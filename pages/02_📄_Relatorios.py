@@ -22,6 +22,33 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 
+# === Arquivo no topo ====
+st.markdown("""
+    <style>
+        /* Esconde o menu de páginas padrão do Streamlit */
+        [data-testid="stSidebarNav"] {display: none;}
+    </style>
+""", unsafe_allow_html=True)
+
+with st.sidebar:
+    # 1. Logo no topo
+    st.image("crti.jpg", use_container_width=True)
+    
+    st.title("Menu Principal")
+    
+    # 2. Navegação Manual (Estilizada como menu)
+    if st.button("🏠 Home", use_container_width=True):
+        st.switch_page("app.py")
+        
+    if st.button("📊 Dashboard", use_container_width=True):
+        st.switch_page("pages/01_📊_Dashboard.py")
+        
+    if st.button("📄 Relatórios", use_container_width=True):
+        st.switch_page("pages/02_📄_Relatorios.py")
+    
+    st.divider()
+    st.info("Selecione uma das opções acima para navegar.")
+
 # ↓ alterado ↓ ====================================
 def data_por_extenso_pt(dt):
     meses = {
