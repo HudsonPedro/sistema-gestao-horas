@@ -1,9 +1,0 @@
-streamlit
-pandas
-plotly
-fpdf
-xlsxwriter
-openpyxl
-pillow
-datetime
-timedelta
