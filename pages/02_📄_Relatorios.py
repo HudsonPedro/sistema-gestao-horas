@@ -1,6 +1,39 @@
 #Por Hudson Valente - CRTI
 #em: 27/04/2026 - 19:55h
 import streamlit as st
+# 1. CONFIGURAÇÃO DA PÁGINA (DEVE SER A PRIMEIRA LINHA)
+st.set_page_config(page_title="Gerador de Relatórios CRTI", page_icon="📄", layout="wide")
+
+# 2. CSS PARA ESCONDER O MENU PADRÃO E MOVER A LOGO PARA O TOPO
+st.markdown("""
+    <style>
+        /* Esconde o menu de páginas padrão do Streamlit */
+        [data-testid="stSidebarNav"] {display: none;}
+        
+        /* Ajusta o espaçamento do topo da sidebar */
+        [data-testid="stSidebarContent"] {padding-top: 1rem;}
+        
+        /* Estilização para o título do sistema */
+        h1 { color: #004a87; }
+    </style>
+""", unsafe_allow_html=True)
+
+# 3. SIDEBAR PERSONALIZADA (Idêntica ao app.py)
+with st.sidebar:
+    st.image("crti.jpg", use_container_width=True)
+    st.title("Menu Principal")
+    
+    if st.button("🏠 Home", use_container_width=True):
+        st.switch_page("app.py")
+        
+    if st.button("📊 Dashboard", use_container_width=True):
+        st.switch_page("pages/01_📊_Dashboard.py")
+        
+    if st.button("📄 Relatórios", use_container_width=True):
+        st.switch_page("pages/02_📄_Relatorios.py")
+    
+    st.divider()
+
 import os
 import glob
 from datetime import timedelta, time, datetime
@@ -21,33 +54,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
-
-# === Arquivo no topo ====
-st.markdown("""
-    <style>
-        /* Esconde o menu de páginas padrão do Streamlit */
-        [data-testid="stSidebarNav"] {display: none;}
-    </style>
-""", unsafe_allow_html=True)
-
-with st.sidebar:
-    # 1. Logo no topo
-    st.image("crti.jpg", use_container_width=True)
-    
-    st.title("Menu Principal")
-    
-    # 2. Navegação Manual (Estilizada como menu)
-    if st.button("🏠 Home", use_container_width=True):
-        st.switch_page("app.py")
-        
-    if st.button("📊 Dashboard", use_container_width=True):
-        st.switch_page("pages/01_📊_Dashboard.py")
-        
-    if st.button("📄 Relatórios", use_container_width=True):
-        st.switch_page("pages/02_📄_Relatorios.py")
-    
-    st.divider()
-    st.info("Selecione uma das opções acima para navegar.")
 
 # ↓ alterado ↓ ====================================
 def data_por_extenso_pt(dt):
