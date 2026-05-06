@@ -9,16 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 2. IDIOMA E LOGIN (Informação do usuário)
-try:
-    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
-except:
-    locale.setlocale(locale.LC_ALL, 'pt_BR')
-
-if st.user.email:
-    st.sidebar.write(f"📧 {st.user.email}")
-
-# 3. CSS PARA ESCONDER O MENU PADRÃO E AJUSTAR CORES
+# 2. CSS PARA ESCONDER O MENU PADRÃO (Movi para cá para garantir o topo)
 st.markdown("""
     <style>
         /* Esconde o menu nativo do Streamlit */
@@ -27,12 +18,26 @@ st.markdown("""
         /* Ajusta cores do ERP */
         [data-testid="stSidebar"] { background-color: #f8f9fa; }
         h1 { color: #004a87; }
+        
+        /* Remove o espaçamento extra que o menu escondido deixa */
+        div[data-testid="stSidebarUserContent"] { padding-top: 0rem; }
     </style>
 """, unsafe_allow_html=True)
 
-# 4. SIDEBAR PERSONALIZADA (Logo no TOPO)
+# 3. IDIOMA E LOGIN
+try:
+    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+except:
+    locale.setlocale(locale.LC_ALL, 'pt_BR')
+
+# 4. SIDEBAR PERSONALIZADA (Logo agora será a primeira coisa visual)
 with st.sidebar:
     st.image("crti.jpg", use_container_width=True)
+    
+    # Mostra o e-mail abaixo da logo
+    if st.user.email:
+        st.caption(f"Conectado: {st.user.email}")
+    
     st.title("Menu Principal")
     
     # Botões de Navegação
@@ -49,13 +54,13 @@ with st.sidebar:
     st.caption("v1.0.0 - Unificado")
     st.caption("© 2024 CRTI Sistemas")
 
-# 5. CONTEÚDO DA HOME
+# 5. CONTEÚDO DA HOME (Igual ao seu PDF)
 st.title("Bem-vindo ao Sistema de Gestão de Horas")
 st.markdown("### Olá! Escolha uma das seções no menu lateral para começar.")
 
 col1, col2 = st.columns(2)
 with col1:
-    st.subheader("📈 Dashboard")
+    st.subheader("📊 Dashboard")
     st.write("Visualize indicadores e métricas em tempo real.")
     if st.button("Ir para Dashboards", key="btn_dash"):
         st.switch_page("pages/01_📊_Dashboard.py")
