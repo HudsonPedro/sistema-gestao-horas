@@ -1,4 +1,39 @@
 import streamlit as st
+
+# 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha!)
+st.set_page_config(page_title="Dashboard CRTI", page_icon="📊", layout="wide")
+
+# 2. CSS PARA OCULTAR O MENU PADRÃO E MOVER A LOGO PARA O TOPO
+st.markdown("""
+    <style>
+        /* Esconde o menu de páginas padrão do Streamlit */
+        [data-testid="stSidebarNav"] {display: none;}
+        
+        /* Ajusta o espaçamento do topo da sidebar */
+        [data-testid="stSidebarContent"] {padding-top: 1rem;}
+        
+        /* Cor do título para o padrão azul */
+        h1 { color: #004a87; }
+    </style>
+""", unsafe_allow_html=True)
+
+# 3. SIDEBAR PERSONALIZADA (Idêntica ao app.py e relatorios.py)
+with st.sidebar:
+    st.image("crti.jpg", use_container_width=True)
+    st.title("Menu Principal")
+    
+    if st.button("🏠 Home", use_container_width=True):
+        st.switch_page("app.py")
+        
+    if st.button("📊 Dashboard", use_container_width=True):
+        st.switch_page("pages/01_📊_Dashboard.py")
+        
+    if st.button("📄 Relatórios", use_container_width=True):
+        st.switch_page("pages/02_📄_Relatorios.py")
+    
+    st.divider()
+
+# --- INÍCIO DA LÓGICA DO DASHBOARD ---
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
