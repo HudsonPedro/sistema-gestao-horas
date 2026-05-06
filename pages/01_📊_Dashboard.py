@@ -3,25 +3,28 @@ import streamlit as st
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha!)
 st.set_page_config(page_title="Dashboard CRTI", page_icon="📊", layout="wide")
 
-# 2. CSS PARA OCULTAR O MENU PADRÃO E MOVER A LOGO PARA O TOPO
+# 2. CSS PARA OCULTAR O MENU E FORÇAR A LOGO NO TOPO
 st.markdown("""
     <style>
         /* Esconde o menu de páginas padrão do Streamlit */
         [data-testid="stSidebarNav"] {display: none;}
         
-        /* Ajusta o espaçamento do topo da sidebar */
-        [data-testid="stSidebarContent"] {padding-top: 1rem;}
+        /* Zera o espaçamento do topo para a logo subir */
+        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
         
-        /* Cor do título para o padrão azul */
+        /* Cor do título para o padrão azul CRTI */
         h1 { color: #004a87; }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. SIDEBAR PERSONALIZADA (Idêntica ao app.py e relatorios.py)
+# 3. SIDEBAR PERSONALIZADA
 with st.sidebar:
+    # Logo agora colada no topo
     st.image("crti.jpg", use_container_width=True)
+    
     st.title("Menu Principal")
     
+    # Navegação Manual
     if st.button("🏠 Home", use_container_width=True):
         st.switch_page("app.py")
         
@@ -38,6 +41,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
+
+st.title("📊 Dashboard de Horas Trabalhadas")
+st.markdown("---")
+
+# [Mantenha o restante do seu código original de carregamento e gráficos aqui]
 
 # ==== CONFIGURAÇÃO DE VALOR ====
 VALOR_HORA = 80.00  # <--- ALTERE AQUI O VALOR DA SUA HORA
