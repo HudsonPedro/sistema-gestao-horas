@@ -3,6 +3,33 @@ import locale
 
 if st.user.email:
     st.write(f"Conectado como: **{st.user.email}**")
+# === Arquivo no topo ====
+st.markdown("""
+    <style>
+        /* Esconde o menu de páginas padrão do Streamlit */
+        [data-testid="stSidebarNav"] {display: none;}
+    </style>
+""", unsafe_allow_html=True)
+
+with st.sidebar:
+    # 1. Logo no topo
+    st.image("crti.jpg", use_container_width=True)
+    
+    st.title("Menu Principal")
+    
+    # 2. Navegação Manual (Estilizada como menu)
+    if st.button("🏠 Home", use_container_width=True):
+        st.switch_page("app.py")
+        
+    if st.button("📊 Dashboard", use_container_width=True):
+        st.switch_page("pages/01_📊_Dashboard.py")
+        
+    if st.button("📄 Relatórios", use_container_width=True):
+        st.switch_page("pages/02_📄_Relatorios.py")
+    
+    st.divider()
+    st.info("Selecione uma das opções acima para navegar.")
+
 
 # 1. Configuração da Página (Deve ser a primeira linha de código Streamlit)
 st.set_page_config(
@@ -44,7 +71,7 @@ with st.sidebar:
     st.caption("© 2024 CRTI Sistemas")
 
 # 5. Conteúdo da Tela Principal (Home)
-st.title("Bem-vindo ao Sistema Unificado CRTI")
+st.title("Bem-vindo ao Sistema de Gestão de Horas")
 st.markdown(f"### Olá! Escolha uma das seções no menu lateral para começar.")
 
 # Criando cards visuais para a Home
