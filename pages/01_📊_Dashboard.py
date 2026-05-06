@@ -39,37 +39,6 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
 
-# === Arquivo no topo ====
-st.markdown("""
-    <style>
-        /* Esconde o menu de páginas padrão do Streamlit */
-        [data-testid="stSidebarNav"] {display: none;}
-    </style>
-""", unsafe_allow_html=True)
-
-with st.sidebar:
-    # 1. Logo no topo
-    st.image("crti.jpg", use_container_width=True)
-    
-    st.title("Menu Principal")
-    
-    # 2. Navegação Manual (Estilizada como menu)
-    if st.button("🏠 Home", use_container_width=True):
-        st.switch_page("app.py")
-        
-    if st.button("📊 Dashboard", use_container_width=True):
-        st.switch_page("pages/01_📊_Dashboard.py")
-        
-    if st.button("📄 Relatórios", use_container_width=True):
-        st.switch_page("pages/02_📄_Relatorios.py")
-    
-    st.divider()
-    st.info("Selecione uma das opções acima para navegar.")
-
-st.set_page_config(page_title="Dashboard CRTI", page_icon="📊", layout="wide")
-st.title("📊 Dashboard de Horas Trabalhadas")
-st.markdown("---")
-
 # ==== CONFIGURAÇÃO DE VALOR ====
 VALOR_HORA = 80.00  # <--- ALTERE AQUI O VALOR DA SUA HORA
 
