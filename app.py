@@ -1,6 +1,9 @@
 import streamlit as st
 import locale
 
+if st.user.email:
+    st.write(f"Conectado como: **{st.user.email}**")
+
 # 1. Configuração da Página (Deve ser a primeira linha de código Streamlit)
 st.set_page_config(
     page_title="CRTI - Sistema de Gestão",
