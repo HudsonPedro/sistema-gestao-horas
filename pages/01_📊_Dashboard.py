@@ -36,18 +36,20 @@ st.markdown("""
 
 # 3. SIDEBAR PERSONALIZADA
 with st.sidebar:
-    # 1. Logo no topo absoluto
-    st.image("hptech.png", use_container_width=True)
+    # 1. Logo
+    st.image("crti.jpg", use_container_width=True)
     
-    # Tenta pegar o e-mail real. Se não existir (vazio), usa o aviso de teste.
-    email_do_google = st.user.get("email")
-    user_to_show = email_do_google if email_do_google else "Usuário Local / Teste"
-    
-    # 2. DESENHA A CAIXINHA (Usando o nome correto da variável)
+    # 2. Lógica de Usuário Simplificada (Evita que o app caia se o e-mail falhar)
+    try:
+        email_google = st.user.get("email")
+        u_display = email_google if email_google else "Usuário Local / Teste"
+    except:
+        u_display = "Usuário Local / Teste"
+
     st.markdown(f"""
         <div class="user-block">
             <span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br>
-            <span style='font-size: 12px; color: #555;'>{user_to_show}</span>
+            <span style='font-size: 12px; color: #555;'>{u_display}</span>
         </div>
     """, unsafe_allow_html=True)
     
