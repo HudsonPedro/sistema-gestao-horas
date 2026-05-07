@@ -41,17 +41,15 @@ with st.sidebar:
     # 1. Logo no topo absoluto
     st.image("hptech.png", use_container_width=True)
     
-    # --- BLOCO DE USUÁRIO CORRIGIDO ---
-    # Tenta obter o e-mail real da sessão do Streamlit Cloud
-    email_real = st.user.get("email")
-
-    # Se o email_real existir, usamos ele. Se não (teste local), usamos um aviso.
-    user_display = email_real if email_real else "Usuário Local / Teste"
+    # Tenta pegar o e-mail real. Se não existir (vazio), usa o aviso de teste.
+    email_do_google = st.user.get("email")
+    user_to_show = email_do_google if email_do_google else "Usuário Local / Teste"
     
+    # 2. DESENHA A CAIXINHA (Usando o nome correto da variável)
     st.markdown(f"""
         <div class="user-block">
             <span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br>
-            <span style='font-size: 12px; color: #555;'>{user_email}</span>
+            <span style='font-size: 12px; color: #555;'>{user_to_show}</span>
         </div>
     """, unsafe_allow_html=True)
     
