@@ -33,7 +33,7 @@ except:
 # 4. SIDEBAR PERSONALIZADA (Logo agora será a primeira coisa visual)
 with st.sidebar:
     # 1. Logo no topo absoluto
-    st.image("crti.jpg", use_container_width=True)
+    st.image("hptech.jpg", use_container_width=True)
     
     # 2. INCLUA O CÓDIGO AQUI (Logo abaixo da imagem)
     if st.user.get("email"):
