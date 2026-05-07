@@ -48,32 +48,42 @@ try:
 except:
     locale.setlocale(locale.LC_ALL, 'pt_BR')
 
+#==== posição da logo ====
 st.markdown("""
     <style>
-        /* Esconde o menu nativo */
+        /* 1. Esconde o menu nativo */
         [data-testid="stSidebarNav"] {display: none;}
-        
-        /* FORÇA A LOGO PARA O TOPO ABSOLUTO */
+
+        /* 2. ZERA TUDO NO TOPO PARA SUBIR A LOGO */
         [data-testid="stSidebarContent"] {
             padding-top: 0rem !important;
+            margin-top: -30px !important; /* Puxa o conteúdo para cima do limite */
         }
-
-        /* Ajuste da logo para não encostar nas laterais */
+        
+        /* 3. CENTRALIZA A LOGO E AJUSTA LARGURA */
         [data-testid="stSidebarHeader"] {
-            padding-top: 0rem !important;
+            padding: 0px !important;
+            text-align: center !important;
+        }
+        
+        /* Garante que a imagem fique centralizada */
+        [data-testid="stSidebar"] img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            width: 85%; /* Ajuste esse % para a logo não encostar nas bordas */
         }
 
-        /* Estilo da caixinha de usuário */
+        /* 4. ESTILO DA CAIXINHA DE USUÁRIO */
         .user-block {
             background-color: #f0f2f6;
             padding: 8px;
             border-radius: 8px;
-            margin-top: -10px; /* Puxa a caixinha um pouco para cima */
+            margin-top: -15px;
+            text-align: left; /* Mantém o texto do usuário alinhado à esquerda */
         }
     </style>
 """, unsafe_allow_html=True)
-
-
 
 # 4. SIDEBAR PERSONALIZADA (Logo agora será a primeira coisa visual)
 with st.sidebar:
