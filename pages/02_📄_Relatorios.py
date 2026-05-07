@@ -1,24 +1,25 @@
 #Por Hudson Valente - CRTI
 #em: 27/04/2026 - 19:55h
 import streamlit as st
-# 1. CONFIGURAÇÃO DA PÁGINA (DEVE SER A PRIMEIRA LINHA)
+
+# 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha de código!)
 st.set_page_config(page_title="Gerador de Relatórios CRTI", page_icon="📄", layout="wide")
 
-# 2. CSS PARA ESCONDER O MENU PADRÃO E MOVER A LOGO PARA O TOPO
+# 2. CSS PARA OCULTAR O MENU E COLAR A LOGO NO TOPO
 st.markdown("""
     <style>
         /* Esconde o menu de páginas padrão do Streamlit */
         [data-testid="stSidebarNav"] {display: none;}
         
-        /* Ajusta o espaçamento do topo da sidebar */
-        [data-testid="stSidebarContent"] {padding-top: 1rem;}
+        /* Zera o espaçamento do topo para a logo subir */
+        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
         
         /* Estilização para o título do sistema */
         h1 { color: #004a87; }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. SIDEBAR PERSONALIZADA (Idêntica ao app.py)
+# 3. SIDEBAR PERSONALIZADA (Logo no TOPO)
 with st.sidebar:
     st.image("crti.jpg", use_container_width=True)
     st.title("Menu Principal")
@@ -34,17 +35,23 @@ with st.sidebar:
     
     st.divider()
 
+# 4. AGORA SIM OS IMPORTS PESADOS E O RESTANTE DO CÓDIGO
 import os
 import glob
 from datetime import timedelta, time, datetime
 import pandas as pd
 import locale
 from fpdf import FPDF
-import xlsxwriter # Biblioteca para Escrever Excel
+import xlsxwriter 
 from PIL import Image
-import shutil # <--- NOVO: BIBLIOTECA PARA CRIAR O ARQUIVO ZIP
+import shutil 
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
-#== nova varivel para carimbar relatorios já gerados ===
+# [Mantenha o restante do seu código original exatamente como no PDF a partir daqui...]
 if "relatorios_gerados" not in st.session_state:
     st.session_state.relatorios_gerados = False
 
