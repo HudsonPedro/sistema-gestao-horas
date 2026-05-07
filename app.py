@@ -9,6 +9,24 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+st.markdown("""
+    <style>
+        [data-testid="stSidebarNav"] {display: none;}
+        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
+        
+        /* O BLOCO QUE VOCÊ PERGUNTOU ENTRA AQUI */
+        .user-block {
+            background-color: #f0f2f6;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+
 # 2. CSS PARA ESCONDER O MENU PADRÃO (Movi para cá para garantir o topo)
 st.markdown("""
     <style>
