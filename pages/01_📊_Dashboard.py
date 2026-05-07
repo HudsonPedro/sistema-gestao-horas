@@ -39,29 +39,32 @@ with st.sidebar:
     # 1. Logo
     st.image("hptech.png", use_container_width=True)
     
-    ## --- BUSCA O USUÁRIO DE FORMA ROBUSTA ---
-    user_email = None
-    
-    # Tentativa 1: Método oficial mais recente
-    if hasattr(st, "user") and st.user.get("email"):
-        user_email = st.user["email"]
-    
-    # Tentativa 2: Fallback para cabeçalhos de contexto (algumas versões do Cloud)
-    if not user_email:
+       # --- LOGICA DE IDENTIFICAÇÃO FINAL ---
+    # 1. Tenta capturar o e-mail real de três formas diferentes
+    usuario_detectado = None
+
+    try:
+        # Forma 1: Objeto moderno (Streamlit 1.30+)
+        usuario_detectado = st.experimental_user.email
+    except AttributeError:
         try:
-            user_email = st.context.user.email
+            # Forma 2: Dicionário st.user
+            usuario_detectado = st.user.get("email")
         except:
             pass
 
-    # Se ainda estiver vazio, aí sim usamos o Hudson como padrão
-    u_display = user_email if user_email else "hudson.valente@crti.com.br"
+    # 2. Define o que mostrar: se achou o e-mail real, usa ele. 
+    # Se não achou (vazio ou None), usa o seu como administrador.
+    u_display = usuario_detectado if usuario_detectado else "hudson.valente@crti.com.br"
 
+    # 3. Renderiza a caixinha estilizada
     st.markdown(f"""
         <div class="user-block">
             <span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br>
-            <span style='font-size: 12px; color: #555;'>{u_display}</span>
+            <span style='font-size: 11px; color: #555; word-wrap: break-word;'>{u_display}</span>
         </div>
     """, unsafe_allow_html=True)
+
     
     st.title("Menu Principal")
     
