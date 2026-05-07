@@ -33,7 +33,7 @@ except:
 # 4. SIDEBAR PERSONALIZADA (Logo agora será a primeira coisa visual)
 with st.sidebar:
     # 1. Logo no topo absoluto
-    st.image("hptech.jpg", use_container_width=True)
+    st.image("hptech.png", use_container_width=True)
     
     # 2. INCLUA O CÓDIGO AQUI (Logo abaixo da imagem)
     if st.user.get("email"):
@@ -53,8 +53,8 @@ with st.sidebar:
         st.switch_page("pages/02_📄_Relatorios.py")
     
     st.divider()
-    st.caption("v1.0.0 - Unificado")
-    st.caption("© 2024 CRTI Sistemas")
+    st.caption("v1.0.0 06052026")
+    st.caption("©2026 Direitos reservados HPTech Informática ME.")
 
 # 5. CONTEÚDO DA HOME (Igual ao seu PDF)
 st.title("Bem-vindo ao Sistema de Gestão de Horas")
