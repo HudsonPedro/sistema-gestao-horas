@@ -39,7 +39,7 @@ st.markdown("""
 # 3. SIDEBAR PERSONALIZADA (Logo no TOPO)
 with st.sidebar:
     # 1. Logo
-    st.image("crti.jpg", use_container_width=True)
+    st.image("hptech.png", use_container_width=True)
     
     # --- BUSCA O USUÁRIO DE FORMA ROBUSTA ---
     user_email = None
