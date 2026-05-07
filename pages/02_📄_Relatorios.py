@@ -22,7 +22,7 @@ st.markdown("""
 # 3. SIDEBAR PERSONALIZADA (Logo no TOPO)
 with st.sidebar:
     # 1. Logo no topo absoluto
-    st.image("hptech.jpg", use_container_width=True)
+    st.image("hptech.png", use_container_width=True)
     
     # 2. INCLUA O CÓDIGO AQUI (Logo abaixo da imagem)
     if st.user.get("email"):
