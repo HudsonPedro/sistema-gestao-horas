@@ -24,9 +24,16 @@ with st.sidebar:
     # 1. Logo no topo absoluto
     st.image("hptech.png", use_container_width=True)
     
-    # 2. INCLUA O CÓDIGO AQUI (Logo abaixo da imagem)
+    # 2. BLOCO DE USUÁRIO (Hierarquia Visual ERP)
+    st.markdown("---") # Linha fina separadora
     if st.user.get("email"):
-        st.caption(f"👤 {st.user['email']}")
+        # Criando duas colunas pequenas: uma para o ícone e outra para o texto
+        col_user1, col_user2 = st.columns([1, 4])
+        with col_user1:
+            st.write("👤") # Ícone de usuário
+        with col_user2:
+            st.markdown(f"**Usuário Logado**\n\n<small>{st.user['email']}</small>", unsafe_allow_html=True)
+    st.markdown("---")
     
     st.divider() # Uma linha para separar a logo do menu
     st.title("Menu Principal")
