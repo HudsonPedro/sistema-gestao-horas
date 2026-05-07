@@ -32,12 +32,14 @@ except:
 
 # 4. SIDEBAR PERSONALIZADA (Logo agora será a primeira coisa visual)
 with st.sidebar:
+    # 1. Logo no topo absoluto
     st.image("crti.jpg", use_container_width=True)
     
-    # Mostra o e-mail abaixo da logo
-    if st.user.email:
-        st.caption(f"Conectado: {st.user.email}")
+    # 2. INCLUA O CÓDIGO AQUI (Logo abaixo da imagem)
+    if st.user.get("email"):
+        st.caption(f"👤 {st.user['email']}")
     
+    st.divider() # Uma linha para separar a logo do menu
     st.title("Menu Principal")
     
     # Botões de Navegação
