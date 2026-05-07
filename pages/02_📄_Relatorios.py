@@ -41,11 +41,27 @@ with st.sidebar:
     # 1. Logo
     st.image("crti.jpg", use_container_width=True)
     
-    # Versão simplificada sem busca de e-mail para destravar o app
-    st.markdown("""
+    # --- BUSCA O USUÁRIO DE FORMA ROBUSTA ---
+    user_email = None
+    
+    # Tentativa 1: Método oficial mais recente
+    if hasattr(st, "user") and st.user.get("email"):
+        user_email = st.user["email"]
+    
+    # Tentativa 2: Fallback para cabeçalhos de contexto (algumas versões do Cloud)
+    if not user_email:
+        try:
+            user_email = st.context.user.email
+        except:
+            pass
+
+    # Se ainda estiver vazio, aí sim usamos o Hudson como padrão
+    u_display = user_email if user_email else "hudson.valente@crti.com.br"
+
+    st.markdown(f"""
         <div class="user-block">
             <span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br>
-            <span style='font-size: 12px; color: #555;'>hudson.valente@crti.com.br</span>
+            <span style='font-size: 12px; color: #555;'>{u_display}</span>
         </div>
     """, unsafe_allow_html=True)
     
