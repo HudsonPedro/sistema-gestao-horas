@@ -54,14 +54,6 @@ from email import encoders
 # [Mantenha o restante do seu código original exatamente como no PDF a partir daqui...]
 if "relatorios_gerados" not in st.session_state:
     st.session_state.relatorios_gerados = False
-
-# ====== BIBLIOTECAS DE E-MAIL ======
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
-
 # ↓ alterado ↓ ====================================
 def data_por_extenso_pt(dt):
     meses = {
