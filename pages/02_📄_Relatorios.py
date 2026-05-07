@@ -41,17 +41,11 @@ with st.sidebar:
     # 1. Logo
     st.image("crti.jpg", use_container_width=True)
     
-    # 2. Lógica de Usuário Simplificada (Evita que o app caia se o e-mail falhar)
-    try:
-        email_google = st.user.get("email")
-        u_display = email_google if email_google else "Usuário Local / Teste"
-    except:
-        u_display = "Usuário Local / Teste"
-
-    st.markdown(f"""
+    # Versão simplificada sem busca de e-mail para destravar o app
+    st.markdown("""
         <div class="user-block">
             <span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br>
-            <span style='font-size: 12px; color: #555;'>{u_display}</span>
+            <span style='font-size: 12px; color: #555;'>hudson.valente@crti.com.br</span>
         </div>
     """, unsafe_allow_html=True)
     
