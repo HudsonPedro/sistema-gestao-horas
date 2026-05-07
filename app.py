@@ -54,7 +54,8 @@ with st.sidebar:
     
     st.divider()
     st.caption("v1.0.0 06052026")
-    st.caption("©2026 Direitos reservados HPTech Informática ME.")
+    st.caption("©2026 Direitos reservados.")
+    st.caption("HPTech Informática ME.")
 
 # 5. CONTEÚDO DA HOME (Igual ao seu PDF)
 st.title("Bem-vindo ao Sistema de Gestão de Horas")
