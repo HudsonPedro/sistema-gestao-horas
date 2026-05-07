@@ -48,6 +48,27 @@ try:
 except:
     locale.setlocale(locale.LC_ALL, 'pt_BR')
 
+st.markdown("""
+    <style>
+        /* Esconde o menu nativo */
+        [data-testid="stSidebarNav"] {display: none;}
+        
+        /* AJUSTE DA LOGO: Dá um respiro de 2rem (aprox. 32px) no topo */
+        [data-testid="stSidebarContent"] {
+            padding-top: 2rem !important;
+        }
+
+        /* Estilo da caixinha de usuário */
+        .user-block {
+            background-color: #f0f2f6;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+
 # 4. SIDEBAR PERSONALIZADA (Logo agora será a primeira coisa visual)
 with st.sidebar:
     # 1. Logo
