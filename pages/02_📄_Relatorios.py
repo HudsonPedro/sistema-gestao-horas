@@ -41,20 +41,26 @@ st.markdown("""
         /* Esconde o menu nativo */
         [data-testid="stSidebarNav"] {display: none;}
         
-        /* AJUSTE DA LOGO: Dá um respiro de 2rem (aprox. 32px) no topo */
+        /* FORÇA A LOGO PARA O TOPO ABSOLUTO */
         [data-testid="stSidebarContent"] {
-            padding-top: 2rem !important;
+            padding-top: 0rem !important;
+        }
+
+        /* Ajuste da logo para não encostar nas laterais */
+        [data-testid="stSidebarHeader"] {
+            padding-top: 0rem !important;
         }
 
         /* Estilo da caixinha de usuário */
         .user-block {
             background-color: #f0f2f6;
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
-            margin-bottom: 10px;
+            margin-top: -10px; /* Puxa a caixinha um pouco para cima */
         }
     </style>
 """, unsafe_allow_html=True)
+
 
 # 3. SIDEBAR PERSONALIZADA (Logo no TOPO)
 with st.sidebar:
