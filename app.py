@@ -55,7 +55,7 @@ with st.sidebar:
     
     # 2. BLOCO DE USUÁRIO (Hierarquia Visual ERP)
     # Desenha a caixinha estilizada
-    u# --- BLOCO DE USUÁRIO CORRIGIDO ---
+    # --- BLOCO DE USUÁRIO CORRIGIDO ---
     # Tenta obter o e-mail real da sessão do Streamlit Cloud
     email_real = st.user.get("email")
 
