@@ -3,6 +3,23 @@ import streamlit as st
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha!)
 st.set_page_config(page_title="Dashboard CRTI", page_icon="📊", layout="wide")
 
+st.markdown("""
+    <style>
+        [data-testid="stSidebarNav"] {display: none;}
+        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
+        
+        /* O BLOCO QUE VOCÊ PERGUNTOU ENTRA AQUI */
+        .user-block {
+            background-color: #f0f2f6;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # 2. CSS PARA OCULTAR O MENU E FORÇAR A LOGO NO TOPO
 st.markdown("""
     <style>
