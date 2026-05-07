@@ -20,7 +20,7 @@ st.markdown("""
 # 3. SIDEBAR PERSONALIZADA
 with st.sidebar:
     # 1. Logo no topo absoluto
-    st.image("crti.jpg", use_container_width=True)
+    st.image("hptech.jpg", use_container_width=True)
     
     # 2. INCLUA O CÓDIGO AQUI (Logo abaixo da imagem)
     if st.user.get("email"):
