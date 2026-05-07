@@ -25,14 +25,19 @@ with st.sidebar:
     st.image("hptech.png", use_container_width=True)
     
     # 2. BLOCO DE USUÁRIO (Hierarquia Visual ERP)
-    st.markdown("---") # Linha fina separadora
-    if st.user.get("email"):
-        # Criando duas colunas pequenas: uma para o ícone e outra para o texto
-        col_user1, col_user2 = st.columns([1, 4])
-        with col_user1:
-            st.write("👤") # Ícone de usuário
-        with col_user2:
-            st.markdown(f"**Usuário Logado**\n\n<small>{st.user['email']}</small>", unsafe_allow_html=True)
+    st.markdown("---")
+    
+    # Tenta obter o e-mail oficial do login
+    try:
+        user_email = st.user.get("email")
+    except:
+        user_email = None
+
+    # Se estiver vazio (mesmo sendo privado), define o administrador padrão
+    if not user_email:
+        user_email = "hudson.valente@crti.com.br"
+    
+    st.markdown(f"👤 **Usuário Logado**\n\n<small>{user_email}</small>", unsafe_allow_html=True)
     st.markdown("---")
     
     st.divider() # Uma linha para separar a logo do menu
