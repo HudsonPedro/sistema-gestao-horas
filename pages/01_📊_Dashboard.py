@@ -191,7 +191,7 @@ clientes_atendidos = df_filtrado["CLIENTE"].nunique()
 with col_m1:
     st.metric("⏱️ Total de Horas", f"{total_horas:.1f}h")
 with col_m2:
-    st.metric("💰 Total Financeiro", f"R$ {total_financeiro:..2f}")
+    st.metric("💰 Total Financeiro", f"R$ {total_financeiro:,.2f}")
 with col_m3:
     st.metric("📅 Dias Trabalhados", int(total_dias))
 with col_m4:
