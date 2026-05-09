@@ -105,7 +105,7 @@ with st.sidebar:
             <span style='font-size: 11px; color: #555; word-wrap: break-word;'>{u_display}</span>
         </div>
     """, unsafe_allow_html=True)
-st.markdown("---")
+    st.markdown("---")
     st.title("Menu Principal")
     
     # Botões de Navegação
