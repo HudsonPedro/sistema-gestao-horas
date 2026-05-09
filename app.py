@@ -76,10 +76,10 @@ st.markdown("""
 
 # 4. SIDEBAR PERSONALIZADA (Logo agora será a primeira coisa visual)
 with st.sidebar:
-    st.markdown("---")
     # 1. Logo
     st.image("hptech.png", use_container_width=True)
     st.markdown("---")
+    
        # --- LOGICA DE IDENTIFICAÇÃO FINAL ---
     # 1. Tenta capturar o e-mail real de três formas diferentes
     usuario_detectado = None
