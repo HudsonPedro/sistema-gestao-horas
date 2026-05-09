@@ -188,9 +188,18 @@ total_dias = df_filtrado["DATA"].nunique()
 media_horas_dia = total_horas / total_dias if total_dias > 0 else 0
 clientes_atendidos = df_filtrado["CLIENTE"].nunique()
 
+def formatar_horas_relogio(horas_decimais):
+    total_minutos = int(round(horas_decimais * 60))
+    horas = total_minutos // 60
+    minutos = total_minutos % 60
+    return f"{horas:02d}:{minutos:02d}"
+
+#with col_m1:
+    #st.metric("⏱️ Total de Horas", f"{total_horas:.1f}h")
 with col_m1:
-    st.metric("⏱️ Total de Horas", f"{total_horas:.1f}h")
-    
+    # De 36.2h para 36:12
+    horas_formatadas = formatar_horas_relogio(total_horas)
+    st.metric("⏱️ Total de Horas", horas_formatadas)
 # Formata como 2,900.00 -> troca vírgula por "X" -> troca ponto por vírgula -> troca "X" por ponto
 valor_formatado = f"{total_financeiro:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 with col_m2:
@@ -200,8 +209,12 @@ with col_m2:
     #st.metric("💰 Total Financeiro", f"R$ {total_financeiro:,.2f}")
 with col_m3:
     st.metric("📅 Dias Trabalhados", int(total_dias))
+#with col_m4:
+    #st.metric("📊 Média/Dia", f"{media_horas_dia:.1f}h")
 with col_m4:
-    st.metric("📊 Média/Dia", f"{media_horas_dia:.1f}h")
+    # De 7.2h para 07:12
+    media_formatada = formatar_horas_relogio(media_horas_dia)
+    st.metric("📊 Média/Dia", media_formatada)
 with col_m5:
     st.metric("🏢 Clientes", int(clientes_atendidos))
 
