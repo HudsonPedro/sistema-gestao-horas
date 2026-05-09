@@ -190,8 +190,14 @@ clientes_atendidos = df_filtrado["CLIENTE"].nunique()
 
 with col_m1:
     st.metric("⏱️ Total de Horas", f"{total_horas:.1f}h")
+    
+# Formata como 2,900.00 -> troca vírgula por "X" -> troca ponto por vírgula -> troca "X" por ponto
+valor_formatado = f"{total_financeiro:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 with col_m2:
-    st.metric("💰 Total Financeiro", f"R$ {total_financeiro:,.2f}")
+    st.metric("💰 Total Financeiro", f"R$ {valor_formatado}")
+#=== ↑ substituido por este =====
+#with col_m2:
+    #st.metric("💰 Total Financeiro", f"R$ {total_financeiro:,.2f}")
 with col_m3:
     st.metric("📅 Dias Trabalhados", int(total_dias))
 with col_m4:
