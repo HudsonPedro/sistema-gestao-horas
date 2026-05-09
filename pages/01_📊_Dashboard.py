@@ -64,7 +64,7 @@ st.markdown("""
 with st.sidebar:
     # 1. Logo
     st.image("hptech.png", use_container_width=True)
-    
+    st.markdown("---")
        # --- LOGICA DE IDENTIFICAÇÃO FINAL ---
     # 1. Tenta capturar o e-mail real de três formas diferentes
     usuario_detectado = None
@@ -90,7 +90,7 @@ with st.sidebar:
             <span style='font-size: 11px; color: #555; word-wrap: break-word;'>{u_display}</span>
         </div>
     """, unsafe_allow_html=True)
-
+    st.markdown("---")
     
     st.title("Menu Principal")
     
