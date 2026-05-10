@@ -101,7 +101,7 @@ with st.sidebar:
     # 3. Renderiza a caixinha estilizada
     st.markdown(f"""
         <div class="user-block">
-            <span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br>
+            <span style='font-size: 14px;'>👨🏻‍💻 <b>Usuário Logado</b></span><br>
             <span style='font-size: 11px; color: #555; word-wrap: break-word;'>{u_display}</span>
         </div>
     """, unsafe_allow_html=True)
