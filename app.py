@@ -35,7 +35,7 @@ st.markdown("""
         
         /* Ajusta cores do ERP */
         [data-testid="stSidebar"] { background-color: #f8f9fa; }
-        h1 { color: #b0231d ; } /*#004a87 = AZUL CRTI*/
+        h1 { color: #b0231d; } /*#004a87 = AZUL CRTI*/
         
         /* Remove o espaçamento extra que o menu escondido deixa */
         div[data-testid="stSidebarUserContent"] { padding-top: 0rem; }
