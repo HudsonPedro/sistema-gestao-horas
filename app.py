@@ -3,8 +3,8 @@ import locale
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha!)
 st.set_page_config(
-    page_title="CRTI - Sistema de Gestão",
-    page_icon="hptech.png📊", 
+    page_title="HPTECH - Sistema de Gestão",
+    page_icon="📊", 
     layout="wide",
     initial_sidebar_state="expanded",
 )
