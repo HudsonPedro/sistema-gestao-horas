@@ -248,7 +248,7 @@ with tab1:
             title="Horas por Cliente",
             labels={"horas_decimal": "Horas", "CLIENTE": "Cliente"},
             color="valor_total",
-            color_continuous_scale="Blues",
+            color_continuous_scale="Reds",
             text_auto='.1f'
         )
         st.plotly_chart(fig, use_container_width=True)
