@@ -1,9 +1,9 @@
-#Por Hudson Valente - CRTI
+#Por Hudson Valente - HPTECH
 #em: 27/04/2026 - 19:55h
 import streamlit as st
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha de código!)
-st.set_page_config(page_title="Gerador de Relatórios CRTI", page_icon="📄", layout="wide")
+st.set_page_config(page_title="Gerador de Relatórios HPTECH", page_icon="📄", layout="wide")
 
 st.markdown("""
     <style>
@@ -65,7 +65,7 @@ st.markdown("""
 # 3. SIDEBAR PERSONALIZADA (Logo no TOPO)
 with st.sidebar:
     # 1. Logo
-    st.image("hptech.png", use_container_width=True)
+    st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
        # --- LOGICA DE IDENTIFICAÇÃO FINAL ---
     # 1. Tenta capturar o e-mail real de três formas diferentes
@@ -217,8 +217,8 @@ Hudson Valente"""
         return False, f"❌ Erro de conexão no envio: {str(e)}"
 
 # ====== STREAMLIT UI ======
-st.set_page_config(page_title="Gerador de Relatórios CRTI", page_icon="📄", layout="wide")
-st.title("🔥Gerador Automático de Relatórios CRTI")
+st.set_page_config(page_title="Gerador de Relatórios HPTECH", page_icon="📄", layout="wide")
+st.title("🔥Gerador Automático de Relatórios HPTECH")
 st.markdown("---")
 
 # --- LÊ A PLANILHA TODA (TODAS AS ABAS) ---
