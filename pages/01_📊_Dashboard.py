@@ -30,7 +30,7 @@ st.markdown("""
         [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
         
         /* Cor do título para o padrão azul CRTI */
-        h1 { color: #da6744; } #(#004a87)
+        h1 { color: #b0231d; } /*#004a87 = AZUL CRTI*/
     </style>
 """, unsafe_allow_html=True)
 
