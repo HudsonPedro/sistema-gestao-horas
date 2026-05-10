@@ -1,7 +1,7 @@
 import streamlit as st
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha!)
-st.set_page_config(page_title="Dashboard CRTI", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Dashboard HPTECH", page_icon="📊", layout="wide")
 
 st.markdown("""
     <style>
@@ -30,7 +30,7 @@ st.markdown("""
         [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
         
         /* Cor do título para o padrão azul CRTI */
-        h1 { color: #004a87; }
+        h1 { color: #da6744; } #(#004a87)
     </style>
 """, unsafe_allow_html=True)
 
@@ -63,7 +63,7 @@ st.markdown("""
 # 3. SIDEBAR PERSONALIZADA
 with st.sidebar:
     # 1. Logo
-    st.image("hptech.png", use_container_width=True)
+    st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
        # --- LOGICA DE IDENTIFICAÇÃO FINAL ---
     # 1. Tenta capturar o e-mail real de três formas diferentes
