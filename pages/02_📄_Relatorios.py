@@ -101,8 +101,8 @@ with st.sidebar:
     if st.button("📊 Dashboard", use_container_width=True):
         st.switch_page("pages/01_📊_Dashboard.py")
         
-    if st.button("📑 Relatórios", use_container_width=True):
-        st.switch_page("pages/02_📑_Relatorios.py")
+    if st.button("📄 Relatórios", use_container_width=True):
+        st.switch_page("pages/02_📄_Relatorios.py")
     
     st.divider()
 
