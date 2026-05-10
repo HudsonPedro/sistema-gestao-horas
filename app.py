@@ -4,7 +4,8 @@ import locale
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha!)
 st.set_page_config(
     page_title="CRTI - Sistema de Gestão",
-    page_icon="📊",
+    page_icon="📊", 
+    url = https://delivery.pixelbin.io/predictions/outputs/1d/nanoBanana/generate/019e13ea-5016-7ffd-ad1d-b45b313b3a32/result_0.png
     layout="wide",
     initial_sidebar_state="expanded",
 )
