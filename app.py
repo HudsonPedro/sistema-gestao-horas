@@ -8,11 +8,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-<img 
-    src="sistema-gestao-horas/hptechNova.png" 
-    alt="Emoji hptechNova"
-    style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;"
-    >
 st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {display: none;}
