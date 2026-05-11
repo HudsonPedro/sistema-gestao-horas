@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import gspread
+from google.oauth2.service_account import Credentials
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Lançamento de Atividades", layout="wide")
@@ -16,12 +18,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. FUNÇÃO PARA CARREGAR AS LEGENDAS
+# 3. FUNÇÕES DE DADOS
 @st.cache_data(ttl=600)
 def carregar_legendas():
-    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg/pub?output=xlsx"
+    url = "https://google.com"
     df = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
     return df
+
+def conectar_google_sheets():
+    # Os dados do JSON devem estar no Secrets do Streamlit como 'gcp_service_account'
+    scope = ["https://googleapis.com", "https://googleapis.com"]
+    creds_dict = st.secrets["gcp_service_account"]
+    creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+    return gspread.authorize(creds)
 
 # 4. SIDEBAR PADRÃO
 with st.sidebar:
@@ -34,35 +43,29 @@ with st.sidebar:
     if st.button("📄 Relatórios", use_container_width=True): st.switch_page("pages/02_📄_Relatorios.py")
     if st.button("📝 Lançamento", use_container_width=True): st.switch_page("pages/03_📝_Lancamento.py")
 
-# 5. CARREGAMENTO E LÓGICA DE FILTROS
+# 5. CARREGAMENTO DE LISTAS
 try:
     df_leg = carregar_legendas()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
-    # Coluna E (índice 4) para Situação
-    lista_situacao = sorted(df_leg.iloc[:, 4].dropna().unique().tolist())
-    # Coluna LOCAL (Supondo que seja a coluna G ou índice 6 - ajuste se necessário)
-    lista_local = ["Remoto", "Presencial"] # Padrão caso não queira puxar da planilha
+    lista_situacao = sorted(df_leg.iloc[:, 4].dropna().unique().tolist()) # Coluna E
 except:
     lista_clientes = ["Erro ao carregar"]
-    lista_situacao = ["Concluído", "Em Aberto", "Pendente"]
-    lista_local = ["Remoto", "Presencial"]
+    lista_situacao = ["Concluído", "Pendente"]
 
 st.title("📝 Lançamento de Atividades")
 
-# 6. INPUTS DINÂMICOS (Fora do formulário para o filtro funcionar)
-col_top1, col_top2, col_top3 = st.columns(3)
+# 6. FILTRO DINÂMICO
+col_top1, col_top2 = st.columns([1, 2])
 with col_top1:
     data_atendimento = st.date_input("DATA", datetime.now())
     cliente_selecionado = st.selectbox("CLIENTE", options=lista_clientes)
 
-# Filtra Solicitante baseado no Cliente
 try:
-    filtro_solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
-    lista_solicitantes = sorted(filtro_solicitantes)
+    lista_solicitantes = sorted(df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist())
 except:
     lista_solicitantes = []
 
-# 7. FORMULÁRIO DE LANÇAMENTO
+# 7. FORMULÁRIO
 with st.form("form_lancamento", clear_on_submit=True):
     col1, col2, col3 = st.columns(3)
     
@@ -70,8 +73,7 @@ with st.form("form_lancamento", clear_on_submit=True):
         ra = st.text_input("RA (Número)")
         situacao_ra = st.selectbox("SITUACAO_RA", options=lista_situacao)
         consultor = st.text_input("CONSULTOR", value="Hudson Valente")
-        # LOCAL movido para baixo do Consultor
-        local = st.selectbox("LOCAL", options=lista_local)
+        local = st.selectbox("LOCAL", ["Remoto", "Presencial"])
 
     with col2:
         hr_inicio = st.time_input("HR_INICIO")
@@ -90,45 +92,32 @@ with st.form("form_lancamento", clear_on_submit=True):
     participante = st.text_input("PARTICIPANTE")
     descricao_d = st.text_area("DESCRICAO_D")
 
-    btn_enviar = st.form_submit_button("🚀 Salvar na Planilha")
+    btn_enviar = st.form_submit_button("🚀 Gravar na Planilha")
 
-import requests
-
+# 8. LÓGICA DE GRAVAÇÃO
 if btn_enviar:
-    # URL de Resposta do seu formulário (mudei para 'formResponse')
-    url_form = "https://docs.google.com/forms/d/e/1FAIpQLSfg8WWTZgbbe6n26N1ONqc75vfYB43bO-8rnYn4gz0gFYlyLQ/viewformm"
-    
-    # MAPEAMENTO DOS CAMPOS (Baseado na estrutura do seu Google Forms)
-    dados_envio = {
-        "entry.1741708815": data_atendimento.strftime('%Y-%m-%d'), # DATA
-        "entry.1039868735": cliente_selecionado,                   # CLIENTE
-        "entry.544773822": ra,                                     # RA
-        "entry.704231364": hr_inicio.strftime('%H:%M'),            # HR_INICIO
-        "entry.1355933618": hr_fim.strftime('%H:%M'),              # HR_FIM
-        "entry.1484196191": hr_inicio_d.strftime('%H:%M'),          # HR_INICIO_D
-        "entry.34006123": hr_fim_d.strftime('%H:%M'),              # HR_FIM_D
-        "entry.1353139369": situacao_ra,                           # SITUACAO_RA
-        "entry.190117498": consultor,                              # CONSULTOR
-        "entry.269094073": solicitante,                            # SOLICITANTE
-        "entry.717646698": km_d,                                   # KM_D
-        "entry.1018868156": local,                                 # LOCAL
-        "entry.1226068297": forma,                                 # FORMA
-        "entry.47862788": forma_d,                                 # FORMA_D
-        "entry.139626354": observacoes,                            # OBSERVAÇÕES
-        "entry.1065181729": participante,                          # PARTICIPANTE
-        "entry.1983050165": descricao_d                            # DESCRICAO_D
-    }
-
     try:
-        # Envia os dados de forma invisível
-        resposta = requests.post(url_form, data=dados_envio)
+        client = conectar_google_sheets()
+        # Use o ID da sua planilha (aquele código longo da URL)
+        planilha_id = "1NKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLE" # COLOQUE O SEU ID AQUI
+        sheet = client.open_by_key(planilha_id)
         
-        if resposta.status_code == 200:
-            st.success(f"✅ Lançamento para {cliente_selecionado} enviado com sucesso!")
-            st.balloons()
-        else:
-            st.error(f"❌ Erro no envio (Código {resposta.status_code}). Verifique se o formulário aceita respostas externas.")
-            
+        # Seleciona a aba pelo nome do mês (Ex: MAIO)
+        # meses_pt = {5: "MAIO", 6: "JUNHO"} # Você pode criar um dicionário para mapear
+        nome_aba = "MAIO" # Defina a lógica ou a aba fixa
+        aba = sheet.worksheet(nome_aba)
+        
+        # Organiza a linha na ordem exata das colunas da sua planilha
+        nova_linha = [
+            data_atendimento.strftime('%d/%m/%Y'), cliente_selecionado, ra, 
+            hr_inicio.strftime('%H:%M'), hr_fim.strftime('%H:%M'), 
+            solicitante, situacao_ra, consultor, observacoes, participante,
+            forma, local, hr_inicio_d.strftime('%H:%M'), hr_fim_d.strftime('%H:%M'),
+            km_d, forma_d, descricao_d
+        ]
+        
+        aba.append_row(nova_linha)
+        st.success(f"✅ Lançamento para {cliente_selecionado} gravado com sucesso!")
+        st.balloons()
     except Exception as e:
-        st.error(f"❌ Erro de conexão: {e}")
-
+        st.error(f"Erro ao gravar: {e}")
