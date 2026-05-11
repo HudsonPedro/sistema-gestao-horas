@@ -40,7 +40,7 @@ st.markdown("""
 
 # 3. SIDEBAR COM NOVO BOTÃO
 with st.sidebar:
-    st.image("hptecgNova.jpg", use_container_width=True)
+    st.image("hptechNova.jpg", use_container_width=True)
     
     # Identificação do Usuário
     u_email = st.user.get("email") or "hudson.valente@crti.com.br"
