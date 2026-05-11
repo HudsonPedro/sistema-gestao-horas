@@ -21,7 +21,7 @@ st.markdown("""
 # 3. FUNÇÕES DE DADOS
 @st.cache_data(ttl=600)
 def carregar_legendas():
-    url = "https://google.com"
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg/pub?output=xlsxm"
     df = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
     return df
 
