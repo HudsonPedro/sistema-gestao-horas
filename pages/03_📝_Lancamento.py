@@ -15,7 +15,7 @@ st.markdown("""
 
 # 2. Sidebar (Copie sua Sidebar padrão aqui)
 with st.sidebar:
-    st.image("hptechNova.jpg", use_container_width=True)
+    st.image("hptechNova.png", use_container_width=True)
     # ... (seu código de login/usuário e botões de navegação)
     if st.button("🏠 Home", use_container_width=True): st.switch_page("app.py")
     if st.button("📊 Dashboard", use_container_width=True): st.switch_page("pages/01_📊_Dashboard.py")
