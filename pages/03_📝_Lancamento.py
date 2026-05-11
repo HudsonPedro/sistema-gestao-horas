@@ -96,7 +96,7 @@ import requests
 
 if btn_enviar:
     # URL de Resposta do seu formulário (mudei para 'formResponse')
-    url_form = "https://google.com"
+    url_form = "https://docs.google.com/forms/d/e/1FAIpQLSfg8WWTZgbbe6n26N1ONqc75vfYB43bO-8rnYn4gz0gFYlyLQ/viewformm"
     
     # MAPEAMENTO DOS CAMPOS (Baseado na estrutura do seu Google Forms)
     dados_envio = {
