@@ -5,7 +5,7 @@ from datetime import datetime
 # 1. Carregamento dos dados da aba "Legendas"
 @st.cache_data(ttl=600)
 def carregar_legendas():
-    url = "https://google.com"
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg/pub?output=xlsx"
     # Lendo especificamente a aba Legendas
     df_legendas = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
     return df_legendas
