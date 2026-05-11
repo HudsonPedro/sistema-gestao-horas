@@ -2,6 +2,12 @@ import streamlit as st
 import locale
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha!)
+<img 
+  src="hptechNova.png" 
+  alt="Emoji hptechNova"
+  style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;"
+>
+
 st.set_page_config(
     page_title="HPTECH - Sistema de Gestão",
     page_icon="📊", 
