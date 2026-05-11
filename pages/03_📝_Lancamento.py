@@ -92,6 +92,43 @@ with st.form("form_lancamento", clear_on_submit=True):
 
     btn_enviar = st.form_submit_button("🚀 Salvar na Planilha")
 
+import requests
+
 if btn_enviar:
-    # Para o envio funcionar, você precisará da lógica de gravação (gspread ou st.connection)
-    st.success(f"Dados de {cliente_selecionado} processados com sucesso!")
+    # URL de Resposta do seu formulário (mudei para 'formResponse')
+    url_form = "https://google.com"
+    
+    # MAPEAMENTO DOS CAMPOS (Baseado na estrutura do seu Google Forms)
+    dados_envio = {
+        "entry.1741708815": data_atendimento.strftime('%Y-%m-%d'), # DATA
+        "entry.1039868735": cliente_selecionado,                   # CLIENTE
+        "entry.544773822": ra,                                     # RA
+        "entry.704231364": hr_inicio.strftime('%H:%M'),            # HR_INICIO
+        "entry.1355933618": hr_fim.strftime('%H:%M'),              # HR_FIM
+        "entry.1484196191": hr_inicio_d.strftime('%H:%M'),          # HR_INICIO_D
+        "entry.34006123": hr_fim_d.strftime('%H:%M'),              # HR_FIM_D
+        "entry.1353139369": situacao_ra,                           # SITUACAO_RA
+        "entry.190117498": consultor,                              # CONSULTOR
+        "entry.269094073": solicitante,                            # SOLICITANTE
+        "entry.717646698": km_d,                                   # KM_D
+        "entry.1018868156": local,                                 # LOCAL
+        "entry.1226068297": forma,                                 # FORMA
+        "entry.47862788": forma_d,                                 # FORMA_D
+        "entry.139626354": observacoes,                            # OBSERVAÇÕES
+        "entry.1065181729": participante,                          # PARTICIPANTE
+        "entry.1983050165": descricao_d                            # DESCRICAO_D
+    }
+
+    try:
+        # Envia os dados de forma invisível
+        resposta = requests.post(url_form, data=dados_envio)
+        
+        if resposta.status_code == 200:
+            st.success(f"✅ Lançamento para {cliente_selecionado} enviado com sucesso!")
+            st.balloons()
+        else:
+            st.error(f"❌ Erro no envio (Código {resposta.status_code}). Verifique se o formulário aceita respostas externas.")
+            
+    except Exception as e:
+        st.error(f"❌ Erro de conexão: {e}")
+
