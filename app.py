@@ -4,13 +4,8 @@ import locale
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha!)
 st.set_page_config(
     page_title="HPTECH - Sistema de Gestão",
-    #page_icon="📊", 
-    #layout="wide",
-    <img 
-    src="hptechNova.png" 
-    alt="Emoji hptechNova"
-    style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;"
-    >
+    page_icon="📊", 
+    layout="wide",
     initial_sidebar_state="expanded",
 )
 
