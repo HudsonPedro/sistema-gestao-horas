@@ -10,3 +10,4 @@ timedelta
 datetime
 requests
 gspread
+google-auth
