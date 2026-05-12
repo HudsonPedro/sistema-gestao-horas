@@ -80,7 +80,7 @@ with st.form("form_lancamento", clear_on_submit=True):
         ra = st.text_input("RA (Número)")
         situacao_ra = st.selectbox("SITUACAO_RA", options=lista_situacao)
         consultor = st.text_input("CONSULTOR", value="Hudson Valente")
-        local = st.selectbox("LOCAL", options=Local)
+        local = st.selectbox("LOCAL", options=lista_local)
         lista_local = sorted(df_leg[df_leg["Clientes"] == cliente_selecionado]["Local"].dropna().unique().tolist())
 
     with col2:
