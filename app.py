@@ -41,7 +41,7 @@ st.markdown("""
 # 3. SIDEBAR COM NOVO BOTÃO
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
-    
+    st.markdown("---")
     # Identificação do Usuário
     u_email = st.user.get("email") or "hudson.valente@crti.com.br"
     st.markdown(f"""
@@ -50,7 +50,7 @@ with st.sidebar:
             <span style='font-size: 11px; color: #555;'>{u_email}</span>
         </div>
     """, unsafe_allow_html=True)
-    
+    st.markdown("---")
     st.title("Menu Principal")
     
     # Navegação Atualizada
