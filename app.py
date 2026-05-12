@@ -4,11 +4,10 @@ import locale
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
     page_title="HPTECH Sistema de Gestão",
-    page_icon="📊",
+    page_icon="hptechNova.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
 st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {display: none;}
