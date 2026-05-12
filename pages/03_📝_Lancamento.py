@@ -7,16 +7,62 @@ from google.oauth2.service_account import Credentials
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Lançamento de Atividades", layout="wide")
 
-# 2. CSS PARA PADRONIZAÇÃO
 st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {display: none;}
-        [data-testid="stSidebarContent"] { padding-top: 0rem !important; margin-top: -30px !important; }
-        [data-testid="stSidebarHeader"] { padding: 0px !important; text-align: center !important; }
-        .user-block { background-color: #f0f2f6; padding: 10px; border-radius: 8px; margin-top: -15px; }
-        h1 { color: #004a87; }
+        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
+        
+        /* O BLOCO QUE VOCÊ PERGUNTOU ENTRA AQUI */
+        .user-block {
+            background-color: #f0f2f6;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+        }
     </style>
 """, unsafe_allow_html=True)
+
+# 2. CSS PARA OCULTAR O MENU E FORÇAR A LOGO NO TOPO
+st.markdown("""
+    <style>
+        /* Esconde o menu de páginas padrão do Streamlit */
+        [data-testid="stSidebarNav"] {display: none;}
+        
+        /* Zera o espaçamento do topo para a logo subir */
+        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
+        
+        /* Cor do título para o padrão azul CRTI */
+        h1 { color: #b0231d; } /*#004a87 = AZUL CRTI*/
+    </style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+    <style>
+        /* Esconde o menu nativo */
+        [data-testid="stSidebarNav"] {display: none;}
+        
+        /* FORÇA A LOGO PARA O TOPO ABSOLUTO */
+        [data-testid="stSidebarContent"] {
+            padding-top: 0rem !important;
+        }
+
+        /* Ajuste da logo para não encostar nas laterais */
+        [data-testid="stSidebarHeader"] {
+            padding-top: 0rem !important;
+        }
+
+        /* Estilo da caixinha de usuário */
+        .user-block {
+            background-color: #f0f2f6;
+            padding: 8px;
+            border-radius: 8px;
+            margin-top: -10px; /* Puxa a caixinha um pouco para cima */
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 
 # 3. FUNÇÕES DE DADOS
 @st.cache_data(ttl=600)
