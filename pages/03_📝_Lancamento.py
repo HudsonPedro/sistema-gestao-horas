@@ -185,17 +185,32 @@ if btn_enviar:
             
             aba = sheet.worksheet(nome_aba)
             
-            # --- NOVA LÓGICA DE BUSCA DE LINHA ---
+                        # --- LÓGICA DE BUSCA DE LINHA (EVITA SOBREPOSIÇÃO) ---
             data_procurada = data_atendimento.strftime('%d/%m/%Y')
-            coluna_datas = aba.col_values(1)  # Lê a Coluna A (Datas)
-            
+            coluna_datas = aba.col_values(1)   # Coluna A (Datas)
+            coluna_clientes = aba.col_values(9) # Coluna I (Clientes) - Ajuste se necessário
+
             try:
-                # Encontra a linha onde a data está (index é 0, então somamos 1)
-                # Se houver mais de uma entrada para o mesmo dia, ele pegará a primeira.
+                # 1. Acha a primeira ocorrência da data
                 linha_destino = coluna_datas.index(data_procurada) + 1
+                
+                # 2. Enquanto a linha atual tiver a mesma data E o cliente não estiver vazio, desce
+                # Isso permite lançar várias atividades no mesmo dia
+                while (linha_destino <= len(coluna_datas) and 
+                       coluna_datas[linha_destino-1] == data_procurada and 
+                       linha_destino <= len(coluna_clientes) and 
+                       coluna_clientes[linha_destino-1].strip() != ""):
+                    linha_destino += 1
+                
+                # 3. Validação: se mudou a data ou acabou a planilha, algo está errado
+                if linha_destino > len(coluna_datas) or coluna_datas[linha_destino-1] != data_procurada:
+                     st.warning("⚠️ Não há mais linhas em branco disponíveis para este dia.")
+                     st.stop()
+
             except ValueError:
-                st.error(f"❌ A data {data_procurada} não foi encontrada na coluna A da aba {nome_aba}.")
+                st.error(f"❌ A data {data_procurada} não foi encontrada na coluna A.")
                 st.stop()
+
 
             # Preparamos os valores para as colunas específicas (seguindo sua imagem)
             # Nota: Ajuste os índices das colunas conforme sua planilha real
