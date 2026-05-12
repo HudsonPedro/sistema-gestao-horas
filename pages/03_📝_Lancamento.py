@@ -53,7 +53,7 @@ try:
     df_leg = carregar_legendas()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
     lista_situacao = sorted(df_leg.iloc[:, 4].dropna().unique().tolist())
-    lista_local = sorted(df_leg["Clientes"].dropna().unique().tolist())
+    lista_local = sorted(df_leg["Local"].dropna().unique().tolist())
 except:
     lista_clientes = ["Erro ao carregar"]
     lista_situacao = ["Concluído", "Pendente"]
