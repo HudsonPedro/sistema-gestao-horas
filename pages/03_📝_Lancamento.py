@@ -26,8 +26,10 @@ def carregar_legendas():
     return df
 
 def conectar_google_sheets():
-    # Os dados do JSON devem estar no Secrets do Streamlit como 'gcp_service_account'
-    scope = ["https://googleapis.com", "https://googleapis.com"]
+    scope = [
+        "https://googleapis.com",
+        "https://googleapis.com"
+    ]
     creds_dict = st.secrets["gcp_service_account"]
     creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
     return gspread.authorize(creds)
