@@ -53,9 +53,11 @@ try:
     df_leg = carregar_legendas()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
     lista_situacao = sorted(df_leg.iloc[:, 4].dropna().unique().tolist())
+    lista_local = sorted(df_leg["Clientes"].dropna().unique().tolist())
 except:
     lista_clientes = ["Erro ao carregar"]
     lista_situacao = ["Concluído", "Pendente"]
+    lista_local = ["Erro ao Carregar"]
 
 st.title("📝 Lançamento de Atividades")
 
@@ -78,7 +80,8 @@ with st.form("form_lancamento", clear_on_submit=True):
         ra = st.text_input("RA (Número)")
         situacao_ra = st.selectbox("SITUACAO_RA", options=lista_situacao)
         consultor = st.text_input("CONSULTOR", value="Hudson Valente")
-        local = st.selectbox("LOCAL", ["Remoto", "Presencial"])
+        local = st.selectbox("LOCAL", options=lista_situacao)
+        lista_local = sorted(df_leg[df_leg["Clientes"] == cliente_selecionado]["Local"].dropna().unique().tolist())
 
     with col2:
         hr_inicio = st.time_input("HR_INICIO")
