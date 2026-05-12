@@ -178,7 +178,7 @@ if btn_enviar:
             client = conectar_google_sheets()
             
             # ATENÇÃO: ID da Planilha
-            planilha_id = "1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg" #1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf"
+            planilha_id = "1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf"
             
             # 2. Tenta abrir a aba (Com tratamento de erro específico)
             try:
