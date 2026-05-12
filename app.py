@@ -92,8 +92,10 @@ with st.sidebar:
         st.switch_page("pages/03_📝_Lancamento.py")
     
     st.divider()
-    st.caption("v1.5 - Unificado")
-
+    st.caption("v1.0 - 11052026")
+    st.caption("Todos os direitos reservados")
+    st.caption("Copyright ©2026 HPtech Informática ME")
+    
 # 4. CONTEÚDO DA HOME COM NOVO CARD
 st.title("Bem-vindo ao Sistema de Gestão CRTI")
 st.markdown("### Selecione uma das seções abaixo para começar.")
