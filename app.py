@@ -9,34 +9,62 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 2. CSS PARA ESCONDER O MENU PADRÃO E CENTRALIZAR LOGO
 st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {display: none;}
+        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
+        
+        /* O BLOCO QUE VOCÊ PERGUNTOU ENTRA AQUI */
+        .user-block {
+            background-color: #f0f2f6;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# 2. CSS PARA OCULTAR O MENU E FORÇAR A LOGO NO TOPO
+st.markdown("""
+    <style>
+        /* Esconde o menu de páginas padrão do Streamlit */
+        [data-testid="stSidebarNav"] {display: none;}
+        
+        /* Zera o espaçamento do topo para a logo subir */
+        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
+        
+        /* Cor do título para o padrão azul CRTI */
+        h1 { color: #b0231d; } /*#004a87 = AZUL CRTI*/
+    </style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+    <style>
+        /* Esconde o menu nativo */
+        [data-testid="stSidebarNav"] {display: none;}
+        
+        /* FORÇA A LOGO PARA O TOPO ABSOLUTO */
         [data-testid="stSidebarContent"] {
             padding-top: 0rem !important;
-            margin-top: -30px !important;
         }
+
+        /* Ajuste da logo para não encostar nas laterais */
         [data-testid="stSidebarHeader"] {
-            padding: 0px !important;
-            text-align: center !important;
+            padding-top: 0rem !important;
         }
-        [data-testid="stSidebar"] img {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            width: 85%;
-        }
+
+        /* Estilo da caixinha de usuário */
         .user-block {
             background-color: #f0f2f6;
             padding: 8px;
             border-radius: 8px;
-            margin-top: -15px;
-            text-align: left;
+            margin-top: -10px; /* Puxa a caixinha um pouco para cima */
         }
-        h1 { color: #004a87; }
     </style>
 """, unsafe_allow_html=True)
+
 
 # 3. SIDEBAR COM NOVO BOTÃO
 with st.sidebar:
