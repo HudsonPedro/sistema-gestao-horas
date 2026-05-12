@@ -60,52 +60,35 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# 3. SIDEBAR PERSONALIZADA
+# 3. SIDEBAR COM NOVO BOTÃO
 with st.sidebar:
-    # 1. Logo
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
-       # --- LOGICA DE IDENTIFICAÇÃO FINAL ---
-    # 1. Tenta capturar o e-mail real de três formas diferentes
-    usuario_detectado = None
-
-    try:
-        # Forma 1: Objeto moderno (Streamlit 1.30+)
-        usuario_detectado = st.experimental_user.email
-    except AttributeError:
-        try:
-            # Forma 2: Dicionário st.user
-            usuario_detectado = st.user.get("email")
-        except:
-            pass
-
-    # 2. Define o que mostrar: se achou o e-mail real, usa ele. 
-    # Se não achou (vazio ou None), usa o seu como administrador.
-    u_display = usuario_detectado if usuario_detectado else "hudson.valente@crti.com.br"
-
-    # 3. Renderiza a caixinha estilizada
+    # Identificação do Usuário
+    u_email = st.user.get("email") or "hudson.valente@crti.com.br"
     st.markdown(f"""
         <div class="user-block">
-            <span style='font-size: 14px;'>👨🏻‍💻 <b>Usuário Logado</b></span><br>
-            <span style='font-size: 11px; color: #555; word-wrap: break-word;'>{u_display}</span>
+            <span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br>
+            <span style='font-size: 11px; color: #555;'>{u_email}</span>
         </div>
     """, unsafe_allow_html=True)
     st.markdown("---")
-    
     st.title("Menu Principal")
     
-    # 3. Navegação Manual
+    # Navegação Atualizada
     if st.button("🏠 Home", use_container_width=True):
         st.switch_page("app.py")
-        
     if st.button("📊 Dashboard", use_container_width=True):
         st.switch_page("pages/01_📊_Dashboard.py")
-        
     if st.button("📄 Relatórios", use_container_width=True):
         st.switch_page("pages/02_📄_Relatorios.py")
+    if st.button("📝 Lançamento", use_container_width=True):
+        st.switch_page("pages/03_📝_Lancamento.py")
     
     st.divider()
-
+    st.caption("v1.0 - 11052026")
+    st.caption("Todos os direitos reservados")
+    st.caption("Copyright ©2026 HPtech Informática ME")
 # --- INÍCIO DA LÓGICA DO DASHBOARD ---
 import pandas as pd
 import plotly.graph_objects as go
