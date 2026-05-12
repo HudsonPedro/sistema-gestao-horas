@@ -107,7 +107,7 @@ if btn_enviar:
         planilha_id = "1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg"
         sheet = client.open_by_key(planilha_id)
         
-        nome_aba = "Maio 2026" # Certifique-se de que a aba tem esse nome exato
+        nome_aba = "MAIO" # Certifique-se de que a aba tem esse nome exato
         aba = sheet.worksheet(nome_aba)
         
         nova_linha = [
