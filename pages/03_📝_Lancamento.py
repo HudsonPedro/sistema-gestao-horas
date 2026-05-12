@@ -83,16 +83,35 @@ def conectar_google_sheets():
     creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
     return gspread.authorize(creds)
 
-# 4. SIDEBAR PADRÃO
+# 3. SIDEBAR COM NOVO BOTÃO
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
+    st.markdown("---")
+    # Identificação do Usuário
     u_email = st.user.get("email") or "hudson.valente@crti.com.br"
-    st.markdown(f"<div class='user-block'><span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br><span style='font-size: 11px; color: #555;'>{u_email}</span></div>", unsafe_allow_html=True)
+    st.markdown(f"""
+        <div class="user-block">
+            <span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br>
+            <span style='font-size: 11px; color: #555;'>{u_email}</span>
+        </div>
+    """, unsafe_allow_html=True)
+    st.markdown("---")
     st.title("Menu Principal")
-    if st.button("🏠 Home", use_container_width=True): st.switch_page("app.py")
-    if st.button("📊 Dashboard", use_container_width=True): st.switch_page("pages/01_📊_Dashboard.py")
-    if st.button("📄 Relatórios", use_container_width=True): st.switch_page("pages/02_📄_Relatorios.py")
-    if st.button("📝 Lançamento", use_container_width=True): st.switch_page("pages/03_📝_Lancamento.py")
+    
+    # Navegação Atualizada
+    if st.button("🏠 Home", use_container_width=True):
+        st.switch_page("app.py")
+    if st.button("📊 Dashboard", use_container_width=True):
+        st.switch_page("pages/01_📊_Dashboard.py")
+    if st.button("📄 Relatórios", use_container_width=True):
+        st.switch_page("pages/02_📄_Relatorios.py")
+    if st.button("📝 Lançamento", use_container_width=True):
+        st.switch_page("pages/03_📝_Lancamento.py")
+    
+    st.divider()
+    st.caption("v1.0 - 11052026")
+    st.caption("Todos os direitos reservados")
+    st.caption("Copyright ©2026 HPtech Informática ME")
 
 # 5. CARREGAMENTO DE LISTAS
 try:
