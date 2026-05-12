@@ -72,7 +72,7 @@ try:
 except:
     lista_solicitantes = []
 try:
-    lista_local = sorted(df_leg[df_leg["Clientes"] == cliente_selecionado]["local"].dropna().unique().tolist())
+    lista_local = sorted(df_leg[df_leg["Clientes"] == cliente_selecionado]["Local"].dropna().unique().tolist())
 except:
     lista_local = []
 
