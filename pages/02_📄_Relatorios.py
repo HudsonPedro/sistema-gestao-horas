@@ -204,15 +204,15 @@ Hudson Valente"""
 
 # ====== STREAMLIT UI ======
 st.set_page_config(page_title="Gerador de Relatórios HPTECH", page_icon="📄", layout="wide")
-st.title("🔥Gerador Automático de Relatórios HPTECH", page_icon="hptechICO.png", layout="wide")
+st.title("🔥Gerador Automático de Relatórios HPTECH", page_icon="hptechICO.png", layout="wide", initial_sidebar_state="expanded")
 st.markdown("---")
 
-st.set_page_config(
-    page_title="HPTECH Sistema de Gestão",
-    page_icon="hptechICO.png",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+#st.set_page_config(
+    #page_title="HPTECH Sistema de Gestão",
+    #page_icon="hptechICO.png",
+    #layout="wide",
+   # initial_sidebar_state="expanded",
+#)
 
 # --- LÊ A PLANILHA TODA (TODAS AS ABAS) ---
 @st.cache_data(ttl=600) 
