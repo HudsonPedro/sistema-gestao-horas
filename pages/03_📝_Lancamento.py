@@ -184,9 +184,9 @@ if btn_enviar:
             # Tenta abrir a planilha
             try:
                 # No seu 03_📝_Lancamento.py substitua por isso:
-                sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf/edit?gid=699078225#gid=699078225")
+                sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf/edit?gid=545789165#gid=545789165")
 
-                sheet = client.open_by_key(planilha_id)
+                #sheet = client.open_by_key(planilha_id)
             except Exception as e:
                 st.error("❌ Planilha não encontrada! Verifique o ID ou se você compartilhou a NOVA planilha com o e-mail da conta de serviço.")
                 st.stop()
