@@ -203,23 +203,25 @@ if btn_enviar:
             
             # Exemplo de mapeamento baseado na sua imagem:
             # B: HR_INICIO, C: HR_FIM, D: TOTAL_HR (fórmula), G: CLIENTE...
+            
+            # O range deve ser a LETRA da coluna seguida do número da LINHA encontrada
             valores_atualizacao = [
-                {'range': f'D{HR_INICIO}', 'values': [[hr_inicio.strftime('%H:%M')]]},
-                {'range': f'E{HR_FIM}', 'values': [[hr_fim.strftime('%H:%M')]]},
-                {'range': f'I{CLIENTE}', 'values': [[cliente_selecionado]]},
-                {'range': f'J{RA}', 'values': [[ra]]},
-                {'range': f'L{SITUACAO_RA}', 'values': [[situacao_ra]]},
-                {'range': f'M{OBSERVAÇÕES}', 'values': [[observacoes]]},
-                {'range': f'N{CONSULTOR}', 'values': [[consultor]]},
-                {'range': f'O{SOLICITANTE}', 'values': [[solicitante]]},
-                {'range': f'P{PARTICIPANTE}', 'values': [[participante]]},
-                {'range': f'Q{FORMA}', 'values': [[forma]]},
-                {'range': f'R{LOCAL}', 'values': [[local]]},
-                {'range': f'S{HR_INICIO_D}', 'values': [[hr_inicio_d.strftime('%H:%M')]]},
-                {'range': f'T{HR_FIM_D}', 'values': [[hr_fim_d.strftime('%H:%M')]]},
-                {'range': f'V{KM_D}', 'values': [[km_d]]},
-                {'range': f'W{FORMA_D}', 'values': [[forma_d]]},
-                {'range': f'X{DESCRICAO_D}', 'values': [[descricao_d]]}
+                {'range': f'D{linha_destino}', 'values': [[hr_inicio.strftime('%H:%M')]]},
+                {'range': f'E{linha_destino}', 'values': [[hr_fim.strftime('%H:%M')]]},
+                {'range': f'I{linha_destino}', 'values': [[cliente_selecionado]]},
+                {'range': f'J{linha_destino}', 'values': [[ra]]},
+                {'range': f'L{linha_destino}', 'values': [[situacao_ra]]},
+                {'range': f'M{linha_destino}', 'values': [[observacoes]]},
+                {'range': f'N{linha_destino}', 'values': [[consultor]]},
+                {'range': f'O{linha_destino}', 'values': [[solicitante]]},
+                {'range': f'P{linha_destino}', 'values': [[participante]]},
+                {'range': f'Q{linha_destino}', 'values': [[forma]]},
+                {'range': f'R{linha_destino}', 'values': [[local]]},
+                {'range': f'S{linha_destino}', 'values': [[hr_inicio_d.strftime('%H:%M')]]},
+                {'range': f'T{linha_destino}', 'values': [[hr_fim_d.strftime('%H:%M')]]},
+                {'range': f'V{linha_destino}', 'values': [[km_d]]},
+                {'range': f'W{linha_destino}', 'values': [[forma_d]]},
+                {'range': f'X{linha_destino}', 'values': [[descricao_d]]}
             ]
 
             aba.batch_update(valores_atualizacao, value_input_option='USER_ENTERED')
