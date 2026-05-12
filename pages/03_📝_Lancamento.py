@@ -184,7 +184,7 @@ if btn_enviar:
             # Tenta abrir a planilha
             try:
                 # No seu 03_📝_Lancamento.py substitua por isso:
-                sheet = client.open_by_url("https://google.com")
+                sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/e/2PACX-1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg/pub?output=xlsx")
 
                 #sheet = client.open_by_key(planilha_id)
             except Exception as e:
