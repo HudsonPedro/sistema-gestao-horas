@@ -108,7 +108,7 @@ if btn_enviar:
             client = conectar_google_sheets()
             
             # ATENÇÃO: Verifique se este ID é o da planilha NOVA (sem .xlsx no nome)
-            planilha_id = "1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf"
+            planilha_id = "1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg"
             
             # Tenta abrir a planilha
             try:
