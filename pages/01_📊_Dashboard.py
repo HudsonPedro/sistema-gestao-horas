@@ -112,10 +112,11 @@ def carregar_dados():
     df = carregar_dados()
     print(df.head())
     
-    #dict_abas = pd.read_excel(url, sheet_name=None, engine='openpyxl')
+    dict_abas = pd.read_excel(url, sheet_name=None, engine='openpyxl')
     return dict_abas
 
-#dict_abas = carregar_dados()
+dict_abas = carregar_dados()
+
 st.sidebar.header("⚙️ Configurações GERAIS")
 
 if st.sidebar.button("🔄 Atualizar Planilha Google", use_container_width=True):
