@@ -108,9 +108,16 @@ VALOR_HORA = 80.00  # <--- ALTERE AQUI O VALOR DA SUA HORA
 def carregar_dados():
     #url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg/pub?output=xlsx"
     #url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
-    sheet_id = "1m__s5DERX8Lca7r9hi5oZR3HRtmA6yZjVeqqGXyisp4"
     
-    dict_abas = pd.read_excel(url, sheet_name=None, engine='openpyxl')
+    sheet_id = "1m__s5DERX8Lca7r9hi5oZR3HRtmA6yZjVeqqGXyisp4"
+    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
+    df = pd.read_csv(url)
+    return df
+
+    df = carregar_dados()
+    print(df.head())
+    
+    #dict_abas = pd.read_excel(url, sheet_name=None, engine='openpyxl')
     return dict_abas
 
 #dict_abas = carregar_dados()
