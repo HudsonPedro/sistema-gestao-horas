@@ -123,15 +123,15 @@ if btn_enviar:
             
             # Organiza a linha para a planilha
             nova_linha = [
-                data_atendimento.strftime('%d/%m/%Y'), 
-                cliente_selecionado, 
-                ra, 
+                data_atendimento.strftime('%d/%m/%Y'),  
                 hr_inicio.strftime('%H:%M'), 
                 hr_fim.strftime('%H:%M'), 
+                cliente_selecionado, 
+                ra,
+                situacao_ra,
+                observacoes,
+                consultor,
                 solicitante, 
-                situacao_ra, 
-                consultor, 
-                observacoes, 
                 participante,
                 forma, 
                 local, 
