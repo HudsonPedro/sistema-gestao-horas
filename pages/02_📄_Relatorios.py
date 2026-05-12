@@ -206,7 +206,7 @@ Hudson Valente"""
 st.set_page_config(page_title="Gerador de Relatórios HPTECH", page_icon="📄", layout="wide")
 st.title((page_icon="hptechICO.png",
     layout="wide",
-    initial_sidebar_state="expanded"),("🔥"Gerador Automático de Relatórios HPTECH"))
+    initial_sidebar_state="expanded"),("🔥Gerador Automático de Relatórios HPTECH"))
 st.markdown("---")
 
 st.set_page_config(
