@@ -170,57 +170,63 @@ with st.form("form_lancamento", clear_on_submit=True):
 
     btn_enviar = st.form_submit_button("🚀 Gravar na Planilha")
 
-# 8. LÓGICA DE GRAVAÇÃO
+# 8. LÓGICA DE GRAVAÇÃO (AJUSTADA)
 if btn_enviar:
-    with st.spinner("⏳ Conectando ao Google Sheets..."):
+    with st.spinner("⏳ Localizando data na planilha..."):
         try:
-            # 1. Tenta a conexão
             client = conectar_google_sheets()
+            planilha_id = "1m__s5DERX8Lca7r9hi5oZR3HRtmA6yZjVeqqGXyisp4"
+            sheet = client.open_by_key(planilha_id)
             
-            # ATENÇÃO: ID da Planilha
-            planilha_id = "1m__s5DERX8Lca7r9hi5oZR3HRtmA6yZjVeqqGXyisp4" #1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf"
+            # Nome da aba dinâmico baseado na data escolhida (Ex: "Maio 2026")
+            meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+                     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+            nome_aba = f"{meses[data_atendimento.month - 1]} {data_atendimento.year}"
             
-            # 2. Tenta abrir a aba (Com tratamento de erro específico)
+            aba = sheet.worksheet(nome_aba)
+            
+            # --- NOVA LÓGICA DE BUSCA DE LINHA ---
+            data_procurada = data_atendimento.strftime('%d/%m/%Y')
+            coluna_datas = aba.col_values(1)  # Lê a Coluna A (Datas)
+            
             try:
-                sheet = client.open_by_key(planilha_id)
-            except gspread.exceptions.SpreadsheetNotFound:
-                st.error("❌ ERRO DE PERMISSÃO: A planilha não foi encontrada. Você lembrou de ir no Google Sheets e COMPARTILHAR a planilha com o e-mail da sua Service Account como Editor?")
+                # Encontra a linha onde a data está (index é 0, então somamos 1)
+                # Se houver mais de uma entrada para o mesmo dia, ele pegará a primeira.
+                linha_destino = coluna_datas.index(data_procurada) + 1
+            except ValueError:
+                st.error(f"❌ A data {data_procurada} não foi encontrada na coluna A da aba {nome_aba}.")
                 st.stop()
 
-            # 3. Tenta encontrar a aba "Maio 2026"
-            nome_aba = "Maio 2026" 
-            try:
-                aba = sheet.worksheet(nome_aba)
-            except gspread.exceptions.WorksheetNotFound:
-                st.error(f"❌ ERRO NA ABA: A planilha foi encontrada, mas não existe uma aba chamada exatamente '{nome_aba}'.")
-                st.stop()
+            # Preparamos os valores para as colunas específicas (seguindo sua imagem)
+            # Nota: Ajuste os índices das colunas conforme sua planilha real
+            # update_cells ou update_range é mais preciso que append_row aqui
             
-            # 4. Organiza a linha para envio
-            nova_linha = [
-                data_atendimento.strftime('%d/%m/%Y'), 
-                hr_inicio.strftime('%H:%M'),           
-                hr_fim.strftime('%H:%M'),             
-                cliente_selecionado,                   
-                ra,                                    
-                situacao_ra,                           
-                observacoes,                           
-                consultor,                             
-                solicitante,                           
-                participante,                          
-                forma,                                 
-                local,                                 
-                hr_inicio_d.strftime('%H:%M'),         
-                hr_fim_d.strftime('%H:%M'),           
-                km_d,                                  
-                forma_d,                               
-                descricao_d                            
+            # Exemplo de mapeamento baseado na sua imagem:
+            # B: HR_INICIO, C: HR_FIM, D: TOTAL_HR (fórmula), G: CLIENTE...
+            valores_atualizacao = [
+                {'range': f'D{HR_INICIO}', 'values': [[hr_inicio.strftime('%H:%M')]]},
+                {'range': f'E{HR_FIM}', 'values': [[hr_fim.strftime('%H:%M')]]},
+                {'range': f'I{CLIENTE}', 'values': [[cliente_selecionado]]},
+                {'range': f'J{RA}', 'values': [[ra]]},
+                {'range': f'L{SITUACAO_RA}', 'values': [[situacao_ra]]},
+                {'range': f'M{OBSERVAÇÕES}', 'values': [[observacoes]]},
+                {'range': f'N{CONSULTOR}', 'values': [[consultor]]},
+                {'range': f'O{SOLICITANTE}', 'values': [[solicitante]]},
+                {'range': f'P{PARTICIPANTE}', 'values': [[participante]]},
+                {'range': f'Q{FORMA}', 'values': [[forma]]},
+                {'range': f'R{LOCAL}', 'values': [[local]]},
+                {'range': f'S{HR_INICIO_D}', 'values': [[hr_inicio_d.strftime('%H:%M')]]},
+                {'range': f'T{HR_FIM_D}', 'values': [[hr_fim_d.strftime('%H:%M')]]},
+                {'range': f'V{KM_D}', 'values': [[km_d]]},
+                {'range': f'W{FORMA_D}', 'values': [[forma_d]]},
+                {'range': f'X{DESCRICAO_D}', 'values': [[descricao_d]]}
             ]
-        
-            # 5. Grava os dados!
-            aba.append_row(nova_linha, value_input_option='USER_ENTERED')
+
+            aba.batch_update(valores_atualizacao, value_input_option='USER_ENTERED')
             
-            st.success(f"✅ Sucesso! Relatório **{ra}** do cliente **{cliente_selecionado}** foi gravado na planilha!")
+            st.success(f"✅ Lançamento realizado com sucesso na linha {linha_destino}!")
             st.balloons()
-            
+
         except Exception as e:
-            st.error(f"❌ Ocorreu um erro técnico inesperado: {e}")
+            st.error(f"❌ Erro crítico: {e}")
+
