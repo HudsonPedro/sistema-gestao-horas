@@ -102,7 +102,7 @@ if btn_enviar:
     try:
         client = conectar_google_sheets()
         # CORRIGIDO: Use o ID completo da sua planilha
-        planilha_id = "1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg" 
+        planilha_id = "1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg"
         sheet = client.open_by_key(planilha_id)
         
         nome_aba = "MAIO" # Certifique-se de que a aba tem esse nome exato
