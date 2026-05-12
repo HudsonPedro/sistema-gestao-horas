@@ -179,12 +179,12 @@ if btn_enviar:
             client = conectar_google_sheets()
             
             # ATENÇÃO: Verifique se este ID é o da planilha NOVA (sem .xlsx no nome)
-            planilha_id = "1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg" #1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf"
+            planilha_id = "1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf"
             
             # Tenta abrir a planilha
             try:
                 # No seu 03_📝_Lancamento.py substitua por isso:
-               # sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/e/2PACX-1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg/pub?output=xlsx")
+                sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf/edit?gid=699078225#gid=699078225")
 
                 sheet = client.open_by_key(planilha_id)
             except Exception as e:
