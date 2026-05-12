@@ -101,55 +101,58 @@ with st.form("form_lancamento", clear_on_submit=True):
 
 # 8. LÓGICA DE GRAVAÇÃO
 # 8. LÓGICA DE GRAVAÇÃO (Substitua apenas este bloco final)
+# 8. LÓGICA DE GRAVAÇÃO
 if btn_enviar:
     try:
-        with st.spinner("Gravando dados na planilha..."):
+        with st.spinner("Conectando ao Google Sheets..."):
             client = conectar_google_sheets()
             
-            # ID da planilha (confirmado)
+            # ATENÇÃO: Verifique se este ID é o da planilha NOVA (sem .xlsx no nome)
             planilha_id = "1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg"
-            sheet = client.open_by_key(planilha_id)
             
-            # Ajuste dinâmico: tenta "Maio 2026", se não conseguir, tenta o nome exato que você definiu
+            # Tenta abrir a planilha
             try:
-                # Esta linha gera "Maio 2026" automaticamente baseada na data selecionada
-                meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
-                         "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
-                nome_aba_dinamico = f"{meses[data_atendimento.month - 1]} {data_atendimento.year}"
-                aba = sheet.worksheet(nome_aba_dinamico)
-            except:
-                # Caso a lógica acima falhe, tenta o nome manual
-                aba = sheet.worksheet("Maio 2026")
+                sheet = client.open_by_key(planilha_id)
+            except Exception as e:
+                st.error("❌ Planilha não encontrada! Verifique o ID ou se você compartilhou a NOVA planilha com o e-mail da conta de serviço.")
+                st.stop()
+
+            # Define o nome da aba exatamente como está no Google
+            nome_aba = "Maio 2026" 
             
-            # Organiza a linha para a planilha
-                    # Organiza a linha na ordem exata das colunas da sua planilha:
-        # A=DATA, B=HR_INICIO, C=HR_FIM, D=CLIENTE, E=RA... e assim por diante
+            try:
+                aba = sheet.worksheet(nome_aba)
+            except:
+                st.error(f"❌ A aba '{nome_aba}' não foi encontrada. Verifique se o nome está idêntico na planilha.")
+                st.stop()
+            
+            # Organiza a linha conforme sua estrutura
             nova_linha = [
-                data_atendimento.strftime('%d/%m/%Y'), # Coluna A (Data)
-                hr_inicio.strftime('%H:%M'),           # Coluna B
-                hr_fim.strftime('%H:%M'),             # Coluna C
-                cliente_selecionado,                   # Coluna D
-                ra,                                    # Coluna E
-                situacao_ra,                           # Coluna F
-                observacoes,                           # Coluna G
-                consultor,                             # Coluna H
-                solicitante,                           # Coluna I
-                participante,                          # Coluna J
-                forma,                                 # Coluna K
-                local,                                 # Coluna L
-                hr_inicio_d.strftime('%H:%M'),         # Coluna M
-                hr_fim_d.strftime('%H:%M'),           # Coluna N
-                km_d,                                  # Coluna O
-                forma_d,                               # Coluna P
-                descricao_d                            # Coluna Q
+                data_atendimento.strftime('%d/%m/%Y'), 
+                hr_inicio.strftime('%H:%M'),           
+                hr_fim.strftime('%H:%M'),             
+                cliente_selecionado,                   
+                ra,                                    
+                situacao_ra,                           
+                observacoes,                           
+                consultor,                             
+                solicitante,                           
+                participante,                          
+                forma,                                 
+                local,                                 
+                hr_inicio_d.strftime('%H:%M'),         
+                hr_fim_d.strftime('%H:%M'),           
+                km_d,                                  
+                forma_d,                               
+                descricao_d                            
             ]
         
-        # Grava na planilha          
-            aba.append_row(nova_linha)
-            st.success(f"✅ Lançamento para {cliente_selecionado} gravado com sucesso!")
+            # Grava na planilha
+            aba.append_row(nova_linha, value_input_option='USER_ENTERED')
+            st.success(f"✅ Sucesso! Lançamento para {cliente_selecionado} gravado.")
             st.balloons()
             
-    except gspread.exceptions.WorksheetNotFound:
-        st.error(f"❌ Erro: A aba '{nome_aba_dinamico}' não foi encontrada na planilha.")
     except Exception as e:
+        st.error(f"Erro inesperado: {e}")
+
         st.error(f"Erro ao gravar: {e}")
