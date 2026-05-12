@@ -122,26 +122,29 @@ if btn_enviar:
                 aba = sheet.worksheet("Maio 2026")
             
             # Organiza a linha para a planilha
-            nova_linha = [
-                data_atendimento.strftime('%d/%m/%Y'),  
-                hr_inicio.strftime('%H:%M'), 
-                hr_fim.strftime('%H:%M'), 
-                cliente_selecionado, 
-                ra,
-                situacao_ra,
-                observacoes,
-                consultor,
-                solicitante, 
-                participante,
-                forma, 
-                local, 
-                hr_inicio_d.strftime('%H:%M'), 
-                hr_fim_d.strftime('%H:%M'),
-                km_d, 
-                forma_d, 
-                descricao_d
-            ]
-            
+                    # Organiza a linha na ordem exata das colunas da sua planilha:
+        # A=DATA, B=HR_INICIO, C=HR_FIM, D=CLIENTE, E=RA... e assim por diante
+        nova_linha = [
+            data_atendimento.strftime('%d/%m/%Y'), # Coluna A (Data)
+            hr_inicio.strftime('%H:%M'),           # Coluna B
+            hr_fim.strftime('%H:%M'),             # Coluna C
+            cliente_selecionado,                   # Coluna D
+            ra,                                    # Coluna E
+            situacao_ra,                           # Coluna F
+            observacoes,                           # Coluna G
+            consultor,                             # Coluna H
+            solicitante,                           # Coluna I
+            participante,                          # Coluna J
+            forma,                                 # Coluna K
+            local,                                 # Coluna L
+            hr_inicio_d.strftime('%H:%M'),         # Coluna M
+            hr_fim_d.strftime('%H:%M'),           # Coluna N
+            km_d,                                  # Coluna O
+            forma_d,                               # Coluna P
+            descricao_d                            # Coluna Q
+        ]
+        
+        # Grava na planilha          
             aba.append_row(nova_linha)
             st.success(f"✅ Lançamento para {cliente_selecionado} gravado com sucesso!")
             st.balloons()
