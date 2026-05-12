@@ -136,13 +136,6 @@ except Exception as e:
     st.info("💡 Dica: Verifique se em 'Arquivo > Compartilhar > Publicar na Web', a opção 'Todo o documento' está selecionada como 'Microsoft Excel'.")
     st.stop()
 
-# Selector de mês (Abas)
-if abas_disponiveis:
-    mes_selecionado = st.selectbox("📅 Selecione o Mês (Aba):", abas_disponiveis)
-    df = dict_abas[mes_selecionado].copy()
-else:
-    st.warning("Nenhuma aba encontrada na planilha.")
-    st.stop()
 #-------novo↑
 
 st.sidebar.header("⚙️ Configurações GERAIS")
