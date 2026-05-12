@@ -90,8 +90,8 @@ with st.form("form_lancamento", clear_on_submit=True):
         hr_inicio = st.time_input("HR_INICIO")
         hr_fim = st.time_input("HR_FIM")
         solicitante = st.selectbox("SOLICITANTE", options=lista_solicitantes)
-        forma = st.text_input("FORMA")
-
+        forma = st.selectbox("FORMA", ["Remoto", "Presencial"]))
+        
     with col3:
         hr_inicio_d = st.time_input("HR_INICIO_D (Desloc)")
         hr_fim_d = st.time_input("HR_FIM_D (Desloc)")
