@@ -104,20 +104,7 @@ st.markdown("---")
 VALOR_HORA = 80.00  # <--- ALTERE AQUI O VALOR DA SUA HORA
 
 # Carrega os mesmos dados do Google Sheets
-#@st.cache_data(ttl=600)
-#def carregar_dados():
-    #url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg/pub?output=xlsx"
-    #url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx" == quero usar esta planilha google
-    
-    #df = carregar_dados()
-    #print(df.head())
-    
-    #dict_abas = pd.read_excel(url, sheet_name=None, engine='openpyxl')
-    #return dict_abas
 
-#dict_abas = carregar_dados()
-#----novo ↓
-# --- AJUSTE NA FUNÇÃO DE CARREGAMENTO ---
 @st.cache_data(ttl=600)
 def carregar_dados():
     # URL de Publicação na Web que você indicou, forçando saída XLSX
@@ -135,8 +122,6 @@ except Exception as e:
     st.error(f"❌ Erro ao conectar: {e}")
     st.info("💡 Dica: Verifique se em 'Arquivo > Compartilhar > Publicar na Web', a opção 'Todo o documento' está selecionada como 'Microsoft Excel'.")
     st.stop()
-
-#-------novo↑
 
 st.sidebar.header("⚙️ Configurações GERAIS")
 
