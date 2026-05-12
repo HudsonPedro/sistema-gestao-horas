@@ -120,14 +120,11 @@ VALOR_HORA = 80.00  # <--- ALTERE AQUI O VALOR DA SUA HORA
 # --- AJUSTE NA FUNÇÃO DE CARREGAMENTO ---
 @st.cache_data(ttl=600)
 def carregar_dados():
-    # ID da sua planilha (extraído da sua URL)
-    sheet_id = "1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE"
+    # URL de Publicação na Web que você indicou, forçando saída XLSX
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
     
-    # URL que força o Google Sheets a exportar o conteúdo atual como um arquivo .xlsx real
-    url_export = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
-    
-    # Agora o read_excel funciona, pois o Google entrega um binário de Excel
-    dict_abas = pd.read_excel(url_export, sheet_name=None, engine='openpyxl')
+    # sheet_name=None carrega todas as abas em um dicionário
+    dict_abas = pd.read_excel(url, sheet_name=None, engine='openpyxl')
     return dict_abas
 
 # --- LOGICA DE EXECUÇÃO ---
@@ -135,7 +132,8 @@ try:
     dict_abas = carregar_dados()
     abas_disponiveis = list(dict_abas.keys())
 except Exception as e:
-    st.error(f"❌ Erro ao conectar com o Google Sheets: {e}")
+    st.error(f"❌ Erro ao conectar: {e}")
+    st.info("💡 Dica: Verifique se em 'Arquivo > Compartilhar > Publicar na Web', a opção 'Todo o documento' está selecionada como 'Microsoft Excel'.")
     st.stop()
 
 # Selector de mês (Abas)
