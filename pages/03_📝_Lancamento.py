@@ -108,7 +108,7 @@ if btn_enviar:
             
             # ID da planilha (confirmado)
             planilha_id = "1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg"
-            sheet = client.open_by_key(planilha_id)
+            sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf/edit?gid=545789165#gid=545789165")
             
             # Ajuste dinâmico: tenta "Maio 2026", se não conseguir, tenta o nome exato que você definiu
             try:
