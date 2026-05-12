@@ -7,7 +7,7 @@ from google.oauth2.service_account import Credentials
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Lançamento de Atividades", layout="wide")
 
-# 2. CSS PARA PADRONIZAÇÃO (LOGO NO TOPO E CAIXA DE USUÁRIO)
+# 2. CSS PARA PADRONIZAÇÃO
 st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {display: none;}
@@ -26,6 +26,7 @@ def carregar_legendas():
     return df
 
 def conectar_google_sheets():
+    # CORRIGIDO: Escopos específicos para permitir o acesso aos dados
     scope = [
         "https://googleapis.com",
         "https://googleapis.com"
@@ -49,7 +50,7 @@ with st.sidebar:
 try:
     df_leg = carregar_legendas()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
-    lista_situacao = sorted(df_leg.iloc[:, 4].dropna().unique().tolist()) # Coluna E
+    lista_situacao = sorted(df_leg.iloc[:, 4].dropna().unique().tolist())
 except:
     lista_clientes = ["Erro ao carregar"]
     lista_situacao = ["Concluído", "Pendente"]
@@ -100,16 +101,13 @@ with st.form("form_lancamento", clear_on_submit=True):
 if btn_enviar:
     try:
         client = conectar_google_sheets()
-        # Use o ID da sua planilha (aquele código longo da URL)
-        planilha_id = "1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf" # COLOQUE O SEU ID AQUI 1NKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLE
+        # CORRIGIDO: Use o ID completo da sua planilha
+        planilha_id = "1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg" 
         sheet = client.open_by_key(planilha_id)
         
-        # Seleciona a aba pelo nome do mês (Ex: MAIO)
-        # meses_pt = {5: "MAIO", 6: "JUNHO"} # Você pode criar um dicionário para mapear
-        nome_aba = "MAIO" # Defina a lógica ou a aba fixa
+        nome_aba = "MAIO" # Certifique-se de que a aba tem esse nome exato
         aba = sheet.worksheet(nome_aba)
         
-        # Organiza a linha na ordem exata das colunas da sua planilha
         nova_linha = [
             data_atendimento.strftime('%d/%m/%Y'), cliente_selecionado, ra, 
             hr_inicio.strftime('%H:%M'), hr_fim.strftime('%H:%M'), 
