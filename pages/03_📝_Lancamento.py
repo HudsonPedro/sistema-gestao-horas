@@ -100,26 +100,53 @@ with st.form("form_lancamento", clear_on_submit=True):
     btn_enviar = st.form_submit_button("🚀 Gravar na Planilha")
 
 # 8. LÓGICA DE GRAVAÇÃO
+# 8. LÓGICA DE GRAVAÇÃO (Substitua apenas este bloco final)
 if btn_enviar:
     try:
-        client = conectar_google_sheets()
-        # CORRIGIDO: Use o ID completo da sua planilha
-        planilha_id = "1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg"
-        sheet = client.open_by_key(planilha_id)
-        
-        nome_aba = "Maio 2026" # Certifique-se de que a aba tem esse nome exato
-        aba = sheet.worksheet(nome_aba)
-        
-        nova_linha = [
-            data_atendimento.strftime('%d/%m/%Y'), cliente_selecionado, ra, 
-            hr_inicio.strftime('%H:%M'), hr_fim.strftime('%H:%M'), 
-            solicitante, situacao_ra, consultor, observacoes, participante,
-            forma, local, hr_inicio_d.strftime('%H:%M'), hr_fim_d.strftime('%H:%M'),
-            km_d, forma_d, descricao_d
-        ]
-        
-        aba.append_row(nova_linha)
-        st.success(f"✅ Lançamento para {cliente_selecionado} gravado com sucesso!")
-        st.balloons()
+        with st.spinner("Gravando dados na planilha..."):
+            client = conectar_google_sheets()
+            
+            # ID da planilha (confirmado)
+            planilha_id = "1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg"
+            sheet = client.open_by_key(planilha_id)
+            
+            # Ajuste dinâmico: tenta "Maio 2026", se não conseguir, tenta o nome exato que você definiu
+            try:
+                # Esta linha gera "Maio 2026" automaticamente baseada na data selecionada
+                meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+                         "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+                nome_aba_dinamico = f"{meses[data_atendimento.month - 1]} {data_atendimento.year}"
+                aba = sheet.worksheet(nome_aba_dinamico)
+            except:
+                # Caso a lógica acima falhe, tenta o nome manual
+                aba = sheet.worksheet("Maio 2026")
+            
+            # Organiza a linha para a planilha
+            nova_linha = [
+                data_atendimento.strftime('%d/%m/%Y'), 
+                cliente_selecionado, 
+                ra, 
+                hr_inicio.strftime('%H:%M'), 
+                hr_fim.strftime('%H:%M'), 
+                solicitante, 
+                situacao_ra, 
+                consultor, 
+                observacoes, 
+                participante,
+                forma, 
+                local, 
+                hr_inicio_d.strftime('%H:%M'), 
+                hr_fim_d.strftime('%H:%M'),
+                km_d, 
+                forma_d, 
+                descricao_d
+            ]
+            
+            aba.append_row(nova_linha)
+            st.success(f"✅ Lançamento para {cliente_selecionado} gravado com sucesso!")
+            st.balloons()
+            
+    except gspread.exceptions.WorksheetNotFound:
+        st.error(f"❌ Erro: A aba '{nome_aba_dinamico}' não foi encontrada na planilha.")
     except Exception as e:
         st.error(f"Erro ao gravar: {e}")
