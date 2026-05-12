@@ -177,15 +177,18 @@ df["minutos"] = df["TOTAL_HR"].apply(converter_para_minutos)
 df["horas_decimal"] = df["minutos"] / 60
 df["valor_total"] = df["horas_decimal"] * VALOR_HORA
 
-# ==== FILTROS ====
+# ==== FILTROS (Com correção para o erro de sorted) ====
 st.sidebar.markdown("### 🔍 Filtros")
-clientes_unicos = sorted(df["CLIENTE"].unique())
+
+# Garantir que não existam valores nulos e converter para string antes de ordenar
+clientes_unicos = sorted(df["CLIENTE"].dropna().astype(str).unique())
 cliente_filtro = st.sidebar.multiselect("Clientes:", clientes_unicos, default=clientes_unicos)
 
-consultores_unicos = sorted(df["CONSULTOR"].unique())
+consultores_unicos = sorted(df["CONSULTOR"].dropna().astype(str).unique())
 consultor_filtro = st.sidebar.multiselect("Consultores:", consultores_unicos, default=consultores_unicos)
 
-df_filtrado = df[(df["CLIENTE"].isin(cliente_filtro)) & (df["CONSULTOR"].isin(consultor_filtro))]
+df_filtrado = df[(df["CLIENTE"].astype(str).isin(cliente_filtro)) & 
+                  (df["CONSULTOR"].astype(str).isin(consultor_filtro))]
 
 # ==== MÉTRICAS PRINCIPAIS ====
 st.markdown("### 📈 Resumo Geral")
