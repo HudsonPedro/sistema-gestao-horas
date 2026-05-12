@@ -171,36 +171,31 @@ with st.form("form_lancamento", clear_on_submit=True):
     btn_enviar = st.form_submit_button("🚀 Gravar na Planilha")
 
 # 8. LÓGICA DE GRAVAÇÃO
-# 8. LÓGICA DE GRAVAÇÃO (Substitua apenas este bloco final)
-# 8. LÓGICA DE GRAVAÇÃO
 if btn_enviar:
-    try:
-        with st.spinner("Conectando ao Google Sheets..."):
+    with st.spinner("⏳ Conectando ao Google Sheets..."):
+        try:
+            # 1. Tenta a conexão
             client = conectar_google_sheets()
             
-            # ATENÇÃO: Verifique se este ID é o da planilha NOVA (sem .xlsx no nome)
+            # ATENÇÃO: ID da Planilha
             planilha_id = "1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf"
             
-            # Tenta abrir a planilha
+            # 2. Tenta abrir a aba (Com tratamento de erro específico)
             try:
-                # No seu 03_📝_Lancamento.py substitua por isso:
-                #sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1ESouVyrO4Qlqm0oyQiFBbXVOEtbCLnCf/edit?gid=545789165#gid=545789165")
-
                 sheet = client.open_by_key(planilha_id)
-            except Exception as e:
-                st.error("❌ Planilha não encontrada! Verifique o ID ou se você compartilhou a NOVA planilha com o e-mail da conta de serviço.")
+            except gspread.exceptions.SpreadsheetNotFound:
+                st.error("❌ ERRO DE PERMISSÃO: A planilha não foi encontrada. Você lembrou de ir no Google Sheets e COMPARTILHAR a planilha com o e-mail da sua Service Account como Editor?")
                 st.stop()
 
-            # Define o nome da aba exatamente como está no Google
+            # 3. Tenta encontrar a aba "Maio 2026"
             nome_aba = "Maio 2026" 
-            
             try:
                 aba = sheet.worksheet(nome_aba)
-            except:
-                st.error(f"❌ A aba '{nome_aba}' não foi encontrada. Verifique se o nome está idêntico na planilha.")
+            except gspread.exceptions.WorksheetNotFound:
+                st.error(f"❌ ERRO NA ABA: A planilha foi encontrada, mas não existe uma aba chamada exatamente '{nome_aba}'.")
                 st.stop()
             
-            # Organiza a linha conforme sua estrutura
+            # 4. Organiza a linha para envio
             nova_linha = [
                 data_atendimento.strftime('%d/%m/%Y'), 
                 hr_inicio.strftime('%H:%M'),           
@@ -221,12 +216,11 @@ if btn_enviar:
                 descricao_d                            
             ]
         
-            # Grava na planilha
+            # 5. Grava os dados!
             aba.append_row(nova_linha, value_input_option='USER_ENTERED')
-            st.success(f"✅ Sucesso! Lançamento para {cliente_selecionado} gravado.")
+            
+            st.success(f"✅ Sucesso! Relatório **{ra}** do cliente **{cliente_selecionado}** foi gravado na planilha!")
             st.balloons()
             
-    except Exception as e:
-        st.error(f"Erro inesperado: {e}")
-
-        st.error(f"Erro ao gravar: {e}")
+        except Exception as e:
+            st.error(f"❌ Ocorreu um erro técnico inesperado: {e}")
