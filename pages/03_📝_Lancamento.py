@@ -28,21 +28,14 @@ def carregar_legendas():
 from google.oauth2 import service_account
 
 def conectar_google_sheets():
-    # Escopos oficiais
-    scopes = [
+    # LINKS OBRIGATÓRIOS para o Google liberar a gravação
+    scope = [
         "https://googleapis.com",
         "https://googleapis.com"
     ]
-    
-    # Carrega as credenciais diretamente do dicionário de segredos
-    creds_info = st.secrets["gcp_service_account"]
-    creds = service_account.Credentials.from_service_account_info(
-        creds_info, scopes=scopes
-    )
-    
-    # Autoriza o gspread
+    creds_dict = st.secrets["gcp_service_account"]
+    creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
     return gspread.authorize(creds)
-
 
 # 4. SIDEBAR PADRÃO
 with st.sidebar:
