@@ -6,7 +6,11 @@ from google.oauth2.service_account import Credentials
 import base64
 
 # 1. CONFIGURAÇÃO DA PÁGINA
-st.set_page_config(page_title="Lançamento de Atividades", layout="wide")
+st.set_page_config(page_title="Lançamento de Atividades", 
+    page_icon="hptech.png",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 st.markdown("""
     <style>
