@@ -17,7 +17,7 @@ st.markdown("""
         [data-testid="stSidebarNav"] {display: none;}
         [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
         
-        /* O BLOCO QUE VOCÊ PERGUNTOU ENTRA AQUI */
+        /* BLOCO USER*/
         .user-block {
             background-color: #f0f2f6;
             padding: 10px;
@@ -38,8 +38,8 @@ st.markdown("""
         /* Zera o espaçamento do topo para a logo subir */
         [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
         
-        /* Cor do título para o padrão azul CRTI */
-        h1 { color: #b0231d; } /*#004a87 = AZUL CRTI*/
+        /* Cor do título para o padrão vermelho */
+        h1 { color: #b0231d; } 
     </style>
 """, unsafe_allow_html=True)
 
@@ -83,7 +83,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)  
     st.markdown("---")
         
-    # Navegação Atualizada
+    # Botão Navegação Atualizada
     if st.button("🏠 Home", use_container_width=True):
         st.switch_page("app.py")
     if st.button("📊 Dashboard", use_container_width=True):
@@ -107,7 +107,7 @@ def get_image_base64(path):
     with open(path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-# Tenta carregar a imagem que está no seu repositório GitHub
+# Tenta carregar a imagem que está no repositório GitHub
 try:
     img_base64 = get_image_base64("hptechICO.png")
     
@@ -126,9 +126,6 @@ except:
 
 st.markdown("---")
 
-
-# [Mantenha o restante do seu código original de carregamento e gráficos aqui]
-
 # ==== CONFIGURAÇÃO DE VALOR ====
 VALOR_HORA = 80.00  # <--- ALTERE AQUI O VALOR DA SUA HORA
 
@@ -136,7 +133,7 @@ VALOR_HORA = 80.00  # <--- ALTERE AQUI O VALOR DA SUA HORA
 
 @st.cache_data(ttl=600)
 def carregar_dados():
-    # URL de Publicação na Web que você indicou, forçando saída XLSX
+    # URL de Publicação na Web, forçando saída XLSX
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
     
     # sheet_name=None carrega todas as abas em um dicionário
@@ -152,11 +149,11 @@ except Exception as e:
     st.info("💡 Dica: Verifique se em 'Arquivo > Compartilhar > Publicar na Web', a opção 'Todo o documento' está selecionada como 'Microsoft Excel'.")
     st.stop()
    
-if st.sidebar.button("🔄 Atualizar Planilha Google", use_container_width=True):
+if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
     st.cache_data.clear()
     st.rerun()
     
-with st.spinner("⏳ Analisando arquivo do Google Sheets e buscando abas..."):
+with st.spinner("⏳ Analisando Dados..."):
     try:
         dict_abas = carregar_dados()
         abas_disponiveis = list(dict_abas.keys())
@@ -189,7 +186,7 @@ df["minutos"] = df["TOTAL_HR"].apply(converter_para_minutos)
 df["horas_decimal"] = df["minutos"] / 60
 df["valor_total"] = df["horas_decimal"] * VALOR_HORA
 
-# ==== FILTROS (Com correção para o erro de sorted) ====
+# ==== FILTROS ====
 st.sidebar.markdown("### 🔍 Filtros")
 
 # Garantir que não existam valores nulos e converter para string antes de ordenar
@@ -218,8 +215,6 @@ def formatar_horas_relogio(horas_decimais):
     minutos = total_minutos % 60
     return f"{horas:02d}:{minutos:02d}"
 
-#with col_m1:
-    #st.metric("⏱️ Total de Horas", f"{total_horas:.1f}h")
 with col_m1:
     # De 36.2h para 36:12
     horas_formatadas = formatar_horas_relogio(total_horas)
@@ -228,13 +223,8 @@ with col_m1:
 valor_formatado = f"{total_financeiro:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 with col_m2:
     st.metric("💰 Total Financeiro", f"R$ {valor_formatado}")
-#=== ↑ substituido por este =====
-#with col_m2:
-    #st.metric("💰 Total Financeiro", f"R$ {total_financeiro:,.2f}")
 with col_m3:
     st.metric("📅 Dias Trabalhados", int(total_dias))
-#with col_m4:
-    #st.metric("📊 Média/Dia", f"{media_horas_dia:.1f}h")
 with col_m4:
     # De 7.2h para 07:12
     media_formatada = formatar_horas_relogio(media_horas_dia)
@@ -249,7 +239,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Por Cliente", "👨‍💼 Por Consultor
 with tab1:
     col_t1, col_t2 = st.columns([1, 2])
     
-    # Agrupamento para tabela e gráfico
+# Agrupamento para tabela e gráfico
     resumo_cliente = df_filtrado.groupby("CLIENTE").agg({
         "horas_decimal": "sum",
         "valor_total": "sum"
