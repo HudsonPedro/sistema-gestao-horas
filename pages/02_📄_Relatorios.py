@@ -15,7 +15,7 @@ st.markdown("""
         [data-testid="stSidebarNav"] {display: none;}
         [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
         
-        /* O BLOCO QUE VOCÊ PERGUNTOU ENTRA AQUI */
+        /* O BLOCO PADRÃO*/
         .user-block {
             background-color: #f0f2f6;
             padding: 10px;
@@ -36,8 +36,8 @@ st.markdown("""
         /* Zera o espaçamento do topo para a logo subir */
         [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
         
-        /* Cor do título para o padrão azul CRTI */
-        h1 { color: #b0231d; } /*#004a87 = AZUL CRTI*/
+        /* Cor do título para o padrão vermelho*/
+        h1 { color: #b0231d; } 
     </style>
 """, unsafe_allow_html=True)
 
@@ -91,13 +91,14 @@ with st.sidebar:
         st.switch_page("pages/02_📄_Relatorios.py")
     if st.button("📝 Lançamento", use_container_width=True):
         st.switch_page("pages/03_📝_Lancamento.py")
-    
+  
+#   versionamento 
     st.divider()
     st.caption("v1.0 - 11052026")
     st.caption("Todos os direitos reservados")
     st.caption("Copyright ©2026 HPtech Informática ME")
     
-# 4. AGORA SIM OS IMPORTS PESADOS E O RESTANTE DO CÓDIGO
+# 4. IMPORTS PESADOS
 import os
 import glob
 from datetime import timedelta, time, datetime
@@ -113,10 +114,9 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 
-# [Mantenha o restante do seu código original exatamente como no PDF a partir daqui...]
 if "relatorios_gerados" not in st.session_state:
     st.session_state.relatorios_gerados = False
-# ↓ alterado ↓ ====================================
+
 def data_por_extenso_pt(dt):
     meses = {
         1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril",
@@ -127,13 +127,6 @@ def data_por_extenso_pt(dt):
     mes = meses[dt.month]
     ano = dt.year
     return f"{dia:02d} de {mes} de {ano}"
-# ↓ alterado ↑ ====================================
-#try:
-#    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
-#except locale.Error:
-    # Se falhar, o Python usará o padrão (C ou En), evitando que o app saia do ar
-#    pass 
-# ↑ alterado ↑ ====================================
 
 PASTA_SAIDA = "relatorios"
 LOGO = "crti.jpg"
@@ -209,16 +202,13 @@ Hudson Valente"""
 
 # ====== STREAMLIT UI ======
 st.set_page_config(page_title="Gerador de Relatórios HPTECH", page_icon="📄", layout="wide")
-#st.image("hptechNova.png", width=250)
-#st.title("🔥Gerador Automático de Relatórios HPTECH") 
-#st.markdown("---")
 
 # Função para converter imagem local para Base64 (para funcionar dentro do HTML)
 def get_image_base64(path):
     with open(path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-# Tenta carregar a imagem que está no seu repositório GitHub
+# Tenta carregar a imagem que está no repositório GitHub
 try:
     img_base64 = get_image_base64("hptechICO.png")
     
@@ -240,18 +230,17 @@ st.markdown("---")
 # --- LÊ A PLANILHA TODA (TODAS AS ABAS) ---
 @st.cache_data(ttl=600) 
 def carregar_planilha_todas_abas():
-    #url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTtNKWayx3w7y8FPuV_hsaYWcZsB6ftUBKpJALkFOnlYxLEbNfu3LH0y76qxQsGhg/pub?output=xlsx"
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
     dict_abas = pd.read_excel(url, sheet_name=None, engine='openpyxl')
     return dict_abas
 
 st.sidebar.header("⚙️ Configurações GERAIS")
 
-if st.sidebar.button("🔄 Atualizar Planilha Google", use_container_width=True):
+if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
     st.cache_data.clear()
     st.rerun()
 
-with st.spinner("⏳ Analisando arquivo do Google Sheets e buscando abas..."):
+with st.spinner("⏳ Analisando Dados..."):
     try:
         dict_abas = carregar_planilha_todas_abas()
         abas_disponiveis = list(dict_abas.keys())
@@ -259,8 +248,8 @@ with st.spinner("⏳ Analisando arquivo do Google Sheets e buscando abas..."):
         st.error(f"❌ Erro ao baixar planilha: Verifique se possui a biblioteca openpyxl instalada. Erro: {e}")
         st.stop()
         
-st.sidebar.markdown("### 📂 Seleção da Planilha")
-#aba_selecionada = st.sidebar.selectbox("**Selecione o Mês:**", abas_disponiveis)
+st.sidebar.markdown("### 📂 Seleção da Base")
+
 #====== NOVO CARIMBAR RELATORIO JA GERADOS E LIMPAR ===========
 def limpar_estado():
     st.session_state.relatorios_gerados = False
@@ -304,12 +293,6 @@ if st.sidebar.button("🗑️ **Limpar Relatórios Antigos**", type="secondary",
 col1, col2 = st.columns([2.5, 1])
 with col1:
     # ==== TABELA DETALHADA ====
-    #st.markdown("---")
-    #st.markdown("### 📋 Detalhamento por Dia")
-    #tabela_detalhe = df_filtrado[["DATA", "CLIENTE", "CONSULTOR", "OBSERVAÇÕES", "TOTAL_HR"]].copy()
-    #st.dataframe(tabela_detalhe.sort_values("DATA", ascending=False), use_container_width=True)
-    
-    #=== ↓ TABELA ATUAL - ALTEDADO POR ↑ =====#
     st.subheader(f"📊 Prévia dos Dados do Mês: {aba_selecionada}")
     st.dataframe(df_completo.head(125), use_container_width=True)
 
@@ -318,12 +301,11 @@ with col2:
     st.metric(f"Linhas em {aba_selecionada}", len(df_completo))
     st.info("1º Selecione o Mês.\n\n2º Selecione as datas.\n\n3º Clique em GERAR RELATÓRIOS.")
 
-
 # ==========================================
 # GERAÇÃO DOS RELATÓRIOS 
 # ==========================================
 if btn_gerar:
-    st.session_state.relatorios_gerados = True # <--- Adicione isso aqui === novo para carimbar relatorio já gerado
+    st.session_state.relatorios_gerados = True 
     st.markdown("---")
     resumo_status = st.empty() 
     
@@ -358,13 +340,10 @@ if btn_gerar:
 
             data_inicio_rel = grupo["DATA"].min().strftime("%d/%m/%Y")
             data_fim_rel = grupo["DATA"].max().strftime("%d/%m/%Y")
-            #data_rodape = grupo["DATA"].max().strftime("%d de %B de %Y").capitalize()
-            # Pega a maior data do grupo e converte para objeto datetime puro
-            #== ↓ alterado ↑ ====
             dt_obj = grupo["DATA"].max().to_pydatetime()
             data_rodape = data_por_extenso_pt(dt_obj)
 
-            # ------ CORREÇÃO DO CÁLCULO DE HORAS AQUI ------
+            # ------ CÁLCULO DE HORAS ------
             total_seg, total_seg_d = 0, 0
             
             for val in grupo["TOTAL_HR"]:
@@ -594,7 +573,7 @@ if btn_gerar:
             arquivos_saida.append(file_xlsx)
 
         # ========================================================
-        # --- AQUI COMEÇA A PARTE NOVA DO ARQUIVO ZIP ---
+        # --- ARQUIVO ZIP ---
         # ========================================================
         resumo_status.success(f"✅ Feito! Foram gerados **{len(arquivos_saida)}** arquivos da aba '{aba_selecionada}'.")
         
