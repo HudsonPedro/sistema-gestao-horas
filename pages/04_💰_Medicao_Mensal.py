@@ -36,7 +36,7 @@ st.markdown("""
 
 # --- FUNÇÕES DE CONVERSÃO E FORMATAÇÃO BRASILEIRA ---
 def horas_para_decimal(tempo_str):
-    """Converte '138:25:00' para float seguro"""
+    """Converte '56:45:00' para float seguro (56.75)"""
     tempo_str = str(tempo_str).strip()
     if ":" not in tempo_str:
         return 0.0
@@ -46,7 +46,7 @@ def horas_para_decimal(tempo_str):
     return horas + (minutos / 60.0)
 
 def formatar_br(valor):
-    """Formata número para o padrão brasileiro: 11.073,33"""
+    """Formata número para o padrão brasileiro: 4.540,00"""
     try:
         return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except:
@@ -114,14 +114,25 @@ dados_faturamento = {
     "cep": "80730-000",
     "cnpj": "04.616.592/0001-21",
     "numero_medicao": numero_medicao,
-    "data_inicio": "01/04/2026",
-    "data_fim": "30/04/2026",
+    "data_inicio": "01/05/2026",
+    "data_fim": "31/05/2026",
     "mes_ano": str(aba_selecionada).lower()[:6],
     "descricao_servico": "Prestação de serviços de consultoria Implantação",
     "qtd_horas": "0:00:00",
     "preco_unitario": valor_hora,
     "preco_total": 0.0,
 }
+
+# Processando dados da aba selecionada
+df_mes = dict_abas[aba_selecionada].copy()
+
+# Normaliza a coluna de situação para evitar erros textuais
+if "SITUACAO_RA" in df_mes.columns:
+    df_mes["SITUACAO_RA_NORM"] = df_mes["SITUACAO_RA"].fillna("").astype(str).str.strip().str.lower()
+    df_filtrado = df_mes[df_mes["SITUACAO_RA_NORM"] == "em elaboração"]
+else:
+    df_filtrado = df_mes.copy() # Fallback de contingência caso mude o nome da coluna
+
 # Realiza o somatório convertendo TODOS os formatos de horas do Pandas/Excel para segundos
 total_segundos = 0
 
@@ -129,23 +140,21 @@ for val in df_filtrado["TOTAL_HR"]:
     if pd.isna(val):
         continue
         
-    # CASO 1: O Pandas leu como objeto datetime.time ou datetime.datetime nativo
+    # CASO 1: Objeto datetime ou time nativo do Excel convertido pelo Pandas
     if hasattr(val, "hour") and hasattr(val, "minute"):
         total_segundos += (val.hour * 3600) + (val.minute * 60) + getattr(val, "second", 0)
         
-    # CASO 2: O Pandas leu como objeto Timedelta do tipo duração
+    # CASO 2: Objeto Timedelta duração acumulada do Pandas
     elif isinstance(val, pd.Timedelta):
         total_segundos += int(val.total_seconds())
         
-    # CASO 3: O Pandas leu como formato de Texto (String) simples
+    # CASO 3: Formato de Texto (String) simples
     else:
         val_str = str(val).strip()
         if ":" in val_str:
             try:
-                # Se o texto trouxer a data grudada (ex: '1900-01-01 12:30:00') limpa e pega só o tempo
                 if " " in val_str:
-                    val_str = val_str.split(" ")[1]
-                    
+                    val_str = val_str.split(" ")[1] # Limpa prefixos de ano/data
                 partes = val_str.split(":")
                 h = int(partes[0])
                 m = int(partes[1]) if len(partes) > 1 else 0
@@ -153,15 +162,6 @@ for val in df_filtrado["TOTAL_HR"]:
                 total_segundos += (h * 3600) + (m * 60) + s
             except (ValueError, IndexError):
                 continue
-
-        try:
-            partes = val_str.split(":")
-            h = int(partes[0])
-            m = int(partes[1]) if len(partes) > 1 else 0
-            s = int(partes[2]) if len(partes) > 2 else 0
-            total_segundos += (h * 3600) + (m * 60) + s
-        except (ValueError, IndexError):
-            continue
 
 # Reconverte o total de segundos para o formato estruturado HH:MM:SS
 horas_inteiras = int(total_segundos // 3600)
@@ -174,7 +174,7 @@ total_horas_faturar = f"{horas_inteiras}:{minutos_restantes:02d}:{segundos_resta
 horas_dec = horas_para_decimal(total_horas_faturar)
 preco_total_calculado = horas_dec * valor_hora
 
-# Tenta capturar o intervalo real de datas da coluna DATA da planilha
+# Tenta capturar o intervalo real de datas do faturamento
 if "DATA" in df_mes.columns:
     df_mes["DATA_DT"] = pd.to_datetime(df_mes["DATA"], errors="coerce")
     df_validas = df_mes.dropna(subset=["DATA_DT"])
