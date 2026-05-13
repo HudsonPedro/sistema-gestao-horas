@@ -158,7 +158,11 @@ st.sidebar.header("⚙️ Configurações GERAIS")
 if st.sidebar.button("🔄 Atualizar Planilha Google", use_container_width=True):
     st.cache_data.clear()
     st.rerun()
-
+    # === VERSIONAMENTO === #
+st.divider()
+st.caption("v1.0 - 11052026")
+st.caption("Todos os direitos reservados")
+st.caption("Copyright ©2026 HPtech Informática ME")
 with st.spinner("⏳ Analisando arquivo do Google Sheets e buscando abas..."):
     try:
         dict_abas = carregar_dados()
@@ -204,12 +208,6 @@ consultor_filtro = st.sidebar.multiselect("Consultores:", consultores_unicos, de
 
 df_filtrado = df[(df["CLIENTE"].astype(str).isin(cliente_filtro)) & 
                   (df["CONSULTOR"].astype(str).isin(consultor_filtro))]
-# === VERSIONAMENTO === #
-st.divider()
-st.caption("v1.0 - 11052026")
-st.caption("Todos os direitos reservados")
-st.caption("Copyright ©2026 HPtech Informática ME")
-
 
 # ==== MÉTRICAS PRINCIPAIS ====
 st.markdown("### 📈 Resumo Geral")
