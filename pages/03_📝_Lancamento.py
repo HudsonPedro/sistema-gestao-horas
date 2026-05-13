@@ -1,3 +1,4 @@
+import datetime
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -188,7 +189,7 @@ with st.form("form_lancamento", clear_on_submit=True):
         
     with col3:
         hr_inicio_d = st.time_input("HORA INICIO(Desloc)", value=datetime.time(0, 0))
-        hr_fim_d = st.time_input("HORA FIM(Desloc)",value=datetime.time(0, 0))
+        hr_fim_d = st.time_input("HORA FIM(Desloc)", value=datetime.time(0, 0))
         km_d = st.number_input("KM(Desloc)", min_value=0.0, step=0.1)
         forma_d = st.text_input("FORMA(Desloc)")
 
