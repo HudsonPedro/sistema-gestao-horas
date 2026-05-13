@@ -1,6 +1,7 @@
 #Por Hudson Valente - HPTECH
 #em: 27/04/2026 - 19:55h
 import streamlit as st
+import base64 #==novo imagem ao lado no título ===#
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha de código!)
 st.set_page_config(page_title="Gerador de Relatórios HPTECH", page_icon="📑", layout="wide")
@@ -204,16 +205,33 @@ Hudson Valente"""
 
 # ====== STREAMLIT UI ======
 st.set_page_config(page_title="Gerador de Relatórios HPTECH", page_icon="📄", layout="wide")
-st.image("hptechNova.png", width=250)
-st.title("🔥Gerador Automático de Relatórios HPTECH") 
-st.markdown("---")
+#st.image("hptechNova.png", width=250)
+#st.title("🔥Gerador Automático de Relatórios HPTECH") 
+#st.markdown("---")
 
-#st.set_page_config(
-    #page_title="HPTECH Sistema de Gestão",
-    #page_icon="hptechICO.png",
-    #layout="wide",
-   # initial_sidebar_state="expanded",
-#)
+# Função para converter imagem local para Base64 (para funcionar dentro do HTML)
+def get_image_base64(path):
+    with open(path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# Tenta carregar a imagem que está no seu repositório GitHub
+try:
+    img_base64 = get_image_base64("hptechICO.png")
+    
+    st.markdown(
+        f"""
+        <div style="display: flex; align-items: center;">
+            <h1 style="margin: 0; font-size: 2.5rem;">🔥 Gerador Automático de Relatórios HPTECH</h1>
+            <img src="data:image/png;base64,{img_base64}" style="margin-left: 20px; height: 60px;">
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+except:
+    # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
+    st.title("🔥 Gerador Automático de Relatórios HPTECH")
+
+st.markdown("---")
 
 # --- LÊ A PLANILHA TODA (TODAS AS ABAS) ---
 @st.cache_data(ttl=600) 
