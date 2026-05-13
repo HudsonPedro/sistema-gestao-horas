@@ -122,22 +122,38 @@ dados_faturamento = {
     "preco_unitario": valor_hora,
     "preco_total": 0.0,
 }
-
-# Processando dados da aba selecionada
-df_mes = dict_abas[aba_selecionada].copy()
-
-# Normaliza as colunas de texto para evitar erros com células nulas ou vazias
-df_mes["SITUACAO_RA"] = df_mes["SITUACAO_RA"].fillna("").astype(str).str.strip().str.lower()
-df_mes["TOTAL_HR"] = df_mes["TOTAL_HR"].fillna("").astype(str).str.strip()
-
-# Filtra estritamente os registros que estão em elaboração neste mês
-df_filtrado = df_mes[df_mes["SITUACAO_RA"] == "em elaboração"]
-
-# Realiza o somatório convertendo as strings de horas da planilha para segundos totais
+# Realiza o somatório convertendo TODOS os formatos de horas do Pandas/Excel para segundos
 total_segundos = 0
+
 for val in df_filtrado["TOTAL_HR"]:
-    val_str = str(val).strip()
-    if ":" in val_str:
+    if pd.isna(val):
+        continue
+        
+    # CASO 1: O Pandas leu como objeto datetime.time ou datetime.datetime nativo
+    if hasattr(val, "hour") and hasattr(val, "minute"):
+        total_segundos += (val.hour * 3600) + (val.minute * 60) + getattr(val, "second", 0)
+        
+    # CASO 2: O Pandas leu como objeto Timedelta do tipo duração
+    elif isinstance(val, pd.Timedelta):
+        total_segundos += int(val.total_seconds())
+        
+    # CASO 3: O Pandas leu como formato de Texto (String) simples
+    else:
+        val_str = str(val).strip()
+        if ":" in val_str:
+            try:
+                # Se o texto trouxer a data grudada (ex: '1900-01-01 12:30:00') limpa e pega só o tempo
+                if " " in val_str:
+                    val_str = val_str.split(" ")[1]
+                    
+                partes = val_str.split(":")
+                h = int(partes[0])
+                m = int(partes[1]) if len(partes) > 1 else 0
+                s = int(partes[2]) if len(partes) > 2 else 0
+                total_segundos += (h * 3600) + (m * 60) + s
+            except (ValueError, IndexError):
+                continue
+
         try:
             partes = val_str.split(":")
             h = int(partes[0])
