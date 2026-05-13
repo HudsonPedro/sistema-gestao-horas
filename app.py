@@ -111,11 +111,11 @@ try:
         f"""
         <div style="display: flex; align-items: center;">
             <h1 style="margin: 0; font-size: 2.5rem;">Bem-vindo ao Sistema de Gestão</h1>
-            st.markdown("## Selecione uma das seções abaixo para começar.")
             <img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;">
         </div>
         """, 
         unsafe_allow_html=True
+        st.markdown("## Selecione uma das seções abaixo para começar.")
     )
 except:
     # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
