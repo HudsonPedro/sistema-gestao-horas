@@ -204,7 +204,8 @@ Hudson Valente"""
 
 # ====== STREAMLIT UI ======
 st.set_page_config(page_title="Gerador de Relatórios HPTECH", page_icon="📄", layout="wide")
-st.title("🔥Gerador Automático de Relatórios HPTECH") #, page_icon="hptechICO.png", layout="wide", initial_sidebar_state="expanded")
+st.image("hptechNova.png", width=250)
+st.title("🔥Gerador Automático de Relatórios HPTECH") 
 st.markdown("---")
 
 #st.set_page_config(
