@@ -115,12 +115,11 @@ try:
         </div>
         """, 
         unsafe_allow_html=True
-        st.markdown("## Selecione uma das seções abaixo para começar.")
     )
 except:
     # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
     st.title("Bem-vindo ao Sistema de Gestão HPTECH")
-
+    st.markdown("## Selecione uma das seções abaixo para começar.")
 st.markdown("---")
 
 col1, col2, col3 = st.columns(3)
