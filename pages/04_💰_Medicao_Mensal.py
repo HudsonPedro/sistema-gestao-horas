@@ -110,10 +110,53 @@ with col_f3:
 df_mes = dict_abas[aba_selecionada].copy()
 
 # Filtrando registros válidos específicos para a medição da CRTI
+#df_filtrado = df_mes[
+    #(df_mes["CLIENTE"].astype(str).str.contains("CR Tecnologia", na=False, case=False)) &
+    #(df_mes["SITUACAO_RA"].astype(str).str.strip() == "Em Elaboração")
+#]
+# =========================================================================
+# PROCESSAMENTO DINÂMICO E CORREÇÃO DO FILTRO DE ATENDIMENTOS
+# =========================================================================
+df_mes = dict_abas[aba_selecionada].copy()
+
+# 1. Garante que as colunas essenciais não possuam valores nulos (NaN) para não quebrar o filtro
+df_mes["CLIENTE"] = df_mes["CLIENTE"].fillna("").astype(str).str.strip()
+df_mes["SITUACAO_RA"] = df_mes["SITUACAO_RA"].fillna("").astype(str).str.strip()
+df_mes["TOTAL_HR"] = df_mes["TOTAL_HR"].fillna("").astype(str).str.strip()
+
+# 2. Executa a filtragem sem sofrer com diferenças de maiúsculas, minúsculas ou espaços
 df_filtrado = df_mes[
-    (df_mes["CLIENTE"].astype(str).str.contains("CR Tecnologia", na=False, case=False)) &
-    (df_mes["SITUACAO_RA"].astype(str).str.strip() == "Em Elaboração")
+    (df_mes["CLIENTE"].str.lower().str.contains("cr tecnologia", na=False)) &
+    (df_mes["SITUACAO_RA"].str.lower() == "em elaboração")
 ]
+#=== ↓ ===
+# 3. Realiza o somatório de horas convertendo as strings 'HH:MM:SS' para segundos totais
+total_segundos = 0
+for val in df_filtrado["TOTAL_HR"]:
+    val_str = str(val).strip()
+    if ":" in val_str:
+        try:
+            p = val_str.split(":")
+            # Trata tanto o formato HH:MM quanto o formato HH:MM:SS vindo do Sheets
+            horas_s = int(p[0]) * 3600
+            minutos_s = int(p[1]) * 60
+            segundos_s = int(p[2]) if len(p) > 2 else 0
+            
+            total_segundos += horas_s + minutes_s + segundos_s
+        except ValueError:
+            pass  # Ignora linhas com formatação corrompida de texto
+
+# 4. Reconverte o montante final de segundos para o formato estruturado HH:MM:SS
+qtd_horas_inteiras = int(total_segundos // 3600)
+qtd_minutos_restantes = int((total_segundos % 3600) // 60)
+qtd_segundos_restantes = int(total_segundos % 60)
+
+total_horas_faturar = f"{qtd_horas_inteiras}:{qtd_minutos_restantes:02d}:{qtd_segundos_restantes:02d}"
+
+# 5. Efetua a conversão para decimal e calcula o preço final do faturamento
+horas_dec = horas_para_decimal(total_horas_faturar)
+preco_total_calculado = horas_dec * valor_hora
+# === até aqui ↑ ==== 
 
 # Realizando o cálculo de somatório de horas (convertendo strings para segundos)
 total_segundos = 0
