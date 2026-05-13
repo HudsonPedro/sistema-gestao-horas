@@ -98,13 +98,11 @@ with st.sidebar:
     st.caption("Copyright ©2026 HPtech Informática ME")
     
 # 4. CONTEÚDO DA HOME COM NOVO CARD
-#st.title("Bem-vindo ao Sistema de Gestão")
-#st.markdown("### Selecione uma das seções abaixo para começar.")
 def get_image_base64(path):
     with open(path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-# Tenta carregar a imagem que está no seu repositório GitHub
+# Tenta carregar a imagem que está no repositório GitHub
 try:
     img_base64 = get_image_base64("hptechICO.png")
     st.markdown(
@@ -143,4 +141,4 @@ with col3:
         st.switch_page("pages/03_📝_Lancamento.py")
 
 st.divider()
-st.info("Sistema integrado com Google Sheets.")
+st.info("Sistema integrado.")
