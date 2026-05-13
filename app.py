@@ -5,7 +5,7 @@ import base64
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
     page_title="HPTECH Sistema de Gestão",
-    page_icon="hptechICO.png",
+    page_icon="hptech.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
