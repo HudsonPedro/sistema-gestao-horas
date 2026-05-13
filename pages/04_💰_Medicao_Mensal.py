@@ -115,7 +115,7 @@ df_mes = dict_abas[aba_selecionada].copy()
     #(df_mes["SITUACAO_RA"].astype(str).str.strip() == "Em Elaboração")
 #]
 # =========================================================================
-# PROCESSAMENTO DINÂMICO E CORREÇÃO DO FILTRO DE ATENDIMENTOS
+# PROCESSAMENTO DINÂMICO E CORREÇÃO DO FILTRO DE ATENDIMENTOS ↓↓
 # =========================================================================
 df_mes = dict_abas[aba_selecionada].copy()
 
@@ -129,7 +129,7 @@ df_filtrado = df_mes[
     (df_mes["CLIENTE"].str.lower().str.contains("cr tecnologia", na=False)) &
     (df_mes["SITUACAO_RA"].str.lower() == "em elaboração")
 ]
-#=== ↓ ===
+
 # 3. Realiza o somatório de horas convertendo as strings 'HH:MM:SS' para segundos totais
 total_segundos = 0
 for val in df_filtrado["TOTAL_HR"]:
