@@ -96,7 +96,7 @@ with st.sidebar:
     st.caption("Copyright ©2026 HPtech Informática ME")
     
 # 4. CONTEÚDO DA HOME COM NOVO CARD
-st.title("Bem-vindo ao Sistema de Gestão CRTI")
+st.title("Bem-vindo ao Sistema de Gestão")
 st.markdown("### Selecione uma das seções abaixo para começar.")
 
 col1, col2, col3 = st.columns(3)
