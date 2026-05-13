@@ -206,10 +206,10 @@ df_filtrado = df[(df["CLIENTE"].astype(str).isin(cliente_filtro)) &
                   (df["CONSULTOR"].astype(str).isin(consultor_filtro))]
 
 # === VERSIONAMENTO === #
-    st.divider()
-    st.caption("v1.0 - 11052026")
-    st.caption("Todos os direitos reservados")
-    st.caption("Copyright ©2026 HPtech Informática ME")
+st.divider()
+st.caption("v1.0 - 11052026")
+st.caption("Todos os direitos reservados")
+st.caption("Copyright ©2026 HPtech Informática ME")
 
 # ==== MÉTRICAS PRINCIPAIS ====
 st.markdown("### 📈 Resumo Geral")
