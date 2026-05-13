@@ -4,7 +4,7 @@ import streamlit as st
 import base64 #==novo imagem ao lado no título ===#
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha de código!)
-st.set_page_config(page_title="Gerador de Relatórios HPTECH", page_icon="📑", layout="wide")
+st.set_page_config(page_title="Gerador de Relatórios HPTECH", page_icon="hptechICO.png", layout="wide")
 
 st.markdown("""
     <style>
