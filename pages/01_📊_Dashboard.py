@@ -95,8 +95,33 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
 
-st.title("📊 Dashboard de Horas Trabalhadas")
+#st.title("📊 Dashboard de Horas Trabalhadas")
+#st.markdown("---")
+
+# Função para converter imagem local para Base64 (para funcionar dentro do HTML)
+def get_image_base64(path):
+    with open(path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# Tenta carregar a imagem que está no seu repositório GitHub
+try:
+    img_base64 = get_image_base64("hptechICO.png")
+    
+    st.markdown(
+        f"""
+        <div style="display: flex; align-items: center;">
+            <h1 style="margin: 0; font-size: 2.5rem;">Dashboard de Horas Trabalhadas</h1>
+            <img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;">
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+except:
+    # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
+    st.title("📊 Dashboard de Horas Trabalhadas")
+
 st.markdown("---")
+
 
 # [Mantenha o restante do seu código original de carregamento e gráficos aqui]
 
