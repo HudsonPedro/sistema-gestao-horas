@@ -111,6 +111,7 @@ try:
         f"""
         <div style="display: flex; align-items: center;">
             <h1 style="margin: 0; font-size: 2.5rem;">Bem-vindo ao Sistema de Gestão</h1>
+            st.markdown("## Selecione uma das seções abaixo para começar.")
             <img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;">
         </div>
         """, 
