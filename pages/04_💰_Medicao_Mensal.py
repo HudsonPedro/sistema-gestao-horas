@@ -106,57 +106,49 @@ with col_f2:
 with col_f3:
     valor_hora = st.number_input("**Preço da Hora (R$):**", min_value=0.0, value=80.00, step=5.0)
 
-# Processando dados da aba selecionada
-df_mes = dict_abas[aba_selecionada].copy()
-
-# Filtrando registros válidos específicos para a medição da CRTI
-#df_filtrado = df_mes[
-    #(df_mes["CLIENTE"].astype(str).str.contains("CR Tecnologia", na=False, case=False)) &
-    #(df_mes["SITUACAO_RA"].astype(str).str.strip() == "Em Elaboração")
-#]
 # =========================================================================
-# PROCESSAMENTO DINÂMICO E CORREÇÃO DO FILTRO DE ATENDIMENTOS ↓↓
+# PROCESSAMENTO DOS DADOS COM SOMA TOTAL DE HORAS DA ABA SELECIONADA
 # =========================================================================
 df_mes = dict_abas[aba_selecionada].copy()
 
-# 1. Garante que as colunas essenciais não possuam valores nulos (NaN) para não quebrar o filtro
-df_mes["CLIENTE"] = df_mes["CLIENTE"].fillna("").astype(str).str.strip()
-df_mes["SITUACAO_RA"] = df_mes["SITUACAO_RA"].fillna("").astype(str).str.strip()
+# 1. Normaliza as colunas essenciais para evitar erros com células em branco (NaN)
+df_mes["SITUACAO_RA"] = df_mes["SITUACAO_RA"].fillna("").astype(str).str.strip().str.lower()
 df_mes["TOTAL_HR"] = df_mes["TOTAL_HR"].fillna("").astype(str).str.strip()
 
-# 2. Executa a filtragem sem sofrer com diferenças de maiúsculas, minúsculas ou espaços
-df_filtrado = df_mes[
-    (df_mes["CLIENTE"].str.lower().str.contains("cr tecnologia", na=False)) &
-    (df_mes["SITUACAO_RA"].str.lower() == "em elaboração")
-]
+# 2. Filtra na aba do mês selecionado apenas os registros "Em Elaboração"
+df_filtrado = df_mes[df_mes["SITUACAO_RA"] == "em elaboração"]
 
-# 3. Realiza o somatório de horas convertendo as strings 'HH:MM:SS' para segundos totais
+# 3. Faz o somatório convertendo as strings de horas da planilha para segundos totais
 total_segundos = 0
 for val in df_filtrado["TOTAL_HR"]:
     val_str = str(val).strip()
     if ":" in val_str:
         try:
-            p = val_str.split(":")
-            # Trata tanto o formato HH:MM quanto o formato HH:MM:SS vindo do Sheets
-            horas_s = int(p[0]) * 3600
-            minutos_s = int(p[1]) * 60
-            segundos_s = int(p[2]) if len(p) > 2 else 0
+            partes = val_str.split(":")
+            # Suporta formatos HH:MM:SS ou HH:MM vindo da planilha
+            h = int(partes[0])
+            m = int(partes[1]) if len(partes) > 1 else 0
+            s = int(partes[2]) if len(partes) > 2 else 0
             
-            total_segundos += horas_s + minutes_s + segundos_s
+            total_segundos += (h * 3600) + (m * 60) + s
         except ValueError:
-            pass  # Ignora linhas com formatação corrompida de texto
+            continue # Ignora células de texto inválidas que possam corromper o cálculo
 
-# 4. Reconverte o montante final de segundos para o formato estruturado HH:MM:SS
-qtd_horas_inteiras = int(total_segundos // 3600)
-qtd_minutos_restantes = int((total_segundos % 3600) // 60)
-qtd_segundos_restantes = int(total_segundos % 60)
+# 4. Reconverte o total de segundos para o formato estruturado HH:MM:SS
+horas_inteiras = int(total_segundos // 3600)
+minutos_restantes = int((total_segundos % 3600) // 60)
+segundos_restantes = int(total_segundos % 60)
 
-total_horas_faturar = f"{qtd_horas_inteiras}:{qtd_minutos_restantes:02d}:{qtd_segundos_restantes:02d}"
+total_horas_faturar = f"{horas_inteiras}:{minutos_restantes:02d}:{segundos_restantes:02d}"
 
-# 5. Efetua a conversão para decimal e calcula o preço final do faturamento
+# 5. Executa a conversão para decimal e calcula o preço final do faturamento brasileiro
 horas_dec = horas_para_decimal(total_horas_faturar)
 preco_total_calculado = horas_dec * valor_hora
-# === até aqui ↑ ==== 
+
+# 6. Atualiza o dicionário com os valores reais calculados
+dados_faturamento["qtd_horas"] = total_horas_faturar
+dados_faturamento["preco_unitario"] = valor_hora
+dados_faturamento["preco_total"] = preco_total_calculado
 
 # Realizando o cálculo de somatório de horas (convertendo strings para segundos)
 total_segundos = 0
