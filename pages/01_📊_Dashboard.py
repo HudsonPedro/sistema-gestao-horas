@@ -2,7 +2,15 @@ import streamlit as st
 import base64
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha!)
-st.set_page_config(page_title="Dashboard HPTECH", page_icon="📊", layout="wide")
+#st.set_page_config(page_title="Dashboard HPTECH", page_icon="📊", layout="wide")
+
+# 1. CONFIGURAÇÃO DA PÁGINA
+st.set_page_config(
+    page_title="Dashboard HPTECH",
+    page_icon="hptechICO.png",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 st.markdown("""
     <style>
@@ -86,10 +94,6 @@ with st.sidebar:
     if st.button("📝 Lançamento", use_container_width=True):
         st.switch_page("pages/03_📝_Lancamento.py")
     
-    st.divider()
-    st.caption("v1.0 - 11052026")
-    st.caption("Todos os direitos reservados")
-    st.caption("Copyright ©2026 HPtech Informática ME")
 # --- INÍCIO DA LÓGICA DO DASHBOARD ---
 import pandas as pd
 import plotly.graph_objects as go
@@ -200,6 +204,12 @@ consultor_filtro = st.sidebar.multiselect("Consultores:", consultores_unicos, de
 
 df_filtrado = df[(df["CLIENTE"].astype(str).isin(cliente_filtro)) & 
                   (df["CONSULTOR"].astype(str).isin(consultor_filtro))]
+
+# === VERSIONAMENTO === #
+    st.divider()
+    st.caption("v1.0 - 11052026")
+    st.caption("Todos os direitos reservados")
+    st.caption("Copyright ©2026 HPtech Informática ME")
 
 # ==== MÉTRICAS PRINCIPAIS ====
 st.markdown("### 📈 Resumo Geral")
