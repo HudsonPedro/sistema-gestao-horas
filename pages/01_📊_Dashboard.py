@@ -1,4 +1,5 @@
 import streamlit as st
+import base64
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha!)
 st.set_page_config(page_title="Dashboard HPTECH", page_icon="📊", layout="wide")
