@@ -106,7 +106,7 @@ def get_image_base64(path):
 # Tenta carregar a imagem que está no seu repositório GitHub
 try:
     img_base64 = get_image_base64("hptechICO.png")
-    
+    st.markdown("## Selecione uma das seções abaixo para começar.")
     st.markdown(
         f"""
         <div style="display: flex; align-items: center;">
@@ -119,7 +119,6 @@ try:
 except:
     # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
     st.title("Bem-vindo ao Sistema de Gestão HPTECH")
-    st.markdown("## Selecione uma das seções abaixo para começar.")
 st.markdown("---")
 
 col1, col2, col3 = st.columns(3)
