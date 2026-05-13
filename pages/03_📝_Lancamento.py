@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
+import base64
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Lançamento de Atividades", layout="wide")
@@ -124,7 +125,30 @@ except:
     lista_situacao = ["Concluído", "Pendente"]
     
 
-st.title("📝 Lançamento de Atividades")
+#st.title("📝 Lançamento de Atividades")
+# Função para converter imagem local para Base64 (para funcionar dentro do HTML)
+def get_image_base64(path):
+    with open(path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# Tenta carregar a imagem que está no seu repositório GitHub
+try:
+    img_base64 = get_image_base64("hptechNova.png")
+    
+    st.markdown(
+        f"""
+        <div style="display: flex; align-items: center;">
+            <h1 style="margin: 0; font-size: 2.5rem;">Lançamento de Atividades</h1>
+            <img src="data:image/png;base64,{img_base64}" style="margin-left: 20px; height: 60px;">
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+except:
+    # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
+    st.title("📝 Lançamento de Atividades")
+
+st.markdown("---")
 
 # 6. FILTRO DINÂMICO
 col_top1, col_top2 = st.columns([1, 2])
