@@ -82,13 +82,7 @@ with st.sidebar:
         </div>
     """, unsafe_allow_html=True)  
     st.markdown("---")
-    # === VERSIONAMENTO ===#
-    st.divider()
-    st.caption("v1.0 - 11052026")
-    st.caption("Todos os direitos reservados")
-    st.caption("Copyright ©2026 HPtech Informática ME"
-    st.title("Menu Principal")
-    
+        
     # Navegação Atualizada
     if st.button("🏠 Home", use_container_width=True):
         st.switch_page("app.py")
