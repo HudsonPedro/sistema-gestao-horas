@@ -1,14 +1,30 @@
 import streamlit as st
+from PIL import Image  # Biblioteca para carregar a imagem corretamente
 import locale
 import base64
 
 # 1. CONFIGURAÇÃO DA PÁGINA
+#st.set_page_config(
+   # page_title="HPTECH Sistema de Gestão",
+   # page_icon="hptechICO.png",
+   # layout="wide",
+   # initial_sidebar_state="expanded",
+#)
+
+# 1. CARREGA O ARQUIVO DE ÍCONE DO SEU GITHUB
+try:
+    icone_hptech = Image.open("hptechICO.png")
+except:
+    icone_hptech = "📊"  # Ícone de segurança caso o arquivo não seja encontrado
+
+# 2. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha de comando do Streamlit!)
 st.set_page_config(
     page_title="HPTECH Sistema de Gestão",
-    page_icon="hptechICO.png",
+    page_icon=icone_hptech,  # Agora passamos o objeto da imagem carregada
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
 st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {display: none;}
