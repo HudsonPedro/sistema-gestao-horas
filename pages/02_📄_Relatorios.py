@@ -221,7 +221,7 @@ try:
     st.markdown(
         f"""
         <div style="display: flex; align-items: center;">
-            <h1 style="margin: 0; font-size: 2.5rem;">🔥 Gerador Automático de Relatórios HPTECH</h1>
+            <h1 style="margin: 0; font-size: 2.5rem;">Gerador Automático de Relatórios</h1>
             <img src="data:image/png;base64,{img_base64}" style="margin-left: 20px; height: 180px;">
         </div>
         """, 
