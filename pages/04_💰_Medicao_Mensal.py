@@ -55,7 +55,7 @@ def formatar_br(valor):
 # --- CARREGAR BASE DE DADOS DO GOOGLE SHEETS ---
 @st.cache_data(ttl=600)
 def carregar_planilha_todas_abas():
-    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
+    url = "google.com"
     response = requests.get(url)
     return pd.read_excel(io.BytesIO(response.content), sheet_name=None, engine='openpyxl')
 
@@ -106,69 +106,7 @@ with col_f2:
 with col_f3:
     valor_hora = st.number_input("**Preço da Hora (R$):**", min_value=0.0, value=80.00, step=5.0)
 
-# =========================================================================
-# PROCESSAMENTO DOS DADOS COM SOMA TOTAL DE HORAS DA ABA SELECIONADA
-# =========================================================================
-df_mes = dict_abas[aba_selecionada].copy()
-
-# 1. Normaliza as colunas essenciais para evitar erros com células em branco (NaN)
-df_mes["SITUACAO_RA"] = df_mes["SITUACAO_RA"].fillna("").astype(str).str.strip().str.lower()
-df_mes["TOTAL_HR"] = df_mes["TOTAL_HR"].fillna("").astype(str).str.strip()
-
-# 2. Filtra na aba do mês selecionado apenas os registros "Em Elaboração"
-df_filtrado = df_mes[df_mes["SITUACAO_RA"] == "em elaboração"]
-
-# 3. Faz o somatório convertendo as strings de horas da planilha para segundos totais
-total_segundos = 0
-for val in df_filtrado["TOTAL_HR"]:
-    val_str = str(val).strip()
-    if ":" in val_str:
-        try:
-            partes = val_str.split(":")
-            # Suporta formatos HH:MM:SS ou HH:MM vindo da planilha
-            h = int(partes[0])
-            m = int(partes[1]) if len(partes) > 1 else 0
-            s = int(partes[2]) if len(partes) > 2 else 0
-            
-            total_segundos += (h * 3600) + (m * 60) + s
-        except ValueError:
-            continue # Ignora células de texto inválidas que possam corromper o cálculo
-
-# 4. Reconverte o total de segundos para o formato estruturado HH:MM:SS
-horas_inteiras = int(total_segundos // 3600)
-minutos_restantes = int((total_segundos % 3600) // 60)
-segundos_restantes = int(total_segundos % 60)
-
-total_horas_faturar = f"{horas_inteiras}:{minutos_restantes:02d}:{segundos_restantes:02d}"
-
-# 5. Executa a conversão para decimal e calcula o preço final do faturamento brasileiro
-horas_dec = horas_para_decimal(total_horas_faturar)
-preco_total_calculado = horas_dec * valor_hora
-
-# 6. Atualiza o dicionário com os valores reais calculados
-dados_faturamento["qtd_horas"] = total_horas_faturar
-dados_faturamento["preco_unitario"] = valor_hora
-dados_faturamento["preco_total"] = preco_total_calculado
-
-# Realizando o cálculo de somatório de horas (convertendo strings para segundos)
-total_segundos = 0
-for val in df_filtrado["TOTAL_HR"].dropna():
-    val_str = str(val).strip()
-    if ":" in val_str:
-        p = val_str.split(":")
-        total_segundos += int(p[0]) * 3600 + int(p[1]) * 60
-
-# Convertendo o montante final de volta para o formato de exibição HH:MM:SS
-total_horas_faturar = f"{int(total_segundos // 3600)}:{int((total_segundos % 3600) // 60):02d}:00"
-horas_decimais = horas_para_decimal(total_horas_faturar)
-preco_total_calculado = horas_decimais * valor_hora
-
-# Determinando o intervalo de datas da planilha
-df_mes["DATA"] = pd.to_datetime(df_mes["DATA"], errors="coerce")
-data_ini_str = df_mes["DATA"].min().strftime("%d/%m/%Y") if not df_mes["DATA"].dropna().empty else "01/04/2026"
-data_fim_str = df_mes["DATA"].max().strftime("%d/%m/%Y") if not df_mes["DATA"].dropna().empty else "30/04/2026"
-
-# Estruturando dados dinâmicos para os geradores
+# Inicializa o dicionário com os dados fixos do cliente antes do processamento
 dados_faturamento = {
     "parceiro": "CR Tecnologia da Informação Ltda",
     "endereco": "Rua Padre Anchieta, 2050 - Bairro Bigorrilho",
@@ -176,14 +114,61 @@ dados_faturamento = {
     "cep": "80730-000",
     "cnpj": "04.616.592/0001-21",
     "numero_medicao": numero_medicao,
-    "data_inicio": data_ini_str,
-    "data_fim": data_fim_str,
-    "mes_ano": aba_selecionada.lower()[:6],
+    "data_inicio": "01/04/2026",
+    "data_fim": "30/04/2026",
+    "mes_ano": str(aba_selecionada).lower()[:6],
     "descricao_servico": "Prestação de serviços de consultoria Implantação",
-    "qtd_horas": total_horas_faturar,
+    "qtd_horas": "0:00:00",
     "preco_unitario": valor_hora,
-    "preco_total": preco_total_calculado,
+    "preco_total": 0.0,
 }
+
+# Processando dados da aba selecionada
+df_mes = dict_abas[aba_selecionada].copy()
+
+# Normaliza as colunas de texto para evitar erros com células nulas ou vazias
+df_mes["SITUACAO_RA"] = df_mes["SITUACAO_RA"].fillna("").astype(str).str.strip().str.lower()
+df_mes["TOTAL_HR"] = df_mes["TOTAL_HR"].fillna("").astype(str).str.strip()
+
+# Filtra estritamente os registros que estão em elaboração neste mês
+df_filtrado = df_mes[df_mes["SITUACAO_RA"] == "em elaboração"]
+
+# Realiza o somatório convertendo as strings de horas da planilha para segundos totais
+total_segundos = 0
+for val in df_filtrado["TOTAL_HR"]:
+    val_str = str(val).strip()
+    if ":" in val_str:
+        try:
+            partes = val_str.split(":")
+            h = int(partes[0])
+            m = int(partes[1]) if len(partes) > 1 else 0
+            s = int(partes[2]) if len(partes) > 2 else 0
+            total_segundos += (h * 3600) + (m * 60) + s
+        except (ValueError, IndexError):
+            continue
+
+# Reconverte o total de segundos para o formato estruturado HH:MM:SS
+horas_inteiras = int(total_segundos // 3600)
+minutos_restantes = int((total_segundos % 3600) // 60)
+segundos_restantes = int(total_segundos % 60)
+
+total_horas_faturar = f"{horas_inteiras}:{minutos_restantes:02d}:{segundos_restantes:02d}"
+
+# Efetua a conversão para decimal e calcula o preço final do faturamento
+horas_dec = horas_para_decimal(total_horas_faturar)
+preco_total_calculado = horas_dec * valor_hora
+
+# Tenta capturar o intervalo real de datas da coluna DATA da planilha
+if "DATA" in df_mes.columns:
+    df_mes["DATA_DT"] = pd.to_datetime(df_mes["DATA"], errors="coerce")
+    df_validas = df_mes.dropna(subset=["DATA_DT"])
+    if not df_validas.empty:
+        dados_faturamento["data_inicio"] = df_validas["DATA_DT"].min().strftime("%d/%m/%Y")
+        dados_faturamento["data_fim"] = df_validas["DATA_DT"].max().strftime("%d/%m/%Y")
+
+# Injeta os valores reais calculados no dicionário de contexto corporativo
+dados_faturamento["qtd_horas"] = total_horas_faturar
+dados_faturamento["preco_total"] = preco_total_calculado
 
 # --- PRÉVIA DOS RESULTADOS CALCULADOS ---
 st.markdown("### 📊 Resumo do Faturamento Calculado da Planilha")
