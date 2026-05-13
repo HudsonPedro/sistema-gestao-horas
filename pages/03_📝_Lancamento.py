@@ -133,13 +133,13 @@ def get_image_base64(path):
 
 # Tenta carregar a imagem que está no seu repositório GitHub
 try:
-    img_base64 = get_image_base64("hptechNova.png")
+    img_base64 = get_image_base64("hptechICO.png")
     
     st.markdown(
         f"""
         <div style="display: flex; align-items: center;">
             <h1 style="margin: 0; font-size: 2.5rem;">Lançamento de Atividades</h1>
-            <img src="data:image/png;base64,{img_base64}" style="margin-left: 20px; height: 60px;">
+            <img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;">
         </div>
         """, 
         unsafe_allow_html=True
