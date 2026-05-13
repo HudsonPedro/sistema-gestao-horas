@@ -93,7 +93,13 @@ with st.sidebar:
         st.switch_page("pages/02_📄_Relatorios.py")
     if st.button("📝 Lançamento", use_container_width=True):
         st.switch_page("pages/03_📝_Lancamento.py")
-    
+
+# === VERSIONAMENTO ===#
+    st.divider()
+    st.caption("v1.0 - 11052026")
+    st.caption("Todos os direitos reservados")
+    st.caption("Copyright ©2026 HPtech Informática ME"
+
 # --- INÍCIO DA LÓGICA DO DASHBOARD ---
 import pandas as pd
 import plotly.graph_objects as go
