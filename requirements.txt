@@ -11,4 +11,3 @@ datetime
 requests
 gspread
 google-auth
-PIL
