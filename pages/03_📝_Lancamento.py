@@ -175,26 +175,26 @@ with st.form("form_lancamento", clear_on_submit=True):
     
     with col1:
         ra = st.text_input("RA (Número)")
-        situacao_ra = st.selectbox("SITUACAO_RA", options=lista_situacao)
+        situacao_ra = st.selectbox("SITUACAO", options=lista_situacao)
         consultor = st.text_input("CONSULTOR", value="Hudson Valente")
         local = st.selectbox("LOCAL", options=lista_local)
        
     with col2:
-        hr_inicio = st.time_input("HR_INICIO")
-        hr_fim = st.time_input("HR_FIM")
+        hr_inicio = st.time_input("HORA INICIO")
+        hr_fim = st.time_input("HORA FIM")
         solicitante = st.selectbox("SOLICITANTE", options=lista_solicitantes)
         forma = st.selectbox("FORMA", ["Remoto", "Presencial"])
         
     with col3:
-        hr_inicio_d = st.time_input("HR_INICIO_D (Desloc)")
-        hr_fim_d = st.time_input("HR_FIM_D (Desloc)")
-        km_d = st.number_input("KM_D", min_value=0.0, step=0.1)
-        forma_d = st.text_input("FORMA_D")
+        hr_inicio_d = st.time_input("HORA INICIO(Desloc)")
+        hr_fim_d = st.time_input("HORA FIM(Desloc)")
+        km_d = st.number_input("KM(Desloc)", min_value=0.0, step=0.1)
+        forma_d = st.text_input("FORMA(Desloc)")
 
     st.markdown("---")
     observacoes = st.text_area("OBSERVAÇÕES")
-    participante = st.text_input("PARTICIPANTE")
-    descricao_d = st.text_area("DESCRICAO_D")
+    participante = st.text_input("PARTICIPANTES")
+    descricao_d = st.text_area("DESCRICAO(Desloc)")
 
     btn_enviar = st.form_submit_button("🚀 Gravar na Planilha")
 
