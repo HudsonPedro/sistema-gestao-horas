@@ -80,8 +80,15 @@ with st.sidebar:
             <span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br>
             <span style='font-size: 11px; color: #555;'>{u_email}</span>
         </div>
-    """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)  
     st.markdown("---")
+
+    # === VERSIONAMENTO ===#
+    st.divider()
+    st.caption("v1.0 - 11052026")
+    st.caption("Todos os direitos reservados")
+    st.caption("Copyright ©2026 HPtech Informática ME"
+    
     st.title("Menu Principal")
     
     # Navegação Atualizada
@@ -93,12 +100,6 @@ with st.sidebar:
         st.switch_page("pages/02_📄_Relatorios.py")
     if st.button("📝 Lançamento", use_container_width=True):
         st.switch_page("pages/03_📝_Lancamento.py")
-
-# === VERSIONAMENTO ===#
-    st.divider()
-    st.caption("v1.0 - 11052026")
-    st.caption("Todos os direitos reservados")
-    st.caption("Copyright ©2026 HPtech Informática ME"
 
 # --- INÍCIO DA LÓGICA DO DASHBOARD ---
 import pandas as pd
