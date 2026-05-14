@@ -288,41 +288,126 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Informática ME"); pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
     return pdf.output(dest="S").encode("latin1")
 
-# --- GERADOR PLANILHA EXCEL ---
+# --- GERADOR PLANILHA EXCEL ATUALIZADO (IDÊNTICO AO PDF) ---
 def gerar_xlsx_medicao_nova(dados):
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {"in_memory": True})
     worksheet = workbook.add_worksheet("Medição")
-    fmt_titulo = workbook.add_format({"bold": True, "size": 14})
-    fmt_borda_cinza = workbook.add_format({"border": 1, "border_color": "#B0B0B0"})
-    fmt_header = workbook.add_format({"bold": True, "bg_color": "#F5F5F5", "border": 1, "border_color": "#B0B0B0", "align": "center"})
-    fmt_celula = workbook.add_format({"border": 1, "border_color": "#B0B0B0", "align": "center"})
-    fmt_celula_esq = workbook.add_format({"border": 1, "border_color": "#B0B0B0", "align": "left"})
-    fmt_total_cinza = workbook.add_format({"bold": True, "border": 1, "border_color": "#B0B0B0", "align": "center"})
-    worksheet.set_column("A:G", 15); worksheet.set_column("C:C", 40)
+    
+    # Oculta as linhas de grade padrão do Excel para manter o visual limpo do PDF
+    worksheet.hide_gridlines(2)
+    
+    # Definição dos Estilos Corporativos (Substituindo vermelho por cinza sóbrio)
+    fmt_titulo = workbook.add_format({"bold": True, "size": 15, "font_name": "Arial"})
+    fmt_borda_cinza = workbook.add_format({"border": 1, "border_color": "#B4B4B4"})
+    
+    fmt_header = workbook.add_format({
+        "bold": True, 
+        "bg_color": "#F5F5F5", 
+        "border": 1, 
+        "border_color": "#B4B4B4", 
+        "align": "center",
+        "valign": "vcenter",
+        "font_name": "Arial",
+        "size": 9
+    })
+    
+    fmt_celula = workbook.add_format({
+        "border": 1, 
+        "border_color": "#B4B4B4", 
+        "align": "center",
+        "valign": "vcenter",
+        "font_name": "Arial",
+        "size": 9
+    })
+    
+    fmt_celula_esq = workbook.add_format({
+        "border": 1, 
+        "border_color": "#B4B4B4", 
+        "align": "left",
+        "valign": "vcenter",
+        "font_name": "Arial",
+        "size": 9
+    })
+    
+    fmt_total_label = workbook.add_format({
+        "bold": True,
+        "bg_color": "#F5F5F5",
+        "border": 1,
+        "border_color": "#B4B4B4",
+        "align": "left",
+        "valign": "vcenter",
+        "font_name": "Arial",
+        "size": 9
+    })
+    
+    fmt_total_valor = workbook.add_format({
+        "bold": True, 
+        "border": 1, 
+        "border_color": "#B4B4B4", 
+        "align": "center",
+        "valign": "vcenter",
+        "font_name": "Arial",
+        "size": 9
+    })
+    
+    fmt_negrito = workbook.add_format({"bold": True, "font_name": "Arial", "size": 10})
+    fmt_regular = workbook.add_format({"font_name": "Arial", "size": 9})
+    
+    # Definição milimétrica das larguras das colunas (Igual ao Grid da imagem)
+    worksheet.set_column("A:A", 12)  # Mês/Ano
+    worksheet.set_column("B:B", 8)   # Item
+    worksheet.set_column("C:C", 45)  # Descrição
+    worksheet.set_column("D:D", 10)  # Unidade
+    worksheet.set_column("E:E", 14)  # Qtd (Horas)
+    worksheet.set_column("F:F", 16)  # Preço Unitário
+    worksheet.set_column("G:G", 16)  # Preço Total
+    
+    # Linha 2: Título Principal
     worksheet.write("A2", "Medição Mensal de Prestação de Serviços", fmt_titulo)
+    
+    # Bloco Superior Esquerdo: Dados do Parceiro (Sem recuo)
     worksheet.merge_range("A4:D8", "", fmt_borda_cinza)
-    worksheet.write("A4", f" Parceiro: {dados['parceiro']}")
-    worksheet.write("A5", f" Endereço: {dados['endereco']}")
-    worksheet.write("A6", f" Cidade/UF: {dados['cidade_uf']}")
-    worksheet.write("A7", f" CEP: {dados['cep']}")
-    worksheet.write("A8", f" CNPJ: {dados['cnpj']}")
+    worksheet.write("A4", f"  Parceiro: {dados['parceiro']}", fmt_regular)
+    worksheet.write("A5", f"  Endereço: {dados['endereco']}", fmt_regular)
+    worksheet.write("A6", f"  Cidade/UF: {dados['cidade_uf']}", fmt_regular)
+    worksheet.write("A7", f"  CEP: {dados['cep']}", fmt_regular)
+    worksheet.write("A8", f"  CNPJ: {dados['cnpj']}", fmt_regular)
+    
+    # Bloco Superior Direito: Dados da Medição
     worksheet.merge_range("E4:G8", "", fmt_borda_cinza)
-    worksheet.write("E4", " Medição Número:")
-    worksheet.write("F4", dados["numero_medicao"], workbook.add_format({"bold": True}))
-    worksheet.write("E6", f" Período: {dados['data_inicio']} até {dados['data_fim']}")
-    worksheet.write("A10", "* Serviços Executados", workbook.add_format({"bold": True}))
+    worksheet.write("E4", "  Medição Número:", fmt_regular)
+    worksheet.write("F4", f" {dados['numero_medicao']}", fmt_negrito)
+    worksheet.write("E6", f"  Período: {dados['data_inicio']} até {dados['data_fim']}", fmt_regular)
+    
+    # Tabela de Serviços Executados
+    worksheet.write("A10", "* Serviços Executados", fmt_negrito)
+    
     headers = ["Mês/Ano", "Item", "Descrição", "Unidade", "Qtd", "Preço Unitário", "Preço Total"]
-    for col, h in enumerate(headers): worksheet.write(10, col, h, fmt_header)
+    for col_idx, text in enumerate(headers):
+        worksheet.write(10, col_idx, text, fmt_header)
+        
+    # Inserção dos dados calculados da planilha nas células correspondentes
     worksheet.write(11, 0, dados["mes_ano"], fmt_celula)
     worksheet.write(11, 1, "1", fmt_celula)
     worksheet.write(11, 2, dados["descricao_servico"], fmt_celula_esq)
     worksheet.write(11, 3, "HR", fmt_celula)
     worksheet.write(11, 4, dados["qtd_horas"], fmt_celula)
     worksheet.write(11, 5, formatar_br(dados["preco_unitario"]), fmt_celula)
-    worksheet.write(11, 6, formatar_br(dados["preco_total"]), fmt_total_cinza)
-    worksheet.write(12, 2, "TOTAL", fmt_header)
-    worksheet.write(12, 6, formatar_br(dados["preco_total"]), fmt_total_cinza)
+    worksheet.write(11, 6, formatar_br(dados["preco_total"]), fmt_celula)
+    
+    # Linha do TOTAL Unificada (Mesclando células para replicar o design do PDF)
+    worksheet.merge_range("A12:B12", "", fmt_celula) # Espaço em branco das primeiras colunas
+    worksheet.write(12, 2, "TOTAL", fmt_total_label)
+    worksheet.write(12, 6, formatar_br(dados["preco_total"]), fmt_total_valor)
+    
+    # Rodapé de Assinaturas (Sem caixas ao redor, usando apenas linhas de marcação)
+    worksheet.write("A15", "* De acordo com a Medição Mensal", fmt_negrito)
+    
+    fmt_linha_assinatura = workbook.add_format({"top": 1, "top_color": "#B4B4B4", "align": "center", "font_name": "Arial", "size": 8})
+    worksheet.write("A18", "HP SERVIÇOS ADM", fmt_linha_assinatura)
+    worksheet.write("E18", "CRTI", fmt_linha_assinatura)
+    
     workbook.close()
     return output.getvalue()
 
