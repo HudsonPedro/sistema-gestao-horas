@@ -221,65 +221,123 @@ col_m1.metric("Total de Horas Encontradas", total_horas_faturar)
 col_m2.metric("Preço Unitário da Hora", f"R$ {formatar_br(valor_hora)}")
 col_m3.metric("Preço Total Calculado", f"R$ {formatar_br(preco_total_calculado)}")
 
-# --- CLASSE DO PDF DA MEDIÇÃO (MOLDURAS VERMELHAS) ---
+# =========================================================================
+# CLASSE DO PDF DA MEDIÇÃO ATUALIZADA (SEM LINHAS VERMELHAS E SEM RECUO)
+# =========================================================================
 class PDFMedicaoNovo(FPDF):
     def moldura_topo(self, x, y, w, h, dados):
-        self.set_draw_color(255, 0, 0)
-        self.set_line_width(0.5)
+        # 1. Altera a borda externa para Cinza Claro (Item 2)
+        self.set_draw_color(180, 180, 180)
+        self.set_line_width(0.4)
         self.rect(x, y, w, h)
+
         self.set_font("Arial", "", 9)
         self.set_text_color(0, 0, 0)
+        
+        # 2. Dados do Parceiro sem recuo de espaçamento (Item 3)
         linhas = [
-            f"Parceiro:       {dados['parceiro']}",
-            f"Endereço:     {dados['endereco']}",
-            f"Cidade / UF:  {dados['cidade_uf']}",
-            f"CEP:             {dados['cep']}",
-            f"CNPJ:           {dados['cnpj']}",
+            f"Parceiro:     {dados['parceiro']}",
+            f"Endereço:   {dados['endereco']}",
+            f"Cidade / UF: {dados['cidade_uf']}",
+            f"CEP:           {dados['cep']}",
+            f"CNPJ:         {dados['cnpj']}",
         ]
-        curr_y = y + 4
+        curr_y = y + 5
         for linha in linhas:
             self.text(x + 4, curr_y, linha)
-            curr_y += 5
+            curr_y += 5.2
+
+        # Linha divisória interna vertical em Cinza Claro
         self.line(x + 110, y, x + 110, y + h)
+        
+        # Informações da medição (Direita)
         self.text(x + 114, y + 8, "Medição Número:")
         self.set_font("Arial", "B", 10)
         self.text(x + 160, y + 8, str(dados["numero_medicao"]))
         self.set_font("Arial", "", 9)
         self.text(x + 114, y + 18, f"Período:  {dados['data_inicio']}    até    {dados['data_fim']}")
 
+
 def gerar_pdf_medicao_nova(dados):
     pdf = PDFMedicaoNovo(orientation="P", unit="mm", format="A4")
     pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
+    
+    # 3. Inclusão Automática da Logo no Topo Direito se o arquivo existir (Item 1)
+    # Altere para "hptechNova.png" caso queira utilizar a logo da HPTECH
+    ARQUIVO_LOGO = "crti.jpg" 
+    if os.path.exists(ARQUIVO_LOGO):
+        pdf.image(ARQUIVO_LOGO, x=150, y=10, w=45)
+    
+    # Título Principal
+    pdf.set_font("Arial", "B", 15)
     pdf.text(15, 20, "Medição Mensal de Prestação de Serviços")
+    
+    # Desenha a Moldura Superior (Agora em Cinza)
     pdf.moldura_topo(15, 28, 180, 32, dados)
+
+    # Tabela de Serviços Executados
     pdf.set_font("Arial", "B", 10)
     pdf.text(15, 70, "* Serviços Executados")
-    pdf.set_y(74); pdf.set_x(15)
-    pdf.set_draw_color(180, 180, 180); pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 8)
-    headers = [("Mês/Ano", 18), ("Item", 10), ("Descrição", 72), ("Unidade", 15), ("Qtd", 20), ("Preço Unitário", 22), ("Preço Total", 23)]
-    for txt, w in headers: pdf.cell(w, 7, txt, border=1, align="C", fill=True)
-    pdf.set_y(81); pdf.set_x(15); pdf.set_font("Arial", "", 8)
+    pdf.set_y(74)
+    pdf.set_x(15)
+    
+    pdf.set_draw_color(180, 180, 180)
+    pdf.set_fill_color(245, 245, 245)
+    pdf.set_font("Arial", "B", 8)
+    
+    headers = [
+        ("Mês/Ano", 18), ("Item", 10), ("Descrição", 72), 
+        ("Unidade", 15), ("Qtd", 20), ("Preço Unitário", 22), ("Preço Total", 23)
+    ]
+    for txt, w in headers: 
+        pdf.cell(w, 7, txt, border=1, align="C", fill=True)
+        
+    # Linha do Serviço Realizado
+    pdf.set_y(81)
+    pdf.set_x(15)
+    pdf.set_font("Arial", "", 8)
     pdf.cell(18, 10, dados["mes_ano"], border=1, align="C")
     pdf.cell(10, 10, "1", border=1, align="C")
     pdf.cell(72, 10, dados["descricao_servico"], border=1, align="L")
     pdf.cell(15, 10, "HR", border=1, align="C")
     pdf.cell(20, 10, dados["qtd_horas"], border=1, align="C")
     pdf.cell(22, 10, formatar_br(dados["preco_unitario"]), border=1, align="C")
-    pdf.set_draw_color(255, 0, 0)
+    
+    # Borda da célula de valor alterada de vermelho para cinza
     pdf.cell(23, 10, formatar_br(dados["preco_total"]), border=1, align="C")
-    pdf.set_y(91); pdf.set_x(15); pdf.set_draw_color(180, 180, 180)
-    pdf.cell(28, 7, "", border=0); pdf.set_font("Arial", "B", 8)
-    pdf.cell(72, 7, "TOTAL", border=1, align="L", fill=True); pdf.cell(57, 7, "", border=0)
-    pdf.set_draw_color(255, 0, 0)
+    
+    # Linha de Fechamento do TOTAL
+    pdf.set_y(91)
+    pdf.set_x(15)
+    pdf.cell(28, 7, "", border=0)
+    pdf.set_font("Arial", "B", 8)
+    pdf.cell(72, 7, "TOTAL", border=1, align="L", fill=True)
+    pdf.cell(57, 7, "", border=0)
     pdf.cell(23, 7, formatar_br(dados["preco_total"]), border=1, align="C")
-    pdf.set_text_color(100, 100, 100); pdf.set_font("Arial", "I", 7)
+    
+    # Notas de rodapé da tabela
+    pdf.set_text_color(100, 100, 100)
+    pdf.set_font("Arial", "I", 7)
     pdf.text(115, 104, "* Duplicatas a serem emitidas")
     pdf.text(115, 107, f"HP SERVIÇOS ADM, valor total de R$ {formatar_br(dados['preco_total'])}")
-    pdf.set_draw_color(255, 0, 0); pdf.rect(15, 115, 180, 35)
-    pdf.set_text_color(0, 0, 0); pdf.set_font("Arial", "B", 9); pdf.text(18, 120, "* De acordo com a Medição Mensal")
-    pdf.set_draw_color(150, 150, 150); pdf.line(20, 140, 85, 140); pdf.line(125, 140, 190, 140)
-    pdf.set_font("Arial", "", 8); pdf.text(20, 144, "HP SERVIÇOS ADM"); pdf.text(125, 144, "CRTI")
+    
+    # Bloco Inferior de Assinatura (Borda alterada para Cinza)
+    pdf.set_draw_color(180, 180, 180)
+    pdf.rect(15, 115, 180, 35)
+    
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Arial", "B", 9)
+    pdf.text(18, 120, "* De acordo com a Medição Mensal")
+    
+    # Linhas para assinatura manual
+    pdf.set_draw_color(180, 180, 180)
+    pdf.line(20, 138, 85, 138)
+    pdf.line(125, 138, 190, 138)
+    
+    pdf.set_font("Arial", "", 8)
+    pdf.text(20, 142, "HP SERVIÇOS ADM")
+    pdf.text(125, 142, "CRTI")
+    
     return pdf.output(dest="S").encode("latin1")
 
 # --- GERADOR PLANILHA EXCEL ---
