@@ -288,7 +288,7 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Informática ME"); pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
     return pdf.output(dest="S").encode("latin1")
 
-# --- GERADOR PLANILHA EXCEL CORRIGIDO (GRID ALINHADO SEM CORTES) ---
+# --- GERADOR PLANILHA EXCEL CORRIGIDO (FIM DOS CORTES VERTICAIS) ---
 def gerar_xlsx_medicao_nova(dados):
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {"in_memory": True})
@@ -335,34 +335,33 @@ def gerar_xlsx_medicao_nova(dados):
         "bold": True, "border": 1, "border_color": cor_borda, "align": "center", "valign": "vcenter", "font_name": "Arial", "size": 9
     })
 
-    # DEFINIÇÃO DE LARGURAS LARGAS PARA EVITAR CORTES DE TEXTO
+    # DEFINIÇÃO DE LARGURAS DE COLUNAS EQUILIBRADAS
     worksheet.set_column("A:A", 14)  # Mês/Ano
     worksheet.set_column("B:B", 8)   # Item
     worksheet.set_column("C:C", 48)  # Descrição
     worksheet.set_column("D:D", 10)  # Unidade
-    worksheet.set_column("E:E", 15)  # Qtd (Espaço para 56:45:00)
+    worksheet.set_column("E:E", 14)  # Qtd
     worksheet.set_column("F:F", 16)  # Preço Unitário
-    worksheet.set_column("G:G", 18)  # Preço Total (Espaço largo para a Logo e Valor)
+    worksheet.set_column("G:G", 18)  # Preço Total
     
     # Título Principal
     worksheet.write("A2", "Medição Mensal de Prestação de Serviços", fmt_titulo)
     
-    # Inserção da Logo da CRTI (Centralizada no cabeçalho direito da coluna G)
+    # Inserção da Logo da CRTI (Fixada no limite direito absoluto)
     ARQUIVO_LOGO = "crti.jpg"
     if os.path.exists(ARQUIVO_LOGO):
         worksheet.insert_image("G1", ARQUIVO_LOGO, {
-            "x_scale": 0.85, 
-            "y_scale": 0.85, 
-            "x_offset": -20, 
+            "x_scale": 1.85, 
+            "y_scale": 1.85, 
+            "x_offset": -15, 
             "y_offset": 5
         })
     
     # =========================================================================
-    # QUADRO 1: PARCEIRO (COLUNAS A ATÉ D) - ALINHADO COM A TABELA
+    # QUADRO 1: PARCEIRO (COLUNAS A ATÉ D)
     # =========================================================================
     worksheet.write("A4", f"  Parceiro: {dados['parceiro']}", fmt_canto_esq_sup)
-    worksheet.write("B4", "", fmt_tampa_sup); worksheet.write("C4", "", fmt_tampa_sup)
-    worksheet.write("D4", "", fmt_canto_dir_sup)
+    worksheet.write("B4", "", fmt_tampa_sup); worksheet.write("C4", "", fmt_tampa_sup); worksheet.write("D4", "", fmt_canto_dir_sup)
     
     worksheet.write("A5", f"  Endereço: {dados['endereco']}", fmt_linha_esq)
     worksheet.write("B5", "", fmt_miolo_limpo); worksheet.write("C5", "", fmt_miolo_limpo); worksheet.write("D5", "", fmt_linha_dir)
@@ -374,23 +373,27 @@ def gerar_xlsx_medicao_nova(dados):
     worksheet.write("B7", "", fmt_miolo_limpo); worksheet.write("C7", "", fmt_miolo_limpo); worksheet.write("D7", "", fmt_linha_dir)
     
     worksheet.write("A8", f"  CNPJ:     {dados['cnpj']}", fmt_canto_esq_inf)
-    worksheet.write("B8", "", fmt_tampa_inf); worksheet.write("C8", "", fmt_tampa_inf)
-    worksheet.write("D8", "", fmt_canto_dir_inf)
+    worksheet.write("B8", "", fmt_tampa_inf); worksheet.write("C8", "", fmt_tampa_inf); worksheet.write("D8", "", fmt_canto_dir_inf)
 
     # =========================================================================
-    # QUADRO 2: MEDIÇÃO (COLUNAS E ATÉ G) - LARGURA TOTAL SEM CORTES
+    # QUADRO 2: MEDIÇÃO (COLUNAS E ATÉ G) - CORRIGIDO SEM QUEBRA VERTICAL
     # =========================================================================
+    # Linha 4 (Mescla F e G para fechar a ponta direita de forma uniforme)
     worksheet.write("E4", "  Medição Número:", fmt_canto_esq_sup)
     worksheet.write("F4", dados["numero_medicao"], fmt_negrito)
     worksheet.write("G4", "", fmt_canto_dir_sup)
     
+    # Linha 5
     worksheet.write("E5", "", fmt_linha_esq); worksheet.write("F5", "", fmt_miolo_limpo); worksheet.write("G5", "", fmt_linha_dir)
     
-    # O Período agora usa uma string com espaçamento corrigido para não vazar a célula
+    # Linha 6 (Texto do período longo avança pelas colunas F e G)
     worksheet.write("E6", f"  Período: {dados['data_inicio']} até {dados['data_fim']}", fmt_linha_esq)
     worksheet.write("F6", "", fmt_miolo_limpo); worksheet.write("G6", "", fmt_linha_dir)
     
+    # Linha 7
     worksheet.write("E7", "", fmt_linha_esq); worksheet.write("F7", "", fmt_miolo_limpo); worksheet.write("G7", "", fmt_linha_dir)
+    
+    # Linha 8
     worksheet.write("E8", "", fmt_canto_esq_inf); worksheet.write("F8", "", fmt_tampa_inf); worksheet.write("G8", "", fmt_canto_dir_inf)
     
     # =========================================================================
@@ -410,7 +413,7 @@ def gerar_xlsx_medicao_nova(dados):
     worksheet.write(11, 5, formatar_br(dados["preco_unitario"]), fmt_celula)
     worksheet.write(11, 6, formatar_br(dados["preco_total"]), fmt_celula)
     
-    # Linha do TOTAL corrigida e sem quebra de bordas
+    # Linha do TOTAL perfeitamente alinhada à coluna G
     worksheet.write(12, 0, "", fmt_celula)
     worksheet.write(12, 1, "", fmt_celula)
     worksheet.write(12, 2, "TOTAL", fmt_total_label)
@@ -423,7 +426,7 @@ def gerar_xlsx_medicao_nova(dados):
     worksheet.write("E14", "* Duplicatas a serem emitidas", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
     worksheet.write("E15", f"HP SERVIÇOS ADM, valor total de R$ {formatar_br(dados['preco_total'])}", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
     
-    # Seção de Assinaturas
+    # Seção de Assinaturas (Alinhada às margens da folha)
     worksheet.write("A17", "* De acordo com a Medição Mensal", fmt_negrito)
     
     fmt_linha_assinatura = workbook.add_format({"top": 1, "top_color": cor_borda, "align": "left", "font_name": "Arial", "size": 8})
@@ -432,7 +435,6 @@ def gerar_xlsx_medicao_nova(dados):
     
     workbook.close()
     return output.getvalue()
-
 
 # --- DISPARO SMTP ---
 def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
