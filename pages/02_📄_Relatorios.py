@@ -627,7 +627,7 @@ if st.session_state.relatorios_gerados:
                     key=f"btn_{path}" # Chave única para não dar conflito
                 )
 # =========================================================================
-# 1. FUNÇÃO DO POP-UP DE CONFIRMAÇÃO EM LOTE OTIMIZADA (SEM TRAVAMENTO)
+# 1. FUNÇÃO DO POP-UP DE CONFIRMAÇÃO EM LOTE BLINDADA (FIM DO TIMEOUT)
 # =========================================================================
 @st.dialog("⚠️ Confirmação de Disparo em Lote")
 def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha, destinatario):
@@ -650,62 +650,85 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha,
     with col_p1:
         if st.button("✅ Sim, Disparar Todos", use_container_width=True):
             import time  
+            import smtplib # Garante a reimportação local para aplicar travas de rede
             
-            # Mensagem estática inicial para indicar atividade ao usuário
             status_placeholder = st.empty()
-            status_placeholder.markdown("🚀 **Conectando ao servidor e iniciando disparos ocultos...**")
+            status_placeholder.markdown("🚀 **Conectando de forma segura ao SMTP do Google...**")
             
             sucessos = 0
             falhas_lista = []
             
-            # O processamento agora roda limpo em segundo plano
+            # Executa os disparos de forma isolada
             for base, lista_anexos in agrupados_por_ra.items():
                 nome_base_limpo = os.path.basename(base)
                 
-                # Executa a sua função SMTP nativa utilizando o host oficial
-                sucesso, msg = enviar_relatorio_email(
-                    lista_anexos, "gmail.com", 587, email_remetente, senha, destinatario
-                )
-                
-                if sucesso:
+                try:
+                    # Sobrescrevemos localmente a conexão com o HOST correto do Google Workspace e trava de segurança de 15s
+                    msg_objeto = MIMEMultipart()
+                    msg_objeto['From'] = email_remetente
+                    msg_objeto['To'] = destinatario
+                    msg_objeto['Subject'] = f"{nome_base_limpo} - HUDSON VALENTE"
+                    
+                    corpo_txt = f"Prezada Sra. Amanda, espero que se encontre bem.\n\nSegue em anexo o {nome_base_limpo} (em formatos PDF e Excel) para análise e assinatura.\n\nAtenciosamente,\n\nHudson Valente"
+                    msg_objeto.attach(MIMEText(corpo_txt, 'plain'))
+                    
+                    for caminho_arquivo in lista_anexos:
+                        nome_arq_orig = os.path.basename(caminho_arquivo)
+                        with open(caminho_arquivo, "rb") as attachment:
+                            if nome_arq_orig.lower().endswith(".pdf"):
+                                part = MIMEBase('application', 'pdf')
+                            elif nome_arq_orig.lower().endswith(".xlsx"):
+                                part = MIMEBase('application', 'vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                            else:
+                                part = MIMEBase('application', 'octet-stream')
+                            part.set_payload(attachment.read())
+                        
+                        encoders.encode_base64(part)
+                        part.add_header('Content-Disposition', 'attachment', filename=nome_arq_orig)
+                        msg_objeto.attach(part)
+                    
+                    # TÚNEL SEGURO COM TIMEOUT ATIVO CONTRA CONGELAMENTO
+                    server = smtplib.SMTP("gmail.com", 587, timeout=15)
+                    server.starttls()
+                    server.login(email_remetente, senha)
+                    server.sendmail(email_remetente, destinatario, msg_objeto.as_string())
+                    server.quit()
+                    
                     sucessos += 1
-                else:
-                    falhas_lista.append(f"❌ {nome_base_limpo}: {msg}")
+                except Exception as error_smtp:
+                    falhas_lista.append(f"❌ {nome_base_limpo}: {str(error_smtp)}")
             
-            # Limpa o texto temporário de carregamento
             status_placeholder.empty()
             
-            # Renderiza o veredito consolidado de uma só vez (Evita estouro de buffer visual)
+            # Entrega do veredito na interface
             if sucessos == total_envios:
-                st.success(f"🎉 Sucesso absoluto! Todas as {sucessos} mensagens foram enviadas.")
+                st.success(f"🎉 Sucesso total! Todas as {sucessos} medições foram enviadas via SMTP.")
                 st.balloons()
-                time.sleep(3)  # Janela aberta por 3 segundos para visualização
+                time.sleep(3)  
             else:
                 st.warning(f"Processo concluído: {sucessos} mensagens enviadas com sucesso.")
-                # Se houver erros, exibe a lista de falhas estruturada
                 for erro_msg in falhas_lista:
                     st.error(erro_msg)
-                time.sleep(5)
+                time.sleep(6)
                 
-            st.rerun()  # Atualiza a view e encerra o ciclo de vida do pop-up
+            st.rerun()  
             
     with col_p2:
         if st.button("❌ Não, Cancelar", use_container_width=True):
             st.rerun()
 
 # =========================================================================
-# 2. LOGICA DO GATILHO PRINCIPAL (SUBSTITUI O COUPLER ANTIGO DO IF)
+# 2. LOGICA DO GATILHO PRINCIPAL (MANTÉM INTEGRADO COM A SUA SIDEBAR)
 # =========================================================================
 if btn_enviar_emails:
     st.markdown("---")
     arquivos_pasta = glob.glob(os.path.join(PASTA_SAIDA, "*.*"))
     arquivos_validos = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx")]
     
-    if not arquivos_validos:
+    if not archivos_validos:
         st.warning("⚠️ Gere os relatórios primeiro.")
         st.stop()
         
-    # Aciona a janela flutuante injetando os parâmetros da barra lateral
     confirmar_envio_atendimentos_popup(
         arquivos_validos=arquivos_validos,
         email_remetente="hudson.valente@crti.com.br",
