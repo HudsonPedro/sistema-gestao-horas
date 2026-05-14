@@ -3,7 +3,7 @@
 import io
 import os  
 import smtplib
-from email encoders import encode_base64
+from email.encoders import encode_base64 # CORREÇÃO DA SINTAXE DE IMPORTAÇÃO
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -338,7 +338,7 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
     msg.attach(MIMEText(corpo, "html"))
     for b_data, ext in [(pdf_bytes, "pdf"), (xlsx_bytes, "xlsx")]:
         part = MIMEBase("application", "octet-stream")
-        part.set_payload(b_data); encoders.encode_base64(part)
+        part.set_payload(b_data); encode_base64(part)
         part.add_header("Content-Disposition", f"attachment; filename=Medicao_{dados['numero_medicao']}.{ext}")
         msg.attach(part)
     try:
