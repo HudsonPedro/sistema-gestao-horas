@@ -126,33 +126,51 @@ dados_faturamento = {
 # Processando dados da aba selecionada
 df_mes = dict_abas[aba_selecionada].copy()
 
-# 1. Normaliza e limpa as colunas essenciais para evitar quebras por células vazias
-df_mes["CLIENTE"] = df_mes["CLIENTE"].fillna("").astype(str).str.strip().str.lower()
+# 1. Normaliza e limpa as colunas essenciais para evitar falhas por células vazias
 df_mes["TOTAL_HR"] = df_mes["TOTAL_HR"].fillna("").astype(str).str.strip()
 
-# 2. Filtra na aba do mês APENAS os lançamentos referentes à CRTI (Cliente Fixo)
-# Procura por qualquer variação de "cr tecnologia" ou "crti" contida na célula
-df_filtrado = df_mes[
-    (df_mes["CLIENTE"].str.contains("cr tecnologia", na=False)) | 
-    (df_mes["CLIENTE"].str.contains("crti", na=False))
-]
+# 2. Identificação automática de colunas para criar o filtro do Consultor
+# O script verifica de forma inteligente se a planilha usa 'EMAIL', 'CONSULTOR', 'USUARIO' ou 'NOME'
+coluna_usuario = None
+for col in df_mes.columns:
+    if str(col).upper() in ["EMAIL", "CONSULTOR", "NOME", "USUARIO"]:
+        coluna_usuario = col
+        break
 
-# 3. Realiza o somatório convertendo todos os formatos de hora para segundos totais
+# 3. Renderização dinâmica do filtro de Consultor na tela caso a coluna exista
+if coluna_usuario:
+    df_mes[coluna_usuario] = df_mes[coluna_usuario].fillna("").astype(str).str.strip()
+    lista_consultores = sorted(list(df_mes[coluna_usuario].unique()))
+    
+    # Pré-seleciona automaticamente o seu e-mail ou nome se estiver na lista
+    index_padrao = 0
+    for i, c in enumerate(lista_consultores):
+        if "hudson" in c.lower() or "valente" in c.lower():
+            index_padrao = i
+            break
+            
+    consultor_sel = st.selectbox("**Filtrar por Consultor / Usuário:**", lista_consultores, index=index_padrao)
+    df_filtrado = df_mes[df_mes[coluna_usuario] == consultor_sel]
+else:
+    st.warning("⚠️ Atenção: Coluna de identificação do consultor não encontrada. Somando todas as linhas da aba.")
+    df_filtrado = df_mes.copy()
+
+# 4. Realiza o somatório convertendo todos os formatos de hora da planilha para segundos totais
 total_segundos = 0
 
 for val in df_filtrado["TOTAL_HR"]:
-    if not val or val == "" or val == "00:00:00" or val == "00:00":
+    if not val or val == "" or val in ["00:00:00", "00:00", "0.0", "0"]:
         continue
         
-    # CASO 1: Objeto datetime ou time nativo do Excel convertido pelo Pandas
+    # CASO A: Objeto datetime ou time nativo do Excel convertido pelo Pandas
     if hasattr(val, "hour") and hasattr(val, "minute"):
         total_segundos += (val.hour * 3600) + (val.minute * 60) + getattr(val, "second", 0)
         
-    # CASO 2: Objeto Timedelta duração acumulada do Pandas
+    # CASO B: Objeto Timedelta duração acumulada do Pandas
     elif isinstance(val, pd.Timedelta):
         total_segundos += int(val.total_seconds())
         
-    # CASO 3: Formato de Texto (String) simples ou acumulado (ex: 56:45)
+    # CASO C: Formato de Texto (String) simples ou acumulado (ex: 56:45)
     else:
         val_str = str(val).strip()
         if ":" in val_str:
@@ -170,18 +188,29 @@ for val in df_filtrado["TOTAL_HR"]:
             except (ValueError, IndexError):
                 continue
 
-# 4. Reconverte o total acumulado de segundos para o formato estruturado HH:MM:SS
+# 5. Reconverte o total acumulado de segundos para o formato estruturado HH:MM:SS
 horas_inteiras = int(total_segundos // 3600)
 minutos_restantes = int((total_segundos % 3600) // 60)
 segundos_restantes = int(total_segundos % 60)
 
 total_horas_faturar = f"{horas_inteiras}:{minutos_restantes:02d}:{segundos_restantes:02d}"
 
-# 5. Efetua a conversão para decimal e calcula o preço final do faturamento
+# 6. Efetua a conversão para decimal e calcula o preço final do faturamento
 horas_dec = horas_para_decimal(total_horas_faturar)
 preco_total_calculado = horas_dec * valor_hora
 
-# 6. Atualiza o dicionário com os valores reais consolidados
+# 7. Tenta capturar dinamicamente o intervalo real de datas do faturamento caso a coluna exista
+if "DATA" in df_filtrado.columns:
+    try:
+        df_filtrado["DATA_DT"] = pd.to_datetime(df_filtrado["DATA"], errors="coerce")
+        df_validas = df_filtrado.dropna(subset=["DATA_DT"])
+        if not df_validas.empty:
+            dados_faturamento["data_inicio"] = df_validas["DATA_DT"].min().strftime("%d/%m/%Y")
+            dados_faturamento["data_fim"] = df_validas["DATA_DT"].max().strftime("%d/%m/%Y")
+    except:
+        pass
+
+# 8. Atualiza o dicionário com os valores reais consolidados para o PDF/Excel
 dados_faturamento["qtd_horas"] = total_horas_faturar
 dados_faturamento["preco_total"] = preco_total_calculado
 
