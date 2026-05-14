@@ -626,8 +626,68 @@ if st.session_state.relatorios_gerados:
                     file_name=nome_arq, 
                     key=f"btn_{path}" # Chave única para não dar conflito
                 )
+# =========================================================================
+# 1. FUNÇÃO DO POP-UP DE CONFIRMAÇÃO DO ENVIO EM LOTE (DADOS DE ATENDIMENTO)
+# =========================================================================
+@st.dialog("⚠️ Confirmação de Disparo em Lote")
+def confirmar_envio_atendimentos_popup(arquivos_validos, servidor_smtp, porta, email_remetente, senha, destinatario):
+    # Agrupa os arquivos localmente na memória RAM para gerar a prévia visual
+    agrupados_por_ra = {}
+    for arq in arquivos_validos:
+        base = arq.replace(".pdf", "").replace(".xlsx", "")
+        if base not in agrupados_por_ra: 
+            agrupados_por_ra[base] = []
+        agrupados_por_ra[base].append(arq)
+        
+    total_envios = len(agrupados_por_ra)
+    
+    st.write(f"Você tem certeza que deseja disparar os relatórios de atendimento em lote?")
+    st.write(f"• **Destinatário:** `{destinatario}`")
+    st.write(f"• **Total de e-mails a serem gerados:** {total_envios} mensagens")
+    st.markdown("---")
+    
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+        if st.button("✅ Sim, Disparar Todos", use_container_width=True):
+            import time  # Controle de congelamento temporal da interface
+            
+            st.write("🚀 Iniciando disparo...")
+            sucessos = 0
+            barra = st.progress(0)
+            
+            # Executa o loop original mapeado do seu banco de dados
+            for i, (base, lista_anexos) in enumerate(agrupados_por_ra.items()):
+                sucesso, msg = enviar_relatorio_email(
+                    lista_anexos, servidor_smtp, porta, email_remetente, senha, destinatario
+                )
+                if sucesso:
+                    sucessos += 1
+                    st.success(msg)
+                else: 
+                    st.error(msg)
+                barra.progress((i + 1) / total_envios)
+            
+            # Exibe o balanço consolidado final
+            if sucessos == total_envios:
+                st.success(f"🎉 Todos os {sucessos} e-mails foram enviados com sucesso!")
+                st.balloons()
+                time.sleep(3)  # Mantém o feedback visual fixado por 3 segundos
+            else:
+                st.warning(f"Processo concluído: {sucessos} enviados com sucesso e {total_envios - sucessos} falhas.")
+                time.sleep(4)
+                
+            st.rerun()  # Força a atualização da view e fecha o pop-up
+            
+    with col_p2:
+        if st.button("❌ Não, Cancelar", use_container_width=True):
+            st.rerun()
+
+# =========================================================================
+# 2. LOGICA DO GATILHO PRINCIPAL (SUBSTITUI O COUPLER ANTIGO DO IF)
+# =========================================================================
 if btn_enviar_emails:
     st.markdown("---")
+    # Captura e valida os arquivos salvos em disco na pasta de saída
     arquivos_pasta = glob.glob(os.path.join(PASTA_SAIDA, "*.*"))
     arquivos_validos = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx")]
     
@@ -635,21 +695,13 @@ if btn_enviar_emails:
         st.warning("⚠️ Gere os relatórios primeiro.")
         st.stop()
         
-    st.subheader("🚀 Iniciando disparo...")
-    agrupados_por_ra = {}
-    for arq in arquivos_validos:
-        base = arq.replace(".pdf", "").replace(".xlsx", "")
-        if base not in agrupados_por_ra: agrupados_por_ra[base] = []
-        agrupados_por_ra[base].append(arq)
-    
-    sucessos, total_envios = 0, len(agrupados_por_ra)
-    barra = st.progress(0)
-    
-    for i, (base, lista_anexos) in enumerate(agrupados_por_ra.items()):
-        sucesso, msg = enviar_relatorio_email(lista_anexos, "smtp.gmail.com", 587, "hudson.valente@crti.com.br", senha_app, email_destinatario)
-        if sucesso:
-            sucessos += 1; st.success(msg)
-        else: st.error(msg)
-        barra.progress((i + 1) / total_envios)
-        
-    st.info(f"🎉 **{sucessos}** de **{total_envios}** e-mails enviados.")
+    # Aciona a janela modal passando os inputs e credenciais coletados da sua UI
+    confirmar_envio_atendimentos_popup(
+        arquivos_validos=arquivos_validos,
+        servidor_smtp="://smtp.gmail.com",
+        porta=587,
+        email_remetente="hudson.valente@crti.com.br",
+        senha=senha_app,
+        destinatario=email_destinatario
+    )
+
