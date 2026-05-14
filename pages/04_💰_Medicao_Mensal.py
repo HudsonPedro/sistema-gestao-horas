@@ -461,9 +461,9 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
 st.markdown("---")
 col_b1, col_b2 = st.columns(2)
 with col_b1:
-    st.download_button(label="📥 Baixar PDF da Medição (Formatado BR)", data=gerar_pdf_medicao_nova(dados_faturamento), file_name=f"Medicao_{numero_medicao}.pdf", mime="application/pdf", use_container_width=True)
+    st.download_button(label="📥 Baixar PDF da Medição", data=gerar_pdf_medicao_nova(dados_faturamento), file_name=f"Medição N° {dados['numero_medicao']} {dados["mes_ano"]}(Implantação) - HUDSON.pdf", mime="application/pdf", use_container_width=True)
 with col_b2:
-    st.download_button(label="📊 Baixar Excel da Medição (Formatado BR)", data=gerar_xlsx_medicao_nova(dados_faturamento), file_name=f"Medicao_{numero_medicao}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+    st.download_button(label="📊 Baixar Excel da Medição", data=gerar_xlsx_medicao_nova(dados_faturamento), file_name=f"Medição N° {dados['numero_medicao']} {dados["mes_ano"]}(Implantação) - HUDSON.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
 st.markdown("---")
 email_target = st.text_input("Destinatário da Medição:", "suellen@crti.com.br")
