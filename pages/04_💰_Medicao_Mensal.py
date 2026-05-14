@@ -288,48 +288,54 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Informática ME"); pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
     return pdf.output(dest="S").encode("latin1")
 
-# --- GERADOR PLANILHA EXCEL CORRIGIDO (DADOS FIXADOS) ---
+# --- GERADOR PLANILHA EXCEL CORRIGIDO (APENAS QUADRO EXTERNO SEM LINHAS INTERNAS) ---
 def gerar_xlsx_medicao_nova(dados):
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {"in_memory": True})
     worksheet = workbook.add_worksheet("Medição")
     
-    # Oculta as linhas de grade padrão do Excel para manter o fundo limpo
+    # Oculta as linhas de grade padrão do Excel
     worksheet.hide_gridlines(2)
     
-    # DEFINIÇÃO DOS ESTILOS
+    # DEFINIÇÃO DE ESTILOS E FONTES
     fmt_titulo = workbook.add_format({"bold": True, "size": 15, "font_name": "Arial"})
     fmt_negrito = workbook.add_format({"bold": True, "font_name": "Arial", "size": 10})
     fmt_regular = workbook.add_format({"font_name": "Arial", "size": 9})
     
-    # Estilos para as caixas de contorno superiores (Cinza Fino)
-    fmt_box_L = workbook.add_format({"left": 1, "top": 1, "bottom": 1, "border_color": "#B4B4B4", "font_name": "Arial", "size": 9})
-    fmt_box_R = workbook.add_format({"right": 1, "top": 1, "bottom": 1, "border_color": "#B4B4B4", "font_name": "Arial", "size": 9})
-    fmt_box_M = workbook.add_format({"top": 1, "bottom": 1, "border_color": "#B4B4B4", "font_name": "Arial", "size": 9})
+    # ESTILOS DAS BORDAS EXTERNAS DOS QUADROS (SEM LINHAS INTERNAS)
+    cor_borda = "#B4B4B4"
+    fmt_canto_esq_sup = workbook.add_format({"left": 1, "top": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    fmt_canto_esq_inf = workbook.add_format({"left": 1, "bottom": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    fmt_linha_esq      = workbook.add_format({"left": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
     
+    fmt_canto_dir_sup = workbook.add_format({"right": 1, "top": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    fmt_canto_dir_inf = workbook.add_format({"right": 1, "bottom": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    fmt_linha_dir      = workbook.add_format({"right": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    
+    fmt_tampa_sup     = workbook.add_format({"top": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    fmt_tampa_inf     = workbook.add_format({"bottom": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    fmt_miolo_limpo   = workbook.add_format({"font_name": "Arial", "size": 9})
+    
+    # ESTILOS DA TABELA DE ITENS
     fmt_header = workbook.add_format({
-        "bold": True, "bg_color": "#F5F5F5", "border": 1, "border_color": "#B4B4B4", 
+        "bold": True, "bg_color": "#F5F5F5", "border": 1, "border_color": cor_borda, 
         "align": "center", "valign": "vcenter", "font_name": "Arial", "size": 9
     })
-    
     fmt_celula = workbook.add_format({
-        "border": 1, "border_color": "#B4B4B4", "align": "center", "valign": "vcenter", "font_name": "Arial", "size": 9
+        "border": 1, "border_color": cor_borda, "align": "center", "valign": "vcenter", "font_name": "Arial", "size": 9
     })
-    
     fmt_celula_esq = workbook.add_format({
-        "border": 1, "border_color": "#B4B4B4", "align": "left", "valign": "vcenter", "font_name": "Arial", "size": 9
+        "border": 1, "border_color": cor_borda, "align": "left", "valign": "vcenter", "font_name": "Arial", "size": 9
     })
-    
     fmt_total_label = workbook.add_format({
-        "bold": True, "bg_color": "#F5F5F5", "border": 1, "border_color": "#B4B4B4", 
+        "bold": True, "bg_color": "#F5F5F5", "border": 1, "border_color": cor_borda, 
         "align": "left", "valign": "vcenter", "font_name": "Arial", "size": 9
     })
-    
     fmt_total_valor = workbook.add_format({
-        "bold": True, "border": 1, "border_color": "#B4B4B4", "align": "center", "valign": "vcenter", "font_name": "Arial", "size": 9
+        "bold": True, "border": 1, "border_color": cor_borda, "align": "center", "valign": "vcenter", "font_name": "Arial", "size": 9
     })
-    
-    # Ajuste de larguras das colunas
+
+    # Definição de larguras de colunas
     worksheet.set_column("A:A", 14)  # Mês/Ano
     worksheet.set_column("B:B", 8)   # Item
     worksheet.set_column("C:C", 48)  # Descrição
@@ -338,48 +344,77 @@ def gerar_xlsx_medicao_nova(dados):
     worksheet.set_column("F:F", 16)  # Preço Unitário
     worksheet.set_column("G:G", 16)  # Preço Total
     
-    # Escreve o Título Principal
+    # Título Principal
     worksheet.write("A2", "Medição Mensal de Prestação de Serviços", fmt_titulo)
     
-    # Inserção da Logo da CRTI alinhada na direita (na célula G1)
+    # Inserção da Logo da CRTI (Canto superior direito)
     ARQUIVO_LOGO = "crti.jpg"
     if os.path.exists(ARQUIVO_LOGO):
         worksheet.insert_image("G1", ARQUIVO_LOGO, {"x_scale": 0.50, "y_scale": 0.50, "x_offset": -30, "y_offset": 5})
     
-    # ESCREVE OS DADOS DO BLOCO ESQUERDO LINHA POR LINHA (SEM SUMIR AS INFORMAÇÕES)
-    worksheet.write("A4", f"  Parceiro: {dados['parceiro']}", fmt_box_L)
-    worksheet.write("A5", f"  Endereço: {dados['endereco']}", fmt_box_L)
-    worksheet.write("A6", f"  Cidade / UF: {dados['cidade_uf']}", fmt_box_L)
-    worksheet.write("A7", f"  CEP:       {dados['cep']}", fmt_box_L)
-    worksheet.write("A8", f"  CNPJ:     {dados['cnpj']}", fmt_box_L)
+    # =========================================================================
+    # CONSTRUÇÃO DO QUADRO 1: PARCEIRO (COLUNAS A ATÉ D)
+    # =========================================================================
+    # Linha 4 (Topo do quadro)
+    worksheet.write("A4", f"  Parceiro: {dados['parceiro']}", fmt_canto_esq_sup)
+    worksheet.write("B4", "", fmt_tampa_sup)
+    worksheet.write("C4", "", fmt_tampa_sup)
+    worksheet.write("D4", "", fmt_canto_dir_sup)
     
-    # Preenche o miolo do bloco esquerdo para aplicar o contorno cinza continuo
-    for r in range(3, 8):
-        for c in range(1, 3):
-            worksheet.write(r, c, "", fmt_box_M)
-        worksheet.write(r, 3, "", fmt_box_R)
-        
-    # ESCREVE OS DADOS DO BLOCO DIREITO LINHA POR LINHA
-    worksheet.write("E4", "  Medição Número:", fmt_box_L)
+    # Linha 5 (Miolo)
+    worksheet.write("A5", f"  Endereço: {dados['endereco']}", fmt_linha_esq)
+    worksheet.write("B5", "", fmt_miolo_limpo)
+    worksheet.write("C5", "", fmt_miolo_limpo)
+    worksheet.write("D5", "", fmt_linha_dir)
+    
+    # Linha 6 (Miolo)
+    worksheet.write("A6", f"  Cidade / UF: {dados['cidade_uf']}", fmt_linha_esq)
+    worksheet.write("B6", "", fmt_miolo_limpo)
+    worksheet.write("C6", "", fmt_miolo_limpo)
+    worksheet.write("D6", "", fmt_linha_dir)
+    
+    # Linha 7 (Miolo)
+    worksheet.write("A7", f"  CEP:       {dados['cep']}", fmt_linha_esq)
+    worksheet.write("B7", "", fmt_miolo_limpo)
+    worksheet.write("C7", "", fmt_miolo_limpo)
+    worksheet.write("D7", "", fmt_linha_dir)
+    
+    # Linha 8 (Base do quadro)
+    worksheet.write("A8", f"  CNPJ:     {dados['cnpj']}", fmt_canto_esq_inf)
+    worksheet.write("B8", "", fmt_tampa_inf)
+    worksheet.write("C8", "", fmt_tampa_inf)
+    worksheet.write("D8", "", fmt_canto_dir_inf)
+
+    # =========================================================================
+    # CONSTRUÇÃO DO QUADRO 2: MEDIÇÃO (COLUNAS E ATÉ G)
+    # =========================================================================
+    # Linha 4 (Topo do quadro)
+    worksheet.write("E4", "  Medição Número:", fmt_canto_esq_sup)
     worksheet.write("F4", dados["numero_medicao"], fmt_negrito)
-    worksheet.write("G4", "", fmt_box_R)
+    worksheet.write("G4", "", fmt_canto_dir_sup)
     
-    worksheet.write("E5", "", fmt_box_L); worksheet.write("F5", "", fmt_box_M); worksheet.write("G5", "", fmt_box_R)
+    # Linha 5 (Miolo limpo)
+    worksheet.write("E5", "", fmt_linha_esq); worksheet.write("F5", "", fmt_miolo_limpo); worksheet.write("G5", "", fmt_linha_dir)
     
-    worksheet.write("E6", f"  Período: {dados['data_inicio']} até {dados['data_fim']}", fmt_box_L)
-    worksheet.write("F6", "", fmt_box_M); worksheet.write("G6", "", fmt_box_R)
+    # Linha 6 (Miolo com Período)
+    worksheet.write("E6", f"  Período: {dados['data_inicio']} até {dados['data_fim']}", fmt_linha_esq)
+    worksheet.write("F6", "", fmt_miolo_limpo); worksheet.write("G6", "", fmt_linha_dir)
     
-    worksheet.write("E7", "", fmt_box_L); worksheet.write("F7", "", fmt_box_M); worksheet.write("G7", "", fmt_box_R)
-    worksheet.write("E8", "", fmt_box_L); worksheet.write("F8", "", fmt_box_M); worksheet.write("G8", "", fmt_box_R)
+    # Linha 7 (Miolo limpo)
+    worksheet.write("E7", "", fmt_linha_esq); worksheet.write("F7", "", fmt_miolo_limpo); worksheet.write("G7", "", fmt_linha_dir)
     
-    # TABELA DE SERVIÇOS EXECUTADOS
+    # Linha 8 (Base do quadro)
+    worksheet.write("E8", "", fmt_canto_esq_inf); worksheet.write("F8", "", fmt_tampa_inf); worksheet.write("G8", "", fmt_canto_dir_inf)
+    
+    # =========================================================================
+    # MONTAGEM DA TABELA DE ITENS EXECUTADOS
+    # =========================================================================
     worksheet.write("A10", "* Serviços Executados", fmt_negrito)
     
     headers = ["Mês/Ano", "Item", "Descrição", "Unidade", "Qtd", "Preço Unitário", "Preço Total"]
     for col_idx, text in enumerate(headers):
         worksheet.write(10, col_idx, text, fmt_header)
         
-    # Lançamento dos dados nas colunas corretas
     worksheet.write(11, 0, dados["mes_ano"], fmt_celula)
     worksheet.write(11, 1, "1", fmt_celula)
     worksheet.write(11, 2, dados["descricao_servico"], fmt_celula_esq)
@@ -388,7 +423,7 @@ def gerar_xlsx_medicao_nova(dados):
     worksheet.write(11, 5, formatar_br(dados["preco_unitario"]), fmt_celula)
     worksheet.write(11, 6, formatar_br(dados["preco_total"]), fmt_celula)
     
-    # Linha do TOTAL idêntica à do PDF
+    # Linha de Fechamento do TOTAL
     worksheet.write(12, 0, "", fmt_celula)
     worksheet.write(12, 1, "", fmt_celula)
     worksheet.write(12, 2, "TOTAL", fmt_total_label)
@@ -397,15 +432,15 @@ def gerar_xlsx_medicao_nova(dados):
     worksheet.write(12, 5, "", fmt_celula)
     worksheet.write(12, 6, formatar_br(dados["preco_total"]), fmt_total_valor)
     
-    # Notas Adicionais de Rodapé
+    # Textos Inline do Rodapé da Tabela
     worksheet.write("E14", "* Duplicatas a serem emitidas", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
     worksheet.write("E15", f"HP SERVIÇOS ADM, valor total de R$ {formatar_br(dados['preco_total'])}", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
     
-    # Bloco de Assinaturas Limpo (Sem recuo e sem borda retangular)
+    # Seção de Assinaturas Limpa
     worksheet.write("A17", "* De acordo com a Medição Mensal", fmt_negrito)
     
-    fmt_linha_assinatura = workbook.add_format({"top": 1, "top_color": "#B4B4B4", "align": "left", "font_name": "Arial", "size": 8})
-    worksheet.write("A20", "HPtech Informática ME", fmt_linha_assinatura) # Alinhado com o PDF da direita
+    fmt_linha_assinatura = workbook.add_format({"top": 1, "top_color": cor_borda, "align": "left", "font_name": "Arial", "size": 8})
+    worksheet.write("A20", "HPtech Informática ME", fmt_linha_assinatura)
     worksheet.write("F20", "CR Tecnologia da Informação Ltda", fmt_linha_assinatura)
     
     workbook.close()
