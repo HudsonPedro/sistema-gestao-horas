@@ -1,5 +1,5 @@
 #Por Hudson Valente - HPTECH
-#em: 27/04/2026 - 19:55h
+#Criado em: 27/04/2026 - 19:55h
 import streamlit as st
 import base64 #==novo imagem ao lado no título ===#
 
@@ -96,7 +96,7 @@ with st.sidebar:
   
 #   versionamento 
     st.divider()
-    st.caption("v1.0 - 11052026")
+    st.caption("v1.0 - 14052026") #16:43 sem alterações
     st.caption("Todos os direitos reservados")
     st.caption("Copyright ©2026 HPtech Informática ME")
     
