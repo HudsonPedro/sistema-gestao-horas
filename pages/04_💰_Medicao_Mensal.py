@@ -443,7 +443,7 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
     smtp_server = st.secrets["smtp"]["servidor"]
     smtp_porta = int(st.secrets["smtp"]["porta"])
     msg = MIMEMultipart(); msg["From"] = email_remetente; msg["To"] = email_destino
-    msg["Subject"] = f"Medição N° {dados['numero_medicao']} dados["mes_ano"] - HUDSON"
+    msg["Subject"] = f"Medição N° {dados['numero_medicao']} {dados["mes_ano"]} - HUDSON"
     corpo = f"<html><body><p>Olá,</p><p>Conforme solicitado, segue em anexo a medição para aprovação, autorizando a emissão da NFS-e referente aos serviços de implantação no período de ({dados['data_inicio']} até {dados['data_fim']}).</p></body></html>"
     msg.attach(MIMEText(corpo, "html"))
     for b_data, ext in [(pdf_bytes, "pdf"), (xlsx_bytes, "xlsx")]:
