@@ -1,3 +1,5 @@
+#Por Hptec Informatica 
+#("v1.0 - 27042026") #16:43 sem alterações
 import streamlit as st
 import base64
 
