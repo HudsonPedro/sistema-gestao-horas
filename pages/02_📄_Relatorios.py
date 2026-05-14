@@ -690,6 +690,9 @@ def confirmar_envio_atendimentos_popup(arquivos_validos):
                 if sucesso:
                     sucessos += 1
                     st.success(msg)
+                    # Dentro do loop de envios bem-sucedidos da Central de Relatórios:
+                    numero_ra_log = str(base).split(" ")[2] if "N" in str(base) else "S/N"
+                    registrar_historico_sheets(tipo="Atendimento", identificador=numero_ra_log, destinatario=destinatario)
                 else: 
                     st.error(msg)
                 barra.progress((i + 1) / total_envios)
