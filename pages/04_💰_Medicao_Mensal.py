@@ -436,62 +436,87 @@ def gerar_xlsx_medicao_nova(dados):
     workbook.close()
     return output.getvalue()
 
-# --- DISPARO SMTP ---
-def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
+# --- DISPARO SMTP CORRIGIDO (FIM DO BUG NONAME) ---
+def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes, nome_pdf, nome_xlsx):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
     smtp_server = st.secrets["smtp"]["servidor"]
     smtp_porta = int(st.secrets["smtp"]["porta"])
-    msg = MIMEMultipart(); msg["From"] = email_remetente; msg["To"] = email_destino
-    msg["Subject"] = f"Medição N° {dados['numero_medicao']} {dados["mes_ano"]}(Implantação) - HUDSON"
-    corpo = f"<html><body><p>Prezada Sra. Suellen, espero que se encontre bem,</p><br><p>Conforme solicitado, segue em anexo a medição para aprovação, autorizando a emissão da NFS-e referente aos serviços de implantação no período de ({dados['data_inicio']} até {dados['data_fim']}).</p><br><p>Atenciosamente,<br><br>Hudson Valente</p></body></html>"
+    
+    msg = MIMEMultipart()
+    msg["From"] = email_remetente
+    msg["To"] = email_destino
+    
+    # O assunto do e-mail assume dinamicamente o nome limpo do arquivo
+    msg["Subject"] = str(nome_pdf).replace(".pdf", "")
+    
+    corpo = f"""<html><body><p>Prezada Sra. Suellen, espero que se encontre bem,</p><br>
+    <p>Conforme solicitado, segue em anexo a medição para aprovação, autorizando a emissão da NFS-e referente aos serviços de implantação no período de ({dados['data_inicio']} até {dados['data_fim']}).</p><br>
+    <p>Atenciosamente,<br><br>Hudson Valente</p></body></html>"""
     msg.attach(MIMEText(corpo, "html"))
-    for b_data, ext in [(pdf_bytes, "pdf"), (xlsx_bytes, "xlsx")]:
+    
+    # Lista estruturada mapeando os bytes com seus respectivos nomes dinâmicos passados pela UI
+    lote_anexos = [
+        (pdf_bytes, nome_pdf),
+        (xlsx_bytes, nome_xlsx)
+    ]
+    
+    for b_data, nome_arquivo in lote_anexos:
         part = MIMEBase("application", "octet-stream")
-        part.set_payload(b_data); encode_base64(part)
-        part.add_header("Content-Disposition", f"attachment; filename=Medição N° {dados['numero_medicao']} - {dados['mes_ano']}(Implantação) - HUDSON.{ext}")
-        msg.attach(part)  #Medicao_{dados['numero_medicao']}.{ext})
+        part.set_payload(b_data)
+        encode_base64(part)
+        
+        # O uso de aspas duplas escapadas \" garante que o Gmail leia nomes com espaços e símbolos sem quebrar
+        part.add_header("Content-Disposition", f"attachment; filename=\"{nome_arquivo}\"")
+        msg.attach(part)
+        
     try:
-        server = smtplib.SMTP(smtp_server, smtp_porta); server.starttls()
-        server.login(email_remetente, senha_remetente); server.sendmail(email_remetente, email_destino, msg.as_string()); server.quit()
-        return True, "E-mail enviado com sucesso!"
-    except Exception as e: return False, f"Falha no envio SMTP: {str(e)}"
+        server = smtplib.SMTP(smtp_server, smtp_porta)
+        server.starttls()
+        server.login(email_remetente, senha_remetente)
+        server.sendmail(email_remetente, email_destino, msg.as_string())
+        server.quit()
+        return True, "E-mail enviado com sucesso com os nomes corrigidos!"
+    except Exception as e: 
+        return False, f"Falha no envio SMTP: {str(e)}"
 
-# --- BOTÕES VISUAIS (CORRIGIDO SEM CONFLITO DE ASPAS) ---
+# --- BOTÕES VISUAIS E EXPORTAÇÃO DIRETAL ---
 st.markdown("---")
 col_b1, col_b2 = st.columns(2)
 
-# =========================================================================
-# VEJA OS NOMES DOS ARQUIVOS ABAIXO E AJUSTE O TEXTO ENTRE ASPAS COMO DESEJAR
-# =========================================================================
-nome_pdf = f"Medicao_N_{dados_faturamento['numero_medicao']}_{dados_faturamento['mes_ano']}.pdf"
-nome_xlsx = f"Medicao_N_{dados_faturamento['numero_medicao']}_{dados_faturamento['mes_ano']}.xlsx"
-# =========================================================================
+# Nomenclatura oficial padronizada sem risco de quebra de codificação
+# Trocamos o caractere '°' por 'N' ou espaço para total compatibilidade com o servidor Linux
+nome_pdf = f"Medicao N {dados_faturamento['numero_medicao']} - {dados_faturamento['mes_ano']} (Implantacao) - HUDSON.pdf"
+nome_xlsx = f"Medicao N {dados_faturamento['numero_medicao']} - {dados_faturamento['mes_ano']} (Implantacao) - HUDSON.xlsx"
 
 with col_b1:
- st.download_button(
- label=" Baixar PDF da Medição", 
- data=gerar_pdf_medicao_nova(dados_faturamento), 
- file_name=nome_pdf, 
- mime="application/pdf", 
- use_container_width=True
- )
+    st.download_button(
+        label=" Baixar PDF da Medição", 
+        data=gerar_pdf_medicao_nova(dados_faturamento), 
+        file_name=nome_pdf, 
+        mime="application/pdf", 
+        use_container_width=True
+    )
 with col_b2:
- st.download_button(
- label=" Baixar Excel da Medição", 
- data=gerar_xlsx_medicao_nova(dados_faturamento), 
- file_name=nome_xlsx, 
- mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
- use_container_width=True
- )
+    st.download_button(
+        label=" Baixar Excel da Medição", 
+        data=gerar_xlsx_medicao_nova(dados_faturamento), 
+        file_name=nome_xlsx, 
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+        use_container_width=True
+    )
 
 st.markdown("---")
 email_target = st.text_input("Destinatário da Medição:", "suellen@crti.com.br")
-if st.button("🚀 Enviar Medição por E-mail", use_container_width=True):
+
+if st.button(" Enviar Medição por E-mail", use_container_width=True):
     with st.spinner("Compilando anexos formatados..."):
         p_b = gerar_pdf_medicao_nova(dados_faturamento)
         x_b = gerar_xlsx_medicao_nova(dados_faturamento)
-        ok, r_msg = enviar_email_medicao_nova(email_target, dados_faturamento, p_b, x_b)
+        
+        # PASSAGEM COMPLETA DOS PARÂMETROS: Repassa os nomes dos arquivos para dentro do e-mail
+        ok, r_msg = enviar_email_medicao_nova(email_target, dados_faturamento, p_b, x_b, nome_pdf, nome_xlsx)
+        
     if ok: 
         st.success(r_msg)
         st.balloons()
