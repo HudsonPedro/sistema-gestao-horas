@@ -130,33 +130,6 @@ def data_por_extenso_pt(dt):
     ano = dt.year
     return f"{dia:02d} de {mes} de {ano}"
 
-# =========================================================================
-# AQUI ENTRA O PASSO 2: COLE A FUNÇÃO DE LOG EXATAMENTE NESTE ESPAÇO
-# =========================================================================
-def registrar_historico_sheets(tipo, identificador, destinatario):
-    """Grava o log do envio com sucesso na aba HISTORICO_ENVIOS do Google Sheets"""
-    import gspread
-    from google.oauth2.service_account import Credentials
-    from datetime import datetime
-    
-    try:
-        escopos = ["googleapis.com"]
-        credenciais = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=escopos)
-        cliente_sheets = gspread.authorize(credenciais)
-        
-        id_planilha = "1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE"
-        planilha = cliente_sheets.open_by_key(id_planilha)
-        aba_log = planilha.worksheet("HISTORICO_ENVIOS")
-        
-        data_atual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        usuario_atual = st.user.get("email") or "hudson.valente@crti.com.br"
-        
-        nova_linha = [data_atual, tipo, str(identificador), destinatario, usuario_atual]
-        aba_log.append_row(nova_linha)
-    except Exception as e:
-        st.sidebar.error(f"Erro ao registrar log de auditoria: {e}")
-# =========================================================================
-
 PASTA_SAIDA = "relatorios"
 LOGO = "crti.jpg"
 os.makedirs(PASTA_SAIDA, exist_ok=True)
@@ -654,66 +627,74 @@ if st.session_state.relatorios_gerados:
                     key=f"btn_{path}" # Chave única para não dar conflito
                 )
 # =========================================================================
-# 1. FUNÇÃO DO POP-UP COM O SEU MOTOR DE ENVIO ORIGINAL (CORRIGIDO)
+# 1. FUNÇÃO DO POP-UP DE CONFIRMAÇÃO EM LOTE OTIMIZADA (SEM TRAVAMENTO)
 # =========================================================================
 @st.dialog("⚠️ Confirmação de Disparo em Lote")
-def confirmar_envio_atendimentos_popup(arquivos_validos):
-    # Agrupa os relatórios por RA usando exatamente a sua lógica original
+def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha, destinatario):
+    # Agrupa os arquivos na memória RAM
     agrupados_por_ra = {}
     for arq in arquivos_validos:
         base = arq.replace(".pdf", "").replace(".xlsx", "")
         if base not in agrupados_por_ra: 
             agrupados_por_ra[base] = []
         agrupados_por_ra[base].append(arq)
-    
+        
     total_envios = len(agrupados_por_ra)
     
-    st.write("Você tem certeza que deseja disparar os relatórios de atendimento em lote?")
-    st.write(f"• **Destinatário Cadastrado:** `{email_destinatario}`")
+    st.write(f"Você tem certeza que deseja disparar os relatórios de atendimento em lote?")
+    st.write(f"• **Destinatário:** `{destinatario}`")
     st.write(f"• **Total de e-mails a serem gerados:** {total_envios} mensagens")
     st.markdown("---")
     
     col_p1, col_p2 = st.columns(2)
     with col_p1:
         if st.button("✅ Sim, Disparar Todos", use_container_width=True):
-            import time
+            import time  
             
-            st.subheader("🚀 Iniciando disparo...")
+            # Mensagem estática inicial para indicar atividade ao usuário
+            status_placeholder = st.empty()
+            status_placeholder.markdown("🚀 **Conectando ao servidor e iniciando disparos ocultos...**")
+            
             sucessos = 0
-            barra = st.progress(0)
+            falhas_lista = []
             
-            # Executa o seu laço original de envio com o host correto: smtp.gmail.com
-            for i, (base, lista_anexos) in enumerate(agrupados_por_ra.items()):
+            # O processamento agora roda limpo em segundo plano
+            for base, lista_anexos in agrupados_por_ra.items():
+                nome_base_limpo = os.path.basename(base)
+                
+                # Executa a sua função SMTP nativa utilizando o host oficial
                 sucesso, msg = enviar_relatorio_email(
-                    lista_anexos, "smtp.gmail.com", 587, "hudson.valente@crti.com.br", senha_app, email_destinatario
+                    lista_anexos, "gmail.com", 587, email_remetente, senha, destinatario
                 )
+                
                 if sucesso:
                     sucessos += 1
-                    st.success(msg)
-                    # Dentro do loop de envios bem-sucedidos da Central de Relatórios:
-                    numero_ra_log = str(base).split(" ")[2] if "N" in str(base) else "S/N"
-                    registrar_historico_sheets(tipo="Atendimento", identificador=numero_ra_log, destinatario=destinatario)
-                else: 
-                    st.error(msg)
-                barra.progress((i + 1) / total_envios)
-                
-            st.info(f"🎉 **{sucessos}** de **{total_envios}** e-mails enviados.")
+                else:
+                    falhas_lista.append(f"❌ {nome_base_limpo}: {msg}")
             
-            # Segura o feedback visual na tela por 3 segundos antes de fechar o pop-up
+            # Limpa o texto temporário de carregamento
+            status_placeholder.empty()
+            
+            # Renderiza o veredito consolidado de uma só vez (Evita estouro de buffer visual)
             if sucessos == total_envios:
+                st.success(f"🎉 Sucesso absoluto! Todas as {sucessos} mensagens foram enviadas.")
                 st.balloons()
-                time.sleep(10)
+                time.sleep(3)  # Janela aberta por 3 segundos para visualização
             else:
+                st.warning(f"Processo concluído: {sucessos} mensagens enviadas com sucesso.")
+                # Se houver erros, exibe a lista de falhas estruturada
+                for erro_msg in falhas_lista:
+                    st.error(erro_msg)
                 time.sleep(5)
                 
-            st.rerun()
+            st.rerun()  # Atualiza a view e encerra o ciclo de vida do pop-up
             
     with col_p2:
         if st.button("❌ Não, Cancelar", use_container_width=True):
             st.rerun()
 
 # =========================================================================
-# 2. LÓGICA DO GATILHO DA SIDEBAR QUE CHAMA O POP-UP
+# 2. LOGICA DO GATILHO PRINCIPAL (SUBSTITUI O COUPLER ANTIGO DO IF)
 # =========================================================================
 if btn_enviar_emails:
     st.markdown("---")
@@ -724,8 +705,11 @@ if btn_enviar_emails:
         st.warning("⚠️ Gere os relatórios primeiro.")
         st.stop()
         
-    # Abre o pop-up de validação passando a lista de arquivos prontos
-    confirmar_envio_atendimentos_popup(arquivos_validos)
-
-
+    # Aciona a janela flutuante injetando os parâmetros da barra lateral
+    confirmar_envio_atendimentos_popup(
+        arquivos_validos=arquivos_validos,
+        email_remetente="hudson.valente@crti.com.br",
+        senha=senha_app,
+        destinatario=email_destinatario
+    )
 
