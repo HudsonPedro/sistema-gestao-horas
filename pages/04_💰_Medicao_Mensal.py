@@ -350,7 +350,12 @@ def gerar_xlsx_medicao_nova(dados):
     # Inserção da Logo da CRTI (Canto superior direito)
     ARQUIVO_LOGO = "crti.jpg"
     if os.path.exists(ARQUIVO_LOGO):
-        worksheet.insert_image("G1", ARQUIVO_LOGO, {"x_scale": 0.50, "y_scale": 0.50, "x_offset": -30, "y_offset": 5})
+        worksheet.insert_image("F1", ARQUIVO_LOGO, {
+            "x_scale": 0.90,       # Aumentado de 0.50 para 0.90
+            "y_scale": 0.90,       # Aumentado de 0.50 para 0.90
+            "x_offset": 25,        # Ajuste fino para alinhar totalmente à direita
+            "y_offset": 5
+        })
     
     # =========================================================================
     # CONSTRUÇÃO DO QUADRO 1: PARCEIRO (COLUNAS A ATÉ D)
