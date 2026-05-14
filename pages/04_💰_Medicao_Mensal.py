@@ -531,7 +531,7 @@ def confirmar_envio_popup(email, dados):
             if ok:
                 st.success(f"🎉 {r_msg}") # Exibe o alerta verde na tela
                 st.balloons()            # Sobe os balões de celebração
-                time.sleep(3)            # Segura a mensagem na tela por 3 segundos antes de fechar
+                time.sleep(10)            # Segura a mensagem na tela por 3 segundos antes de fechar
             else:
                 st.error(r_msg)
                 time.sleep(4)            # Dá mais tempo para ler caso ocorra algum erro
