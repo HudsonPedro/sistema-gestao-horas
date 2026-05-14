@@ -1,6 +1,7 @@
 # Por Hudson Valente - HPTECH
 # Gerador de Medição Mensal Automatizado - PDF + XLSX
 import io
+import os  # GARANTE O IMPORT PARA BANIR O NAMEERROR
 import smtplib
 from email import encoders
 from email.mime.base import MIMEBase
@@ -36,7 +37,6 @@ st.markdown("""
 
 # --- FUNÇÕES DE CONVERSÃO E FORMATAÇÃO BRASILEIRA ---
 def horas_para_decimal(tempo_str):
-    """Converte '56:45:00' para float seguro (56.75)"""
     tempo_str = str(tempo_str).strip()
     if ":" not in tempo_str:
         return 0.0
@@ -46,7 +46,6 @@ def horas_para_decimal(tempo_str):
     return horas + (minutos / 60.0)
 
 def formatar_br(valor):
-    """Formata número para o padrão brasileiro: 4.540,00"""
     try:
         return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except:
@@ -59,7 +58,7 @@ def carregar_planilha_todas_abas():
     response = requests.get(url)
     return pd.read_excel(io.BytesIO(response.content), sheet_name=None, engine='openpyxl')
 
-# 3. SIDEBAR COM MENU DE NAVEGAÇÃO E ATUALIZAÇÃO DA BASE
+# 3. SIDEBAR COM MENU DE NAVEGAÇÃO
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -106,7 +105,7 @@ with col_f2:
 with col_f3:
     valor_hora = st.number_input("**Preço da Hora (R$):**", min_value=0.0, value=80.00, step=5.0)
 
-# Inicializa o dicionário com os dados fixos do cliente antes do processamento
+# Inicializa o dicionário
 dados_faturamento = {
     "parceiro": "CR Tecnologia da Informação Ltda",
     "endereco": "Rua Padre Anchieta, 2050 - Bairro Bigorrilho",
@@ -123,26 +122,18 @@ dados_faturamento = {
     "preco_total": 0.0,
 }
 
-# Processando dados da aba selecionada
 df_mes = dict_abas[aba_selecionada].copy()
-
-# 1. Normaliza e limpa as colunas essenciais para evitar falhas por células vazias
 df_mes["TOTAL_HR"] = df_mes["TOTAL_HR"].fillna("").astype(str).str.strip()
 
-# 2. Identificação automática de colunas para criar o filtro do Consultor
-# O script verifica de forma inteligente se a planilha usa 'EMAIL', 'CONSULTOR', 'USUARIO' ou 'NOME'
 coluna_usuario = None
 for col in df_mes.columns:
     if str(col).upper() in ["EMAIL", "CONSULTOR", "NOME", "USUARIO"]:
         coluna_usuario = col
         break
 
-# 3. Renderização dinâmica do filtro de Consultor na tela caso a coluna exista
 if coluna_usuario:
     df_mes[coluna_usuario] = df_mes[coluna_usuario].fillna("").astype(str).str.strip()
     lista_consultores = sorted(list(df_mes[coluna_usuario].unique()))
-    
-    # Pré-seleciona automaticamente o seu e-mail ou nome se estiver na lista
     index_padrao = 0
     for i, c in enumerate(lista_consultores):
         if "hudson" in c.lower() or "valente" in c.lower():
@@ -152,54 +143,38 @@ if coluna_usuario:
     consultor_sel = st.selectbox("**Filtrar por Consultor / Usuário:**", lista_consultores, index=index_padrao)
     df_filtrado = df_mes[df_mes[coluna_usuario] == consultor_sel]
 else:
-    st.warning("⚠️ Atenção: Coluna de identificação do consultor não encontrada. Somando todas as linhas da aba.")
     df_filtrado = df_mes.copy()
 
-# 4. Realiza o somatório convertendo todos os formatos de hora da planilha para segundos totais
 total_segundos = 0
-
 for val in df_filtrado["TOTAL_HR"]:
     if not val or val == "" or val in ["00:00:00", "00:00", "0.0", "0"]:
         continue
-        
-    # CASO A: Objeto datetime ou time nativo do Excel convertido pelo Pandas
     if hasattr(val, "hour") and hasattr(val, "minute"):
         total_segundos += (val.hour * 3600) + (val.minute * 60) + getattr(val, "second", 0)
-        
-    # CASO B: Objeto Timedelta duração acumulada do Pandas
     elif isinstance(val, pd.Timedelta):
         total_segundos += int(val.total_seconds())
-        
-    # CASO C: Formato de Texto (String) simples ou acumulado (ex: 56:45)
     else:
         val_str = str(val).strip()
         if ":" in val_str:
             try:
-                # Remove possíveis carimbos de data automáticos do Excel (ex: '1900-01-01 ')
                 if " " in val_str:
                     val_str = val_str.split(" ")[-1]
-                
                 partes = val_str.split(":")
                 h = int(partes[0])
                 m = int(partes[1]) if len(partes) > 1 else 0
                 s = int(partes[2]) if len(partes) > 2 else 0
-                
                 total_segundos += (h * 3600) + (m * 60) + s
             except (ValueError, IndexError):
                 continue
 
-# 5. Reconverte o total acumulado de segundos para o formato estruturado HH:MM:SS
 horas_inteiras = int(total_segundos // 3600)
 minutos_restantes = int((total_segundos % 3600) // 60)
 segundos_restantes = int(total_segundos % 60)
-
 total_horas_faturar = f"{horas_inteiras}:{minutos_restantes:02d}:{segundos_restantes:02d}"
 
-# 6. Efetua a conversão para decimal e calcula o preço final do faturamento
 horas_dec = horas_para_decimal(total_horas_faturar)
 preco_total_calculado = horas_dec * valor_hora
 
-# 7. Tenta capturar dinamicamente o intervalo real de datas do faturamento caso a coluna exista
 if "DATA" in df_filtrado.columns:
     try:
         df_filtrado["DATA_DT"] = pd.to_datetime(df_filtrado["DATA"], errors="coerce")
@@ -210,31 +185,26 @@ if "DATA" in df_filtrado.columns:
     except:
         pass
 
-# 8. Atualiza o dicionário com os valores reais consolidados para o PDF/Excel
 dados_faturamento["qtd_horas"] = total_horas_faturar
 dados_faturamento["preco_total"] = preco_total_calculado
 
-# --- PRÉVIA DOS RESULTADOS CALCULADOS ---
-st.markdown("### 📊 Resumo do Faturamento Calculado da Planilha")
+# --- PRÉVIA DOS RESULTADOS ---
+st.markdown("### Resumo do Faturamento Calculado da Planilha")
 col_m1, col_m2, col_m3 = st.columns(3)
 col_m1.metric("Total de Horas Encontradas", total_horas_faturar)
 col_m2.metric("Preço Unitário da Hora", f"R$ {formatar_br(valor_hora)}")
 col_m3.metric("Preço Total Calculado", f"R$ {formatar_br(preco_total_calculado)}")
 
-# =========================================================================
-# CLASSE DO PDF DA MEDIÇÃO ATUALIZADA (SEM LINHAS VERMELHAS E SEM RECUO)
-# =========================================================================
+# --- CLASSE DO PDF REVISADA (SEM RECUO E SEM VERMELHO) ---
 class PDFMedicaoNovo(FPDF):
     def moldura_topo(self, x, y, w, h, dados):
-        # 1. Altera a borda externa para Cinza Claro (Item 2)
-        self.set_draw_color(180, 180, 180)
+        self.set_draw_color(180, 180, 180)  # Cinza Sóbrio profissional
         self.set_line_width(0.4)
         self.rect(x, y, w, h)
-
         self.set_font("Arial", "", 9)
         self.set_text_color(0, 0, 0)
         
-        # 2. Dados do Parceiro sem recuo de espaçamento (Item 3)
+        # Alinhamento limpo removendo o recuo artificial de texto
         linhas = [
             f"Parceiro:     {dados['parceiro']}",
             f"Endereço:   {dados['endereco']}",
@@ -246,98 +216,57 @@ class PDFMedicaoNovo(FPDF):
         for linha in linhas:
             self.text(x + 4, curr_y, linha)
             curr_y += 5.2
-
-        # Linha divisória interna vertical em Cinza Claro
+            
         self.line(x + 110, y, x + 110, y + h)
-        
-        # Informações da medição (Direita)
         self.text(x + 114, y + 8, "Medição Número:")
         self.set_font("Arial", "B", 10)
         self.text(x + 160, y + 8, str(dados["numero_medicao"]))
         self.set_font("Arial", "", 9)
-        self.text(x + 114, y + 18, f"Período:  {dados['data_inicio']}    até    {dados['data_fim']}")
-
+        self.text(x + 114, y + 18, f"Período: {dados['data_inicio']} até {dados['data_fim']}")
 
 def gerar_pdf_medicao_nova(dados):
     pdf = PDFMedicaoNovo(orientation="P", unit="mm", format="A4")
     pdf.add_page()
     
-    # 3. Inclusão Automática da Logo no Topo Direito se o arquivo existir (Item 1)
-    # Altere para "hptechNova.png" caso queira utilizar a logo da HPTECH
-    ARQUIVO_LOGO = "crti.jpg" 
+    # Inclusão da logo se o arquivo existir
+    ARQUIVO_LOGO = "crti.jpg"
     if os.path.exists(ARQUIVO_LOGO):
         pdf.image(ARQUIVO_LOGO, x=150, y=10, w=45)
-    
-    # Título Principal
+        
     pdf.set_font("Arial", "B", 15)
     pdf.text(15, 20, "Medição Mensal de Prestação de Serviços")
-    
-    # Desenha a Moldura Superior (Agora em Cinza)
     pdf.moldura_topo(15, 28, 180, 32, dados)
-
-    # Tabela de Serviços Executados
+    
     pdf.set_font("Arial", "B", 10)
     pdf.text(15, 70, "* Serviços Executados")
-    pdf.set_y(74)
-    pdf.set_x(15)
+    pdf.set_y(74); pdf.set_x(15)
+    pdf.set_draw_color(180, 180, 180); pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 8)
     
-    pdf.set_draw_color(180, 180, 180)
-    pdf.set_fill_color(245, 245, 245)
-    pdf.set_font("Arial", "B", 8)
+    headers = [("Mês/Ano", 18), ("Item", 10), ("Descrição", 72), ("Unidade", 15), ("Qtd", 20), ("Preço Unitário", 22), ("Preço Total", 23)]
+    for txt, w in headers: pdf.cell(w, 7, txt, border=1, align="C", fill=True)
     
-    headers = [
-        ("Mês/Ano", 18), ("Item", 10), ("Descrição", 72), 
-        ("Unidade", 15), ("Qtd", 20), ("Preço Unitário", 22), ("Preço Total", 23)
-    ]
-    for txt, w in headers: 
-        pdf.cell(w, 7, txt, border=1, align="C", fill=True)
-        
-    # Linha do Serviço Realizado
-    pdf.set_y(81)
-    pdf.set_x(15)
-    pdf.set_font("Arial", "", 8)
+    pdf.set_y(81); pdf.set_x(15); pdf.set_font("Arial", "", 8)
     pdf.cell(18, 10, dados["mes_ano"], border=1, align="C")
     pdf.cell(10, 10, "1", border=1, align="C")
     pdf.cell(72, 10, dados["descricao_servico"], border=1, align="L")
     pdf.cell(15, 10, "HR", border=1, align="C")
     pdf.cell(20, 10, dados["qtd_horas"], border=1, align="C")
     pdf.cell(22, 10, formatar_br(dados["preco_unitario"]), border=1, align="C")
-    
-    # Borda da célula de valor alterada de vermelho para cinza
     pdf.cell(23, 10, formatar_br(dados["preco_total"]), border=1, align="C")
     
-    # Linha de Fechamento do TOTAL
-    pdf.set_y(91)
-    pdf.set_x(15)
-    pdf.cell(28, 7, "", border=0)
-    pdf.set_font("Arial", "B", 8)
-    pdf.cell(72, 7, "TOTAL", border=1, align="L", fill=True)
-    pdf.cell(57, 7, "", border=0)
+    pdf.set_y(91); pdf.set_x(15)
+    pdf.cell(28, 7, "", border=0); pdf.set_font("Arial", "B", 8)
+    pdf.cell(72, 7, "TOTAL", border=1, align="L", fill=True); pdf.cell(57, 7, "", border=0)
     pdf.cell(23, 7, formatar_br(dados["preco_total"]), border=1, align="C")
     
-    # Notas de rodapé da tabela
-    pdf.set_text_color(100, 100, 100)
-    pdf.set_font("Arial", "I", 7)
+    pdf.set_text_color(100, 100, 100); pdf.set_font("Arial", "I", 7)
     pdf.text(115, 104, "* Duplicatas a serem emitidas")
     pdf.text(115, 107, f"HP SERVIÇOS ADM, valor total de R$ {formatar_br(dados['preco_total'])}")
     
-    # Bloco Inferior de Assinatura (Borda alterada para Cinza)
-    pdf.set_draw_color(180, 180, 180)
-    pdf.rect(15, 115, 180, 35)
-    
-    pdf.set_text_color(0, 0, 0)
-    pdf.set_font("Arial", "B", 9)
-    pdf.text(18, 120, "* De acordo com a Medição Mensal")
-    
-    # Linhas para assinatura manual
-    pdf.set_draw_color(180, 180, 180)
-    pdf.line(20, 138, 85, 138)
-    pdf.line(125, 138, 190, 138)
-    
-    pdf.set_font("Arial", "", 8)
-    pdf.text(20, 142, "HP SERVIÇOS ADM")
-    pdf.text(125, 142, "CRTI")
-    
+    pdf.set_draw_color(180, 180, 180); pdf.rect(15, 115, 180, 35)
+    pdf.set_text_color(0, 0, 0); pdf.set_font("Arial", "B", 9); pdf.text(18, 120, "* De acordo com a Medição Mensal")
+    pdf.line(20, 138, 85, 138); pdf.line(125, 138, 190, 138)
+    pdf.set_font("Arial", "", 8); pdf.text(20, 142, "HP SERVIÇOS ADM"); pdf.text(125, 142, "CRTI")
     return pdf.output(dest="S").encode("latin1")
 
 # --- GERADOR PLANILHA EXCEL ---
@@ -346,23 +275,23 @@ def gerar_xlsx_medicao_nova(dados):
     workbook = xlsxwriter.Workbook(output, {"in_memory": True})
     worksheet = workbook.add_worksheet("Medição")
     fmt_titulo = workbook.add_format({"bold": True, "size": 14})
-    fmt_borda_vermelha = workbook.add_format({"border": 1, "border_color": "red"})
+    fmt_borda_cinza = workbook.add_format({"border": 1, "border_color": "#B0B0B0"})
     fmt_header = workbook.add_format({"bold": True, "bg_color": "#F5F5F5", "border": 1, "border_color": "#B0B0B0", "align": "center"})
     fmt_celula = workbook.add_format({"border": 1, "border_color": "#B0B0B0", "align": "center"})
     fmt_celula_esq = workbook.add_format({"border": 1, "border_color": "#B0B0B0", "align": "left"})
-    fmt_total_vermelho = workbook.add_format({"bold": True, "border": 1, "border_color": "red", "align": "center"})
+    fmt_total_cinza = workbook.add_format({"bold": True, "border": 1, "border_color": "#B0B0B0", "align": "center"})
     worksheet.set_column("A:G", 15); worksheet.set_column("C:C", 40)
     worksheet.write("A2", "Medição Mensal de Prestação de Serviços", fmt_titulo)
-    worksheet.merge_range("A4:D8", "", fmt_borda_vermelha)
-    worksheet.write("A4", f"  Parceiro: {dados['parceiro']}")
-    worksheet.write("A5", f"  Endereço: {dados['endereco']}")
-    worksheet.write("A6", f"  Cidade/UF: {dados['cidade_uf']}")
-    worksheet.write("A7", f"  CEP: {dados['cep']}")
-    worksheet.write("A8", f"  CNPJ: {dados['cnpj']}")
-    worksheet.merge_range("E4:G8", "", fmt_borda_vermelha)
-    worksheet.write("E4", "  Medição Número:")
+    worksheet.merge_range("A4:D8", "", fmt_borda_cinza)
+    worksheet.write("A4", f" Parceiro: {dados['parceiro']}")
+    worksheet.write("A5", f" Endereço: {dados['endereco']}")
+    worksheet.write("A6", f" Cidade/UF: {dados['cidade_uf']}")
+    worksheet.write("A7", f" CEP: {dados['cep']}")
+    worksheet.write("A8", f" CNPJ: {dados['cnpj']}")
+    worksheet.merge_range("E4:G8", "", fmt_borda_cinza)
+    worksheet.write("E4", " Medição Número:")
     worksheet.write("F4", dados["numero_medicao"], workbook.add_format({"bold": True}))
-    worksheet.write("E6", f"  Período: {dados['data_inicio']} até {dados['data_fim']}")
+    worksheet.write("E6", f" Período: {dados['data_inicio']} até {dados['data_fim']}")
     worksheet.write("A10", "* Serviços Executados", workbook.add_format({"bold": True}))
     headers = ["Mês/Ano", "Item", "Descrição", "Unidade", "Qtd", "Preço Unitário", "Preço Total"]
     for col, h in enumerate(headers): worksheet.write(10, col, h, fmt_header)
@@ -372,12 +301,13 @@ def gerar_xlsx_medicao_nova(dados):
     worksheet.write(11, 3, "HR", fmt_celula)
     worksheet.write(11, 4, dados["qtd_horas"], fmt_celula)
     worksheet.write(11, 5, formatar_br(dados["preco_unitario"]), fmt_celula)
-    worksheet.write(11, 6, formatar_br(dados["preco_total"]), fmt_total_vermelho)
+    worksheet.write(11, 6, formatar_br(dados["preco_total"]), fmt_total_cinza)
     worksheet.write(12, 2, "TOTAL", fmt_header)
-    worksheet.write(12, 6, formatar_br(dados["preco_total"]), fmt_total_vermelho)
+    worksheet.write(12, 6, formatar_br(dados["preco_total"]), fmt_total_cinza)
     workbook.close()
     return output.getvalue()
 
+# --- DISPARO SMTP ---
 def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
@@ -385,9 +315,8 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
     smtp_porta = int(st.secrets["smtp"]["porta"])
     msg = MIMEMultipart(); msg["From"] = email_remetente; msg["To"] = email_destino
     msg["Subject"] = f"Medição Mensal de Prestação de Serviços N° {dados['numero_medicao']} - CRTI"
-    corpo = f"<html><body><p>Olá,</p><p>Seguem anexados os relatórios da medição de serviços calculada de {dados['data_inicio']} até {dados['data_fim']}.</p><p>Total faturado: R$ {formatar_br(dados['preco_total'])}</p></body></html>"
+    corpo = f"<html><body><p>Olá,</p><p>Seguem anexados os relatórios da medição de serviços ({dados['data_inicio']} até {dados['data_fim']}).</p></body></html>"
     msg.attach(MIMEText(corpo, "html"))
-    
     for b_data, ext in [(pdf_bytes, "pdf"), (xlsx_bytes, "xlsx")]:
         part = MIMEBase("application", "octet-stream")
         part.set_payload(b_data); encoders.encode_base64(part)
@@ -399,7 +328,7 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
         return True, "E-mail enviado com sucesso!"
     except Exception as e: return False, f"Falha no envio SMTP: {str(e)}"
 
-# --- EXIBIÇÃO DOS BOTÕES VISUAIS ---
+# --- BOTÕES VISUAIS ---
 st.markdown("---")
 col_b1, col_b2 = st.columns(2)
 with col_b1:
@@ -410,7 +339,7 @@ with col_b2:
 st.markdown("---")
 email_target = st.text_input("Destinatário da Medição:", "financeiro@crti.com.br")
 if st.button("🚀 Enviar Medição por E-mail", use_container_width=True):
-    with st.spinner("Compilando anexos formatados e enviando..."):
+    with st.spinner("Compilando anexos formatados..."):
         p_b = gerar_pdf_medicao_nova(dados_faturamento)
         x_b = gerar_xlsx_medicao_nova(dados_faturamento)
         ok, r_msg = enviar_email_medicao_nova(email_target, dados_faturamento, p_b, x_b)
