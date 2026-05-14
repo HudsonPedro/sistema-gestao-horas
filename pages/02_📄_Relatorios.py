@@ -627,11 +627,10 @@ if st.session_state.relatorios_gerados:
                     key=f"btn_{path}" # Chave única para não dar conflito
                 )
 # =========================================================================
-# 1. FUNÇÃO DO POP-UP DE CONFIRMAÇÃO DO ENVIO EM LOTE (DADOS DE ATENDIMENTO)
+# 1. FUNÇÃO DO POP-UP DE CONFIRMAÇÃO DO ENVIO EM LOTE (CORRIGIDO)
 # =========================================================================
 @st.dialog("⚠️ Confirmação de Disparo em Lote")
-def confirmar_envio_atendimentos_popup(arquivos_validos, servidor_smtp, porta, email_remetente, senha, destinatario):
-    # Agrupa os arquivos localmente na memória RAM para gerar a prévia visual
+def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha, destinatario):
     agrupados_por_ra = {}
     for arq in arquivos_validos:
         base = arq.replace(".pdf", "").replace(".xlsx", "")
@@ -649,16 +648,16 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, servidor_smtp, porta, e
     col_p1, col_p2 = st.columns(2)
     with col_p1:
         if st.button("✅ Sim, Disparar Todos", use_container_width=True):
-            import time  # Controle de congelamento temporal da interface
+            import time  
             
             st.write("🚀 Iniciando disparo...")
             sucessos = 0
             barra = st.progress(0)
             
-            # Executa o loop original mapeado do seu banco de dados
             for i, (base, lista_anexos) in enumerate(agrupados_por_ra.items()):
+                # Forçamos o uso direto do endereço correto do Gmail "gmail.com" e porta 587
                 sucesso, msg = enviar_relatorio_email(
-                    lista_anexos, servidor_smtp, porta, email_remetente, senha, destinatario
+                    lista_anexos, "gmail.com", 587, email_remetente, senha, destinatario
                 )
                 if sucesso:
                     sucessos += 1
@@ -667,16 +666,15 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, servidor_smtp, porta, e
                     st.error(msg)
                 barra.progress((i + 1) / total_envios)
             
-            # Exibe o balanço consolidado final
             if sucessos == total_envios:
                 st.success(f"🎉 Todos os {sucessos} e-mails foram enviados com sucesso!")
                 st.balloons()
-                time.sleep(3)  # Mantém o feedback visual fixado por 3 segundos
+                time.sleep(3)  
             else:
                 st.warning(f"Processo concluído: {sucessos} enviados com sucesso e {total_envios - sucessos} falhas.")
                 time.sleep(4)
                 
-            st.rerun()  # Força a atualização da view e fecha o pop-up
+            st.rerun()  
             
     with col_p2:
         if st.button("❌ Não, Cancelar", use_container_width=True):
@@ -687,7 +685,6 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, servidor_smtp, porta, e
 # =========================================================================
 if btn_enviar_emails:
     st.markdown("---")
-    # Captura e valida os arquivos salvos em disco na pasta de saída
     arquivos_pasta = glob.glob(os.path.join(PASTA_SAIDA, "*.*"))
     arquivos_validos = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx")]
     
@@ -695,11 +692,9 @@ if btn_enviar_emails:
         st.warning("⚠️ Gere os relatórios primeiro.")
         st.stop()
         
-    # Aciona a janela modal passando os inputs e credenciais coletados da sua UI
+    # Abre a janela modal passando os dados corretos obtidos da sua barra lateral
     confirmar_envio_atendimentos_popup(
         arquivos_validos=arquivos_validos,
-        servidor_smtp="://smtp.gmail.com",
-        porta=587,
         email_remetente="hudson.valente@crti.com.br",
         senha=senha_app,
         destinatario=email_destinatario
