@@ -1,3 +1,6 @@
+#Por Hptec Informatica 
+#("v1.0 - 11052026") #16:43 sem alterações
+
 import datetime
 import streamlit as st
 import pandas as pd
@@ -118,7 +121,7 @@ with st.sidebar:
         st.switch_page("pages/04_💰_Medicao_Mensal.py")
     
     st.divider()
-    st.caption("v1.0 - 11052026")
+    st.caption("v1.0 - 11052026")#16:46 Sem alterção
     st.caption("Todos os direitos reservados")
     st.caption("Copyright ©2026 HPtech Informática ME")
 
