@@ -248,7 +248,7 @@ def gerar_pdf_medicao_nova(dados):
     
     ARQUIVO_LOGO = "crti.jpg"
     if os.path.exists(ARQUIVO_LOGO):
-        pdf.image(ARQUIVO_LOGO, x=150, y=10, w=90)
+        pdf.image(ARQUIVO_LOGO, x=150, y=10, w=45)
         
     pdf.set_font("Arial", "B", 15)
     pdf.text(15, 20, "Medição Mensal de Prestação de Serviços")
