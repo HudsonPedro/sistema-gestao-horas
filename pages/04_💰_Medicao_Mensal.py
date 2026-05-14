@@ -288,16 +288,16 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Informática ME"); pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
     return pdf.output(dest="S").encode("latin1")
 
-# --- GERADOR PLANILHA EXCEL ATUALIZADO (IDÊNTICO AO PDF) ---
+# --- GERADOR PLANILHA EXCEL ATUALIZADO (100% IDÊNTICO AO PDF) ---
 def gerar_xlsx_medicao_nova(dados):
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {"in_memory": True})
     worksheet = workbook.add_worksheet("Medição")
     
-    # Oculta as linhas de grade padrão do Excel para manter o visual limpo do PDF
+    # Oculta as linhas de grade padrão do Excel
     worksheet.hide_gridlines(2)
     
-    # Definição dos Estilos Corporativos (Substituindo vermelho por cinza sóbrio)
+    # Definição dos Estilos Corporativos (Fontes e tamanhos iguais ao PDF)
     fmt_titulo = workbook.add_format({"bold": True, "size": 15, "font_name": "Arial"})
     fmt_borda_cinza = workbook.add_format({"border": 1, "border_color": "#B4B4B4"})
     
@@ -354,30 +354,36 @@ def gerar_xlsx_medicao_nova(dados):
     fmt_negrito = workbook.add_format({"bold": True, "font_name": "Arial", "size": 10})
     fmt_regular = workbook.add_format({"font_name": "Arial", "size": 9})
     
-    # Definição milimétrica das larguras das colunas (Igual ao Grid da imagem)
-    worksheet.set_column("A:A", 12)  # Mês/Ano
+    # Larguras das colunas ajustadas milimetricamente
+    worksheet.set_column("A:A", 14)  # Mês/Ano
     worksheet.set_column("B:B", 8)   # Item
-    worksheet.set_column("C:C", 45)  # Descrição
+    worksheet.set_column("C:C", 48)  # Descrição
     worksheet.set_column("D:D", 10)  # Unidade
     worksheet.set_column("E:E", 14)  # Qtd (Horas)
     worksheet.set_column("F:F", 16)  # Preço Unitário
     worksheet.set_column("G:G", 16)  # Preço Total
     
-    # Linha 2: Título Principal
+    # Título Principal
     worksheet.write("A2", "Medição Mensal de Prestação de Serviços", fmt_titulo)
     
-    # Bloco Superior Esquerdo: Dados do Parceiro (Sem recuo)
+    # 1. INCLUSÃO DA LOGO CRTI NO EXCEL (Se a imagem crti.jpg existir na pasta)
+    ARQUIVO_LOGO = "crti.jpg"
+    if os.path.exists(ARQUIVO_LOGO):
+        # x_scale e y_scale ajustam a escala da imagem para caber nas linhas do Excel
+        worksheet.insert_image("F1", ARQUIVO_LOGO, {"x_scale": 0.55, "y_scale": 0.55, "x_offset": 10, "y_offset": 5})
+    
+    # 2. COMPLEMENTAÇÃO DAS INFORMAÇÕES DO PARCEIRO (Preenche o bloco esquerdo inteiro)
     worksheet.merge_range("A4:D8", "", fmt_borda_cinza)
     worksheet.write("A4", f"  Parceiro: {dados['parceiro']}", fmt_regular)
     worksheet.write("A5", f"  Endereço: {dados['endereco']}", fmt_regular)
-    worksheet.write("A6", f"  Cidade/UF: {dados['cidade_uf']}", fmt_regular)
-    worksheet.write("A7", f"  CEP: {dados['cep']}", fmt_regular)
-    worksheet.write("A8", f"  CNPJ: {dados['cnpj']}", fmt_regular)
+    worksheet.write("A6", f"  Cidade / UF: {dados['cidade_uf']}", fmt_regular)
+    worksheet.write("A7", f"  CEP:       {dados['cep']}", fmt_regular)
+    worksheet.write("A8", f"  CNPJ:     {dados['cnpj']}", fmt_regular)
     
-    # Bloco Superior Direito: Dados da Medição
+    # 3. PREENCHIMENTO DO BLOCO DIREITO (Número da medição e Período completo calendário)
     worksheet.merge_range("E4:G8", "", fmt_borda_cinza)
     worksheet.write("E4", "  Medição Número:", fmt_regular)
-    worksheet.write("F4", f" {dados['numero_medicao']}", fmt_negrito)
+    worksheet.write("F4", dados["numero_medicao"], fmt_negrito)
     worksheet.write("E6", f"  Período: {dados['data_inicio']} até {dados['data_fim']}", fmt_regular)
     
     # Tabela de Serviços Executados
@@ -387,8 +393,8 @@ def gerar_xlsx_medicao_nova(dados):
     for col_idx, text in enumerate(headers):
         worksheet.write(10, col_idx, text, fmt_header)
         
-    # Inserção dos dados calculados da planilha nas células correspondentes
-    worksheet.write(11, 0, dados["mes_ano"], fmt_celula)
+    # 4. CORREÇÃO DA POSIÇÃO DOS DADOS (Mês/Ano entra estritamente na coluna A)
+    worksheet.write(11, 0, dados["mes_ano"], fmt_celula) # maio/2026 fixado na coluna A
     worksheet.write(11, 1, "1", fmt_celula)
     worksheet.write(11, 2, dados["descricao_servico"], fmt_celula_esq)
     worksheet.write(11, 3, "HR", fmt_celula)
@@ -396,20 +402,29 @@ def gerar_xlsx_medicao_nova(dados):
     worksheet.write(11, 5, formatar_br(dados["preco_unitario"]), fmt_celula)
     worksheet.write(11, 6, formatar_br(dados["preco_total"]), fmt_celula)
     
-    # Linha do TOTAL Unificada (Mesclando células para replicar o design do PDF)
-    worksheet.merge_range("A12:B12", "", fmt_celula) # Espaço em branco das primeiras colunas
+    # 5. LINHA DO TOTAL (Igual ao PDF, mesclando A e B, deixando o TOTAL na C)
+    worksheet.write(12, 0, "", fmt_celula)
+    worksheet.write(12, 1, "", fmt_celula)
     worksheet.write(12, 2, "TOTAL", fmt_total_label)
+    worksheet.write(12, 3, "", fmt_celula)
+    worksheet.write(12, 4, "", fmt_celula)
+    worksheet.write(12, 5, "", fmt_celula)
     worksheet.write(12, 6, formatar_br(dados["preco_total"]), fmt_total_valor)
     
-    # Rodapé de Assinaturas (Sem caixas ao redor, usando apenas linhas de marcação)
-    worksheet.write("A15", "* De acordo com a Medição Mensal", fmt_negrito)
+    # Notas adicionais abaixo da tabela (Igual ao PDF)
+    worksheet.write("E14", "* Duplicatas a serem emitidas", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
+    worksheet.write("E15", f"HPtech Informática ME, valor total de R$ {formatar_br(dados['preco_total'])}", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
     
-    fmt_linha_assinatura = workbook.add_format({"top": 1, "top_color": "#B4B4B4", "align": "center", "font_name": "Arial", "size": 8})
-    worksheet.write("A18", "HP SERVIÇOS ADM", fmt_linha_assinatura)
-    worksheet.write("E18", "CRTI", fmt_linha_assinatura)
+    # Assinaturas no Rodapé (Removendo bordas externas e usando linhas superiores limpas)
+    worksheet.write("A17", "* De acordo com a Medição Mensal", fmt_negrito)
+    
+    fmt_linha_assinatura = workbook.add_format({"top": 1, "top_color": "#B4B4B4", "align": "left", "font_name": "Arial", "size": 8})
+    worksheet.write("A20", "HPtech Informática ME", fmt_linha_assinatura)
+    worksheet.write("F20", "CR Tecnologia da Informação Ltda", fmt_linha_assinatura)
     
     workbook.close()
     return output.getvalue()
+
 
 # --- DISPARO SMTP ---
 def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
