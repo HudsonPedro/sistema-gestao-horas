@@ -583,6 +583,9 @@ def confirmar_envio_popup(email, dados):
                 st.success(f"🎉 {r_msg}") # Exibe o alerta verde na tela
                 st.balloons()            # Sobe os balões de celebração
                 time.sleep(10)            # Segura a mensagem na tela por 10 segundos antes de fechar
+                # Dentro do bloco de sucesso do envio da Medição Mensal:
+                registrar_historico_sheets(tipo="Medição Mensal", identificador=dados_faturamento["numero_medicao"], destinatario=email_target)
+
             else:
                 st.error(r_msg)
                 time.sleep(4)            # Dá mais tempo para ler caso ocorra algum erro
