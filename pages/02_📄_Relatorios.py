@@ -672,7 +672,7 @@ def confirmar_envio_atendimentos_popup(arquivos_validos):
             # Segura o feedback visual na tela por 3 segundos antes de fechar o pop-up
             if sucessos == total_envios:
                 st.balloons()
-                time.sleep(3)
+                time.sleep(10)
             else:
                 time.sleep(5)
                 
