@@ -462,8 +462,8 @@ st.markdown("---")
 col_b1, col_b2 = st.columns(2)
 
 # Definição segura dos nomes dos arquivos usando aspas simples por dentro
-nome_pdf = f"Medição N° {dados['numero_medicao']} - {dados['mes_ano']}(Implantação) - HUDSON.pdf"
-nome_xlsx = f"Medição N° {dados['numero_medicao']} - {dados['mes_ano']}(Implantação) - HUDSON.xlsx"
+nome_pdf = f"Medição N° {dados_faturamento['numero_medicao']} - {dados_faturamento['mes_ano']}(Implantação) - HUDSON.pdf"
+nome_xlsx = f"Medição N° {dados_faturamento['numero_medicao']} - {dados_faturamento['mes_ano']}(Implantação) - HUDSON.xlsx"
 
 with col_b1:
     st.download_button(
