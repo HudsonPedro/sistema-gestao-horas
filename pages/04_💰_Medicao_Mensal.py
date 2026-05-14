@@ -351,8 +351,8 @@ def gerar_xlsx_medicao_nova(dados):
     ARQUIVO_LOGO = "crti.jpg"
     if os.path.exists(ARQUIVO_LOGO):
         worksheet.insert_image("F1", ARQUIVO_LOGO, {
-            "x_scale": 0.90,       # Aumentado de 0.50 para 0.90
-            "y_scale": 0.90,       # Aumentado de 0.50 para 0.90
+            "x_scale": 1.90,       # Aumentado de 0.50 para 0.90
+            "y_scale": 1.90,       # Aumentado de 0.50 para 0.90
             "x_offset": 25,        # Ajuste fino para alinhar totalmente à direita
             "y_offset": 5
         })
