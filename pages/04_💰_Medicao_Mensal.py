@@ -449,8 +449,8 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
     for b_data, ext in [(pdf_bytes, "pdf"), (xlsx_bytes, "xlsx")]:
         part = MIMEBase("application", "octet-stream")
         part.set_payload(b_data); encode_base64(part)
-        part.add_header("Content-Disposition", f"attachment; filename=Medição N° {dados['numero_medicao']} {dados["mes_ano"]}(Implantação) - HUDSON.{ext}")
-        msg.attach(part)  #Medicao_{dados['numero_medicao']}
+        part.add_header("Content-Disposition", f"attachment; filename=Medição N° {dados['numero_medicao']}.{ext} {dados["mes_ano"]}.{ext}(Implantação) - HUDSON")
+        msg.attach(part)  #Medicao_{dados['numero_medicao']}.{ext})
     try:
         server = smtplib.SMTP(smtp_server, smtp_porta); server.starttls()
         server.login(email_remetente, senha_remetente); server.sendmail(email_remetente, email_destino, msg.as_string()); server.quit()
