@@ -91,6 +91,8 @@ with st.sidebar:
         st.switch_page("pages/02_📄_Relatorios.py")
     if st.button("📝 Lançamento", use_container_width=True):
         st.switch_page("pages/03_📝_Lancamento.py")
+    if st.button("💰 Medição Mensal", use_container_width=True):
+        st.switch_page("pages/04_💰_Medicao_Mensal.py")
   
 #   versionamento 
     st.divider()
