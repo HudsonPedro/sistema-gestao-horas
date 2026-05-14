@@ -506,20 +506,45 @@ with col_b2:
         use_container_width=True
     )
 
+# --- BOTÃO PRINCIPAL QUE ABRE O POPUP ---
 st.markdown("---")
 email_target = st.text_input("Destinatário da Medição:", "suellen@crti.com.br")
 
-if st.button(" Enviar Medição por E-mail", use_container_width=True):
-    with st.spinner("Compilando anexos formatados..."):
-        p_b = gerar_pdf_medicao_nova(dados_faturamento)
-        x_b = gerar_xlsx_medicao_nova(dados_faturamento)
-        
-        # PASSAGEM COMPLETA DOS PARÂMETROS: Repassa os nomes dos arquivos para dentro do e-mail
-        ok, r_msg = enviar_email_medicao_nova(email_target, dados_faturamento, p_b, x_b, nome_pdf, nome_xlsx)
-        
-    if ok: 
-        st.success(r_msg)
-        st.balloons()
-    else: 
-        st.error(r_msg)
+# 1. Definição da função do Pop-up (st.dialog)
+@st.dialog("⚠️ Confirmação de Envio")
+def confirmar_envio_popup(email, dados):
+    st.write(f"Você tem certeza que deseja enviar a medição para o e-mail **{email}**?")
+    st.write(f"**Total de Horas:** {dados['qtd_horas']} | **Valor Total:** R$ {formatar_br(dados['preco_total'])}")
+    st.markdown("---")
+    
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+        # Se clicar em Sim, executa o disparo do e-mail
+        if st.button("✅ Sim, Enviar", use_container_width=True):
+            with st.spinner("Compilando anexos formatados e enviando..."):
+                p_b = gerar_pdf_medicao_nova(dados)
+                x_b = gerar_xlsx_medicao_nova(dados)
+                ok, r_msg = enviar_email_medicao_nova(email, dados, p_b, x_b, nome_pdf, nome_xlsx)
+                
+            if ok:
+                st.success(r_msg)
+                st.balloons()
+            else:
+                st.error(r_msg)
+            
+            # Recarrega a página para fechar o pop-up automaticamente após o sucesso/erro
+            st.rerun()
+            
+    with col_p2:
+        # Se clicar em Não, apenas fecha o pop-up recarregando a tela
+        if st.button("❌ Não, Cancelar", use_container_width=True):
+            st.rerun()
+
+# 2. Gatilho para abrir o pop-up na tela
+if st.button("🚀 Enviar Medição por E-mail", use_container_width=True):
+    if not email_target:
+        st.error("Por favor, preencha o e-mail do destinatário.")
+    else:
+        # Chama a função que renderiza a janela pop-up na tela
+        confirmar_envio_popup(email_target, dados_faturamento)
 
