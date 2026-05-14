@@ -627,22 +627,22 @@ if st.session_state.relatorios_gerados:
                     key=f"btn_{path}" # Chave única para não dar conflito
                 )
 # =========================================================================
-# 1. FUNÇÃO DO POP-UP DE CONFIRMAÇÃO DO DISPARO (SEM USAR SUA FUNÇÃO ANTIGA)
+# 1. FUNÇÃO DO POP-UP COM O SEU MOTOR DE ENVIO ORIGINAL (CORRIGIDO)
 # =========================================================================
 @st.dialog("⚠️ Confirmação de Disparo em Lote")
-def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha, destinatario):
-    # Agrupa os relatórios por RA para gerar as 3 mensagens
+def confirmar_envio_atendimentos_popup(arquivos_validos):
+    # Agrupa os relatórios por RA usando exatamente a sua lógica original
     agrupados_por_ra = {}
     for arq in arquivos_validos:
         base = arq.replace(".pdf", "").replace(".xlsx", "")
         if base not in agrupados_por_ra: 
             agrupados_por_ra[base] = []
         agrupados_por_ra[base].append(arq)
-        
+    
     total_envios = len(agrupados_por_ra)
     
     st.write("Você tem certeza que deseja disparar os relatórios de atendimento em lote?")
-    st.write(f"• **Destinatário Cadastrado:** `{destinatario}`")
+    st.write(f"• **Destinatário Cadastrado:** `{email_destinatario}`")
     st.write(f"• **Total de e-mails a serem gerados:** {total_envios} mensagens")
     st.markdown("---")
     
@@ -650,64 +650,30 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha,
     with col_p1:
         if st.button("✅ Sim, Disparar Todos", use_container_width=True):
             import time
-            import smtplib
             
-            status_placeholder = st.empty()
-            status_placeholder.markdown("🚀 **Conectando de forma segura ao SMTP do Google...**")
-            
+            st.subheader("🚀 Iniciando disparo...")
             sucessos = 0
+            barra = st.progress(0)
             
-            # Executa o loop de envio usando o motor SMTP direto e corrigido
-            for base, lista_anexos in agrupados_por_ra.items():
-                nome_base_limpo = os.path.basename(base)
-                
-                try:
-                    # Monta a estrutura da mensagem
-                    msg_objeto = MIMEMultipart()
-                    msg_objeto['From'] = email_remetente
-                    msg_objeto['To'] = destinatario
-                    msg_objeto['Subject'] = f"{nome_base_limpo} - HUDSON VALENTE"
-                    
-                    corpo_txt = f"Prezada Sra. Amanda, espero que se encontre bem.\n\nSegue em anexo o {nome_base_limpo} (em formatos PDF e Excel) para análise e assinatura.\n\nAtenciosamente,\n\nHudson Valente"
-                    msg_objeto.attach(MIMEText(corpo_txt, 'plain'))
-                    
-                    # Anexa os arquivos salvos na pasta
-                    for caminho_arquivo in lista_anexos:
-                        nome_arq_orig = os.path.basename(caminho_arquivo)
-                        with open(caminho_arquivo, "rb") as attachment:
-                            if nome_arq_orig.lower().endswith(".pdf"):
-                                part = MIMEBase('application', 'pdf')
-                            elif nome_arq_orig.lower().endswith(".xlsx"):
-                                part = MIMEBase('application', 'vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-                            else:
-                                part = MIMEBase('application', 'octet-stream')
-                            part.set_payload(attachment.read())
-                        
-                        encoders.encode_base64(part)
-                        part.add_header('Content-Disposition', 'attachment', filename=nome_arq_orig)
-                        msg_objeto.attach(part)
-                    
-                    # CONEXÃO REAL DIRETA COM O ENDEREÇO OFICIAL DO GOOGLE (OCUPA O LUGAR DA FUNÇÃO ANTIGA)
-                    server = smtplib.SMTP("gmail.com", 587, timeout=15)
-                    server.starttls()
-                    server.login(email_remetente, senha)
-                    server.sendmail(email_remetente, destinatario, msg_objeto.as_string())
-                    server.quit()
-                    
+            # Executa o seu laço original de envio com o host correto: smtp.gmail.com
+            for i, (base, lista_anexos) in enumerate(agrupados_por_ra.items()):
+                sucesso, msg = enviar_relatorio_email(
+                    lista_anexos, "smtp.gmail.com", 587, "hudson.valente@crti.com.br", senha_app, email_destinatario
+                )
+                if sucesso:
                     sucessos += 1
-                    st.success(f"✅ Enviado com sucesso: {nome_base_limpo}")
-                except Exception as error_smtp:
-                    st.error(f"❌ Erro ao enviar {nome_base_limpo}: {str(error_smtp)}")
+                    st.success(msg)
+                else: 
+                    st.error(msg)
+                barra.progress((i + 1) / total_envios)
+                
+            st.info(f"🎉 **{sucessos}** de **{total_envios}** e-mails enviados.")
             
-            status_placeholder.empty()
-            
-            # Feedback de fechamento na tela
+            # Segura o feedback visual na tela por 3 segundos antes de fechar o pop-up
             if sucessos == total_envios:
-                st.success(f"🎉 Sucesso! Todos os {sucessos} e-mails foram enviados.")
                 st.balloons()
                 time.sleep(3)
             else:
-                st.warning(f"Concluído: {sucessos} enviados com sucesso e {total_envios - sucessos} falhas.")
                 time.sleep(5)
                 
             st.rerun()
@@ -717,7 +683,7 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha,
             st.rerun()
 
 # =========================================================================
-# 2. LOGICA DO GATILHO PRINCIPAL (SUBSTITUI O FINAL DA PÁGINA 23)
+# 2. LÓGICA DO GATILHO DA SIDEBAR QUE CHAMA O POP-UP
 # =========================================================================
 if btn_enviar_emails:
     st.markdown("---")
@@ -728,12 +694,8 @@ if btn_enviar_emails:
         st.warning("⚠️ Gere os relatórios primeiro.")
         st.stop()
         
-    # Abre o pop-up injetando as credenciais obtidas da sua barra lateral
-    confirmar_envio_atendimentos_popup(
-        arquivos_validos=arquivos_validos,
-        email_remetente="hudson.valente@crti.com.br",
-        senha=senha_app,
-        destinatario=email_destinatario
-    )
+    # Abre o pop-up de validação passando a lista de arquivos prontos
+    confirmar_envio_atendimentos_popup(arquivos_validos)
+
 
 
