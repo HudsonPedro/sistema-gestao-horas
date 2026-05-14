@@ -13,6 +13,7 @@ import xlsxwriter
 import pandas as pd
 import requests
 from datetime import datetime, timedelta
+import base64
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
@@ -85,7 +86,29 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
 
-st.title("💰 Medição Mensal de Prestação de Serviços")
+#st.title("💰 Medição Mensal de Prestação de Serviços")
+#st.markdown("---")
+# 4. CONTEÚDO DA HOME COM NOVO CARD
+def get_image_base64(path):
+    with open(path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# Tenta carregar a imagem que está no repositório GitHub
+try:
+    img_base64 = get_image_base64("hptechICO.png")
+    st.markdown(
+        f"""
+        <div style="display: flex; align-items: center;">
+            <h1 style="margin: 0; font-size: 2.5rem;">Medição Mensal de Prestação de Serviço</h1>
+            <img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;">
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+    st.markdown("Fechamento mensal consolidado.")
+except:
+    # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
+    st.title("Medição Mensal de Prestação de Serviço")
 st.markdown("---")
 
 # Conectando à planilha
