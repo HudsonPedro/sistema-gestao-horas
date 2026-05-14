@@ -102,7 +102,7 @@ col_f1, col_f2, col_f3 = st.columns(3)
 with col_f1:
     aba_selecionada = st.selectbox("**Selecione o Mês de Faturamento:**", abas_disponiveis)
 with col_f2:
-    numero_medicao = st.number_input("**Número da Medição:**", min_value=1, value=37)
+    numero_medicao = st.number_input("**Número da Medição:**", min_value=1, value=38)
 with col_f3:
     valor_hora = st.number_input("**Preço da Hora (R$):**", min_value=0.0, value=80.00, step=5.0)
 
@@ -443,8 +443,11 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
     smtp_server = st.secrets["smtp"]["servidor"]
     smtp_porta = int(st.secrets["smtp"]["porta"])
     msg = MIMEMultipart(); msg["From"] = email_remetente; msg["To"] = email_destino
-    msg["Subject"] = f"Medição N° {dados['numero_medicao']} {dados["mes_ano"]} - HUDSON"
-    corpo = f"<html><body><p>Olá,</p><p>Conforme solicitado, segue em anexo a medição para aprovação, autorizando a emissão da NFS-e referente aos serviços de implantação no período de ({dados['data_inicio']} até {dados['data_fim']}).</p></body></html>"
+    msg["Subject"] = f"Medição N° {dados['numero_medicao']} {dados["mes_ano"]}(Implantação) - HUDSON"
+    corpo = f"<html><body><p>Prezada Sra. Suellen, espero que se encontre bem,</p>
+    <p>Conforme solicitado, segue em anexo a medição para aprovação, autorizando a emissão da NFS-e referente aos serviços de implantação no período de ({dados['data_inicio']} até {dados['data_fim']}).</p><br>
+    <p>Atenciosamente,<br>Hudson Valente</p>
+    </body></html>"
     msg.attach(MIMEText(corpo, "html"))
     for b_data, ext in [(pdf_bytes, "pdf"), (xlsx_bytes, "xlsx")]:
         part = MIMEBase("application", "octet-stream")
@@ -466,7 +469,7 @@ with col_b2:
     st.download_button(label="📊 Baixar Excel da Medição (Formatado BR)", data=gerar_xlsx_medicao_nova(dados_faturamento), file_name=f"Medicao_{numero_medicao}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
 st.markdown("---")
-email_target = st.text_input("Destinatário da Medição:", "financeiro@crti.com.br")
+email_target = st.text_input("Destinatário da Medição:", "suellen@crti.com.br")
 if st.button("🚀 Enviar Medição por E-mail", use_container_width=True):
     with st.spinner("Compilando anexos formatados..."):
         p_b = gerar_pdf_medicao_nova(dados_faturamento)
