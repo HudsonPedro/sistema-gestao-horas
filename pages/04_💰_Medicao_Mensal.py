@@ -457,13 +457,30 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
         return True, "E-mail enviado com sucesso!"
     except Exception as e: return False, f"Falha no envio SMTP: {str(e)}"
 
-# --- BOTÕES VISUAIS ---
+# --- BOTÕES VISUAIS (CORRIGIDO SEM CONFLITO DE ASPAS) ---
 st.markdown("---")
 col_b1, col_b2 = st.columns(2)
+
+# Definição segura dos nomes dos arquivos usando aspas simples por dentro
+nome_pdf = f"Medição N° {dados_faturamento['numero_medicao']} - {dados_faturamento['mes_ano']}(Implantação) - HUDSON.pdf"
+nome_xlsx = f"Medição N° {dados_faturamento['numero_medicao']} - {dados_faturamento['mes_ano']}(Implantação) - HUDSON.xlsx"
+
 with col_b1:
-    st.download_button(label="📥 Baixar PDF da Medição", data=gerar_pdf_medicao_nova(dados_faturamento), file_name=f"Medição N° {dados['numero_medicao']} - {dados['mes_ano']}(Implantação) - HUDSON.pdf", mime="application/pdf", use_container_width=True)
+    st.download_button(
+        label="📥 Baixar PDF da Medição", 
+        data=gerar_pdf_medicao_nova(dados_faturamento), 
+        file_name=nome_pdf, 
+        mime="application/pdf", 
+        use_container_width=True
+    )
 with col_b2:
-    st.download_button(label="📊 Baixar Excel da Medição", data=gerar_xlsx_medicao_nova(dados_faturamento), file_name=f"Medição N° {dados['numero_medicao']} - {dados['mes_ano']}(Implantação) - HUDSON.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+    st.download_button(
+        label="📊 Baixar Excel da Medição", 
+        data=gerar_xlsx_medicao_nova(dados_faturamento), 
+        file_name=nome_xlsx, 
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+        use_container_width=True
+    )
 
 st.markdown("---")
 email_target = st.text_input("Destinatário da Medição:", "suellen@crti.com.br")
@@ -472,5 +489,9 @@ if st.button("🚀 Enviar Medição por E-mail", use_container_width=True):
         p_b = gerar_pdf_medicao_nova(dados_faturamento)
         x_b = gerar_xlsx_medicao_nova(dados_faturamento)
         ok, r_msg = enviar_email_medicao_nova(email_target, dados_faturamento, p_b, x_b)
-    if ok: st.success(r_msg); st.balloons()
-    else: st.error(r_msg)
+    if ok: 
+        st.success(r_msg)
+        st.balloons()
+    else: 
+        st.error(r_msg)
+
