@@ -126,18 +126,22 @@ dados_faturamento = {
 # Processando dados da aba selecionada
 df_mes = dict_abas[aba_selecionada].copy()
 
-# Normaliza a coluna de situação para evitar erros textuais
-if "SITUACAO_RA" in df_mes.columns:
-    df_mes["SITUACAO_RA_NORM"] = df_mes["SITUACAO_RA"].fillna("").astype(str).str.strip().str.lower()
-    df_filtrado = df_mes[df_mes["SITUACAO_RA_NORM"] == "em elaboração"]
-else:
-    df_filtrado = df_mes.copy() # Fallback de contingência caso mude o nome da coluna
+# 1. Normaliza e limpa as colunas essenciais para evitar quebras por células vazias
+df_mes["CLIENTE"] = df_mes["CLIENTE"].fillna("").astype(str).str.strip().str.lower()
+df_mes["TOTAL_HR"] = df_mes["TOTAL_HR"].fillna("").astype(str).str.strip()
 
-# Realiza o somatório convertendo TODOS os formatos de horas do Pandas/Excel para segundos
+# 2. Filtra na aba do mês APENAS os lançamentos referentes à CRTI (Cliente Fixo)
+# Procura por qualquer variação de "cr tecnologia" ou "crti" contida na célula
+df_filtrado = df_mes[
+    (df_mes["CLIENTE"].str.contains("cr tecnologia", na=False)) | 
+    (df_mes["CLIENTE"].str.contains("crti", na=False))
+]
+
+# 3. Realiza o somatório convertendo todos os formatos de hora para segundos totais
 total_segundos = 0
 
 for val in df_filtrado["TOTAL_HR"]:
-    if pd.isna(val):
+    if not val or val == "" or val == "00:00:00" or val == "00:00":
         continue
         
     # CASO 1: Objeto datetime ou time nativo do Excel convertido pelo Pandas
@@ -148,41 +152,36 @@ for val in df_filtrado["TOTAL_HR"]:
     elif isinstance(val, pd.Timedelta):
         total_segundos += int(val.total_seconds())
         
-    # CASO 3: Formato de Texto (String) simples
+    # CASO 3: Formato de Texto (String) simples ou acumulado (ex: 56:45)
     else:
         val_str = str(val).strip()
         if ":" in val_str:
             try:
+                # Remove possíveis carimbos de data automáticos do Excel (ex: '1900-01-01 ')
                 if " " in val_str:
-                    val_str = val_str.split(" ")[1] # Limpa prefixos de ano/data
+                    val_str = val_str.split(" ")[-1]
+                
                 partes = val_str.split(":")
                 h = int(partes[0])
                 m = int(partes[1]) if len(partes) > 1 else 0
                 s = int(partes[2]) if len(partes) > 2 else 0
+                
                 total_segundos += (h * 3600) + (m * 60) + s
             except (ValueError, IndexError):
                 continue
 
-# Reconverte o total de segundos para o formato estruturado HH:MM:SS
+# 4. Reconverte o total acumulado de segundos para o formato estruturado HH:MM:SS
 horas_inteiras = int(total_segundos // 3600)
 minutos_restantes = int((total_segundos % 3600) // 60)
 segundos_restantes = int(total_segundos % 60)
 
 total_horas_faturar = f"{horas_inteiras}:{minutos_restantes:02d}:{segundos_restantes:02d}"
 
-# Efetua a conversão para decimal e calcula o preço final do faturamento
+# 5. Efetua a conversão para decimal e calcula o preço final do faturamento
 horas_dec = horas_para_decimal(total_horas_faturar)
 preco_total_calculado = horas_dec * valor_hora
 
-# Tenta capturar o intervalo real de datas do faturamento
-if "DATA" in df_mes.columns:
-    df_mes["DATA_DT"] = pd.to_datetime(df_mes["DATA"], errors="coerce")
-    df_validas = df_mes.dropna(subset=["DATA_DT"])
-    if not df_validas.empty:
-        dados_faturamento["data_inicio"] = df_validas["DATA_DT"].min().strftime("%d/%m/%Y")
-        dados_faturamento["data_fim"] = df_validas["DATA_DT"].max().strftime("%d/%m/%Y")
-
-# Injeta os valores reais calculados no dicionário de contexto corporativo
+# 6. Atualiza o dicionário com os valores reais consolidados
 dados_faturamento["qtd_horas"] = total_horas_faturar
 dados_faturamento["preco_total"] = preco_total_calculado
 
