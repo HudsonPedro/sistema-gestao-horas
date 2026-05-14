@@ -1,9 +1,9 @@
 # Por Hudson Valente - HPTECH
 # Gerador de Medição Mensal Automatizado - PDF + XLSX
 import io
-import os  # GARANTE O IMPORT PARA BANIR O NAMEERROR
+import os  
 import smtplib
-from email import encoders
+from email encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -12,6 +12,7 @@ import streamlit as st
 import xlsxwriter
 import pandas as pd
 import requests
+from datetime import datetime, timedelta
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
@@ -105,7 +106,35 @@ with col_f2:
 with col_f3:
     valor_hora = st.number_input("**Preço da Hora (R$):**", min_value=0.0, value=80.00, step=5.0)
 
-# Inicializa o dicionário
+# LÓGICA DE TRATAMENTO DINÂMICO DE DATAS DO CALENDÁRIO
+try:
+    nome_aba_limpo = str(aba_selecionada).strip()
+    partes_abas = nome_aba_limpo.split(" ")
+    
+    meses_map = {
+        "janeiro": 1, "fevereiro": 2, "março": 3, "abril": 4, "maio": 5, "junho": 6,
+        "julho": 7, "agosto": 8, "setembro": 9, "outubro": 10, "novembro": 11, "dezembro": 12
+    }
+    
+    mes_nome_doc = partes_abas[0].lower()
+    ano_doc = int(partes_abas[1]) if len(partes_abas) > 1 else datetime.now().year
+    mes_num_doc = meses_map.get(mes_nome_doc, datetime.now().month)
+    
+    data_inicio_real = f"01/{mes_num_doc:02d}/{ano_doc}"
+    
+    if mes_num_doc == 12:
+        ultimo_dia_mes = 31
+    else:
+        ultimo_dia_mes = (datetime(ano_doc, mes_num_doc + 1, 1) - timedelta(days=1)).day
+        
+    data_fim_real = f"{ultimo_dia_mes:02d}/{mes_num_doc:02d}/{ano_doc}"
+    mes_ano_tabela = f"{mes_nome_doc}/{ano_doc}"
+except:
+    data_inicio_real = "01/05/2026"
+    data_fim_real = "31/05/2026"
+    mes_ano_tabela = "maio/2026"
+
+# Inicializa o dicionário com as datas corrigidas
 dados_faturamento = {
     "parceiro": "CR Tecnologia da Informação Ltda",
     "endereco": "Rua Padre Anchieta, 2050 - Bairro Bigorrilho",
@@ -113,9 +142,9 @@ dados_faturamento = {
     "cep": "80730-000",
     "cnpj": "04.616.592/0001-21",
     "numero_medicao": numero_medicao,
-    "data_inicio": "01/05/2026",
-    "data_fim": "31/05/2026",
-    "mes_ano": str(aba_selecionada).lower()[:6],
+    "data_inicio": data_inicio_real,
+    "data_fim": data_fim_real,
+    "mes_ano": mes_ano_tabela,
     "descricao_servico": "Prestação de serviços de consultoria Implantação",
     "qtd_horas": "0:00:00",
     "preco_unitario": valor_hora,
@@ -175,16 +204,6 @@ total_horas_faturar = f"{horas_inteiras}:{minutos_restantes:02d}:{segundos_resta
 horas_dec = horas_para_decimal(total_horas_faturar)
 preco_total_calculado = horas_dec * valor_hora
 
-if "DATA" in df_filtrado.columns:
-    try:
-        df_filtrado["DATA_DT"] = pd.to_datetime(df_filtrado["DATA"], errors="coerce")
-        df_validas = df_filtrado.dropna(subset=["DATA_DT"])
-        if not df_validas.empty:
-            dados_faturamento["data_inicio"] = df_validas["DATA_DT"].min().strftime("%d/%m/%Y")
-            dados_faturamento["data_fim"] = df_validas["DATA_DT"].max().strftime("%d/%m/%Y")
-    except:
-        pass
-
 dados_faturamento["qtd_horas"] = total_horas_faturar
 dados_faturamento["preco_total"] = preco_total_calculado
 
@@ -195,16 +214,15 @@ col_m1.metric("Total de Horas Encontradas", total_horas_faturar)
 col_m2.metric("Preço Unitário da Hora", f"R$ {formatar_br(valor_hora)}")
 col_m3.metric("Preço Total Calculado", f"R$ {formatar_br(preco_total_calculado)}")
 
-# --- CLASSE DO PDF REVISADA (SEM RECUO E SEM VERMELHO) ---
+# --- CLASSE DO PDF REVISADA (SEM RECUO, SEM VERMELHO, SEM CAIXA EMBAIXO) ---
 class PDFMedicaoNovo(FPDF):
     def moldura_topo(self, x, y, w, h, dados):
-        self.set_draw_color(180, 180, 180)  # Cinza Sóbrio profissional
+        self.set_draw_color(180, 180, 180)  
         self.set_line_width(0.4)
         self.rect(x, y, w, h)
         self.set_font("Arial", "", 9)
         self.set_text_color(0, 0, 0)
         
-        # Alinhamento limpo removendo o recuo artificial de texto
         linhas = [
             f"Parceiro:     {dados['parceiro']}",
             f"Endereço:   {dados['endereco']}",
@@ -228,7 +246,6 @@ def gerar_pdf_medicao_nova(dados):
     pdf = PDFMedicaoNovo(orientation="P", unit="mm", format="A4")
     pdf.add_page()
     
-    # Inclusão da logo se o arquivo existir
     ARQUIVO_LOGO = "crti.jpg"
     if os.path.exists(ARQUIVO_LOGO):
         pdf.image(ARQUIVO_LOGO, x=150, y=10, w=45)
@@ -263,10 +280,12 @@ def gerar_pdf_medicao_nova(dados):
     pdf.text(115, 104, "* Duplicatas a serem emitidas")
     pdf.text(115, 107, f"HP SERVIÇOS ADM, valor total de R$ {formatar_br(dados['preco_total'])}")
     
-    pdf.set_draw_color(180, 180, 180); pdf.rect(15, 115, 180, 35)
-    pdf.set_text_color(0, 0, 0); pdf.set_font("Arial", "B", 9); pdf.text(18, 120, "* De acordo com a Medição Mensal")
-    pdf.line(20, 138, 85, 138); pdf.line(125, 138, 190, 138)
-    pdf.set_font("Arial", "", 8); pdf.text(20, 142, "HP SERVIÇOS ADM"); pdf.text(125, 142, "CRTI")
+    # ASSINATURAS LIMPAS
+    pdf.set_text_color(0, 0, 0); pdf.set_font("Arial", "B", 9)
+    pdf.text(15, 122, "* De acordo com a Medição Mensal")
+    pdf.set_draw_color(180, 180, 180)
+    pdf.line(15, 142, 85, 142); pdf.line(125, 142, 195, 142)
+    pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HP SERVIÇOS ADM"); pdf.text(125, 146, "CRTI")
     return pdf.output(dest="S").encode("latin1")
 
 # --- GERADOR PLANILHA EXCEL ---
