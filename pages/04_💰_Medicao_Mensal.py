@@ -511,6 +511,9 @@ st.markdown("---")
 email_target = st.text_input("Destinatário da Medição:", "suellen@crti.com.br")
 
 # 1. Definição da função do Pop-up (st.dialog)
+import time # Garante a importação do controle de tempo no script
+
+# 1. Definição da função do Pop-up com persistência de mensagem
 @st.dialog("⚠️ Confirmação de Envio")
 def confirmar_envio_popup(email, dados):
     st.write(f"Você tem certeza que deseja enviar a medição para o e-mail **{email}**?")
@@ -519,7 +522,6 @@ def confirmar_envio_popup(email, dados):
     
     col_p1, col_p2 = st.columns(2)
     with col_p1:
-        # Se clicar em Sim, executa o disparo do e-mail
         if st.button("✅ Sim, Enviar", use_container_width=True):
             with st.spinner("Compilando anexos formatados e enviando..."):
                 p_b = gerar_pdf_medicao_nova(dados)
@@ -527,24 +529,24 @@ def confirmar_envio_popup(email, dados):
                 ok, r_msg = enviar_email_medicao_nova(email, dados, p_b, x_b, nome_pdf, nome_xlsx)
                 
             if ok:
-                st.success(r_msg)
-                st.balloons()
+                st.success(f"🎉 {r_msg}") # Exibe o alerta verde na tela
+                st.balloons()            # Sobe os balões de celebração
+                time.sleep(3)            # Segura a mensagem na tela por 3 segundos antes de fechar
             else:
                 st.error(r_msg)
+                time.sleep(4)            # Dá mais tempo para ler caso ocorra algum erro
             
-            # Recarrega a página para fechar o pop-up automaticamente após o sucesso/erro
+            # Atualiza a página e fecha o pop-up automaticamente
             st.rerun()
             
     with col_p2:
-        # Se clicar em Não, apenas fecha o pop-up recarregando a tela
         if st.button("❌ Não, Cancelar", use_container_width=True):
             st.rerun()
 
-# 2. Gatilho para abrir o pop-up na tela
+# 2. Gatilho para abrir o pop-up na tela (Mantém igual)
 if st.button("🚀 Enviar Medição por E-mail", use_container_width=True):
     if not email_target:
         st.error("Por favor, preencha o e-mail do destinatário.")
     else:
-        # Chama a função que renderiza a janela pop-up na tela
         confirmar_envio_popup(email_target, dados_faturamento)
 
