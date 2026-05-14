@@ -1,4 +1,4 @@
-# Por Hudson Valente - HPTECH
+# Por Hudson Valente - HPTECH 14/05/2026 09:12
 # Gerador de Medição Mensal Automatizado - PDF + XLSX
 import io
 import os  
@@ -278,14 +278,14 @@ def gerar_pdf_medicao_nova(dados):
     
     pdf.set_text_color(100, 100, 100); pdf.set_font("Arial", "I", 7)
     pdf.text(115, 104, "* Duplicatas a serem emitidas")
-    pdf.text(115, 107, f"HP SERVIÇOS ADM, valor total de R$ {formatar_br(dados['preco_total'])}")
+    pdf.text(115, 107, f"HPtech Informática ME, valor total de R$ {formatar_br(dados['preco_total'])}")
     
     # ASSINATURAS LIMPAS
     pdf.set_text_color(0, 0, 0); pdf.set_font("Arial", "B", 9)
     pdf.text(15, 122, "* De acordo com a Medição Mensal")
     pdf.set_draw_color(180, 180, 180)
     pdf.line(15, 142, 85, 142); pdf.line(125, 142, 195, 142)
-    pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HP SERVIÇOS ADM"); pdf.text(125, 146, "CRTI")
+    pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Informática ME"); pdf.text(125, 146, "CRTI")
     return pdf.output(dest="S").encode("latin1")
 
 # --- GERADOR PLANILHA EXCEL ---
