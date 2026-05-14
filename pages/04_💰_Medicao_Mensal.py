@@ -53,9 +53,8 @@ def formatar_br(valor):
     except:
         return "0,00"
 
-# --- PASSO 2 INTEGRADO: FUNÇÃO DE AUDITORIA ---
+# --- GRAVAÇÃO DE LOG DE AUDITORIA NO GOOGLE SHEETS ---
 def registrar_historico_sheets(tipo, identificador, destinatario):
-    """Grava o log do envio com sucesso na aba HISTORICO_ENVIOS do Google Sheets"""
     import gspread
     from google.oauth2.service_account import Credentials
     try:
@@ -123,7 +122,6 @@ with st.spinner("Analisando dados das planilhas..."):
 # --- CONTROLES DE FILTRO DIRETOS NA TELA ---
 col_f1, col_f2, col_f3 = st.columns(3)
 with col_f1:
-    # FILTRO DO KEYERROR: Remove abas administrativas e de logs da caixa de seleção
     abas_faturamento = [a for a in abas_disponiveis if a.upper() not in ["HISTORICO_ENVIOS", "PÁGINA1", "SHEET1"]]
     aba_selecionada = st.selectbox("**Selecione o Mês de Faturamento:**", abas_faturamento)
 with col_f2:
@@ -134,7 +132,6 @@ with col_f3:
 # Processando dados da aba selecionada
 df_mes = dict_abas[aba_selecionada].copy()
 
-# TRAVA DE SEGURANÇA CONTRA PLANILHAS ADM SEM COLUNA DE HORAS
 if "TOTAL_HR" not in df_mes.columns:
     st.warning(f"⚠️ A aba '{aba_selecionada}' não possui a coluna de horas 'TOTAL_HR'. Selecione um mês válido.")
     st.stop()
@@ -169,7 +166,6 @@ except:
     data_fim_real = "31/05/2026"
     mes_ano_tabela = "maio/2026"
 
-# Inicializa o dicionário de faturamento
 dados_faturamento = {
     "parceiro": "CR Tecnologia da Informação Ltda",
     "endereco": "Rua Padre Anchieta, 2050 - Bairro Bigorrilho",
@@ -319,58 +315,119 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HP SERVIÇOS ADM"); pdf.text(125, 146, "CRTI")
     return pdf.output(dest="S").encode("latin1")
 
-# --- GERADOR PLANILHA EXCEL ---
+# --- GERADOR PLANILHA EXCEL RESTAURADO ---
 def gerar_xlsx_medicao_nova(dados):
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {"in_memory": True})
     worksheet = workbook.add_worksheet("Medição")
-    fmt_titulo = workbook.add_format({"bold": True, "size": 14})
-    fmt_borda_cinza = workbook.add_format({"border": 1, "border_color": "#B0B0B0"})
-    fmt_header = workbook.add_format({"bold": True, "bg_color": "#F5F5F5", "border": 1, "border_color": "#B0B0B0", "align": "center"})
-    fmt_celula = workbook.add_format({"border": 1, "border_color": "#B0B0B0", "align": "center"})
-    fmt_celula_esq = workbook.add_format({"border": 1, "border_color": "#B0B0B0", "align": "left"})
-    fmt_total_cinza = workbook.add_format({"bold": True, "border": 1, "border_color": "#B0B0B0", "align": "center"})
-    worksheet.set_column("A:A", 14); worksheet.set_column("B:B", 8)
-    worksheet.set_column("C:C", 48); worksheet.set_column("D:D", 10)
-    worksheet.set_column("E:E", 14); worksheet.set_column("F:F", 16)
-    worksheet.set_column("G:G", 18)
+    
+    worksheet.hide_gridlines(2)
+    
+    fmt_titulo = workbook.add_format({"bold": True, "size": 15, "font_name": "Arial"})
+    fmt_negrito = workbook.add_format({"bold": True, "font_name": "Arial", "size": 10})
+    fmt_regular = workbook.add_format({"font_name": "Arial", "size": 9})
+    
+    cor_borda = "#B4B4B4"
+    fmt_canto_esq_sup = workbook.add_format({"left": 1, "top": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    fmt_canto_esq_inf = workbook.add_format({"left": 1, "bottom": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    fmt_linha_esq      = workbook.add_format({"left": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    
+    fmt_canto_dir_sup = workbook.add_format({"right": 1, "top": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    fmt_canto_dir_inf = workbook.add_format({"right": 1, "bottom": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    fmt_linha_dir      = workbook.add_format({"right": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    
+    fmt_tampa_sup     = workbook.add_format({"top": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    fmt_tampa_inf     = workbook.add_format({"bottom": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
+    fmt_miolo_limpo   = workbook.add_format({"font_name": "Arial", "size": 9})
+    
+    fmt_header = workbook.add_format({
+        "bold": True, "bg_color": "#F5F5F5", "border": 1, "border_color": cor_borda, 
+        "align": "center", "valign": "vcenter", "font_name": "Arial", "size": 9
+    })
+    fmt_celula = workbook.add_format({
+        "border": 1, "border_color": cor_borda, "align": "center", "valign": "vcenter", "font_name": "Arial", "size": 9
+    })
+    fmt_celula_esq = workbook.add_format({
+        "border": 1, "border_color": cor_borda, "align": "left", "valign": "vcenter", "font_name": "Arial", "size": 9
+    })
+    fmt_total_label = workbook.add_format({
+        "bold": True, "bg_color": "#F5F5F5", "border": 1, "border_color": cor_borda, 
+        "align": "left", "valign": "vcenter", "font_name": "Arial", "size": 9
+    })
+    fmt_total_valor = workbook.add_format({
+        "bold": True, "border": 1, "border_color": cor_borda, "align": "center", "valign": "vcenter", "font_name": "Arial", "size": 9
+    })
+
+    worksheet.set_column("A:A", 14)  
+    worksheet.set_column("B:B", 8)   
+    worksheet.set_column("C:C", 48)  
+    worksheet.set_column("D:D", 10)  
+    worksheet.set_column("E:E", 14)  
+    worksheet.set_column("F:F", 16)  
+    worksheet.set_column("G:G", 18)  
+    
     worksheet.write("A2", "Medição Mensal de Prestação de Serviços", fmt_titulo)
     
-    # Borda externa do bloco esquerdo
-    fmt_box_L = workbook.add_format({"left": 1, "top": 1, "bottom": 1, "border_color": "#B4B4B4", "font_name": "Arial", "size": 9})
-    fmt_box_R = workbook.add_format({"right": 1, "top": 1, "bottom": 1, "border_color": "#B4B4B4", "font_name": "Arial", "size": 9})
-    fmt_box_M = workbook.add_format({"top": 1, "bottom": 1, "border_color": "#B4B4B4", "font_name": "Arial", "size": 9})
+    ARQUIVO_LOGO = "crti.jpg"
+    if os.path.exists(ARQUIVO_LOGO):
+        worksheet.insert_image("G1", ARQUIVO_LOGO, {"x_scale": 0.85, "y_scale": 0.85, "x_offset": -15, "y_offset": 5})
     
-    worksheet.write("A4", f"  Parceiro: {dados['parceiro']}", fmt_box_L)
-    worksheet.write("A5", f"  Endereço: {dados['endereco']}", fmt_box_L)
-    worksheet.write("A6", f"  Cidade / UF: {dados['cidade_uf']}", fmt_box_L)
-    worksheet.write("A7", f"  CEP:       {dados['cep']}", fmt_box_L)
-    worksheet.write("A8", f"  CNPJ:     {dados['cnpj']}", fmt_box_L)
-    for r in range(3, 8):
-        for c in range(1, 3): worksheet.write(r, c, "", fmt_box_M)
-        worksheet.write(r, 3, "", fmt_box_R)
-        
-    worksheet.write("E4", "  Medição Número:", fmt_box_L)
-    worksheet.write("F4", dados["numero_medicao"], workbook.add_format({"bold": True}))
-    worksheet.write("G4", "", fmt_box_R)
-    worksheet.write("E5", "", fmt_box_L); worksheet.write("F5", "", fmt_box_M); worksheet.write("G5", "", fmt_box_R)
-    worksheet.write("E6", f"  Período: {dados['data_inicio']} até {dados['data_fim']}", fmt_box_L)
-    worksheet.write("F6", "", fmt_box_M); worksheet.write("G6", "", fmt_box_R)
-    worksheet.write("E7", "", fmt_box_L); worksheet.write("F7", "", fmt_box_M); worksheet.write("G7", "", fmt_box_R)
-    worksheet.write("E8", "", fmt_box_L); worksheet.write("F8", "", fmt_box_M); worksheet.write("G8", "", fmt_box_R)
+    worksheet.write("A4", f"  Parceiro: {dados['parceiro']}", fmt_canto_esq_sup)
+    worksheet.write("B4", "", fmt_tampa_sup); worksheet.write("C4", "", fmt_tampa_sup); worksheet.write("D4", "", fmt_canto_dir_sup)
     
-    worksheet.write("A10", "* Serviços Executados", workbook.add_format({"bold": True}))
+    worksheet.write("A5", f"  Endereço: {dados['endereco']}", fmt_linha_esq)
+    worksheet.write("B5", "", fmt_miolo_limpo); worksheet.write("C5", "", fmt_miolo_limpo); worksheet.write("D5", "", fmt_linha_dir)
+    
+    worksheet.write("A6", f"  Cidade / UF: {dados['cidade_uf']}", fmt_linha_esq)
+    worksheet.write("B6", "", fmt_miolo_limpo); worksheet.write("C6", "", fmt_miolo_limpo); worksheet.write("D6", "", fmt_linha_dir)
+    
+    worksheet.write("A7", f"  CEP:       {dados['cep']}", fmt_linha_esq)
+    worksheet.write("B7", "", fmt_miolo_limpo); worksheet.write("C7", "", fmt_miolo_limpo); worksheet.write("D7", "", fmt_linha_dir)
+    
+    worksheet.write("A8", f"  CNPJ:     {dados['cnpj']}", fmt_canto_esq_inf)
+    worksheet.write("B8", "", fmt_tampa_inf); worksheet.write("C8", "", fmt_tampa_inf); worksheet.write("D8", "", fmt_canto_dir_inf)
+
+    worksheet.write("E4", "  Medição Número:", fmt_canto_esq_sup)
+    worksheet.write("F4", dados["numero_medicao"], fmt_negrito)
+    worksheet.write("G4", "", fmt_canto_dir_sup)
+    
+    worksheet.write("E5", "", fmt_linha_esq); worksheet.write("F5", "", fmt_miolo_limpo); worksheet.write("G5", "", fmt_linha_dir)
+    worksheet.write("E6", f"  Período: {dados['data_inicio']} até {dados['data_fim']}", fmt_linha_esq)
+    worksheet.write("F6", "", fmt_miolo_limpo); worksheet.write("G6", "", fmt_linha_dir)
+    
+    worksheet.write("E7", "", fmt_linha_esq); worksheet.write("F7", "", fmt_miolo_limpo); worksheet.write("G7", "", fmt_linha_dir)
+    worksheet.write("E8", "", fmt_canto_esq_inf); worksheet.write("F8", "", fmt_tampa_inf); worksheet.write("G8", "", fmt_canto_dir_inf)
+    
+    worksheet.write("A10", "* Serviços Executados", fmt_negrito)
+    
     headers = ["Mês/Ano", "Item", "Descrição", "Unidade", "Qtd", "Preço Unitário", "Preço Total"]
     for col_idx, text in enumerate(headers): worksheet.write(10, col_idx, text, fmt_header)
+        
     worksheet.write(11, 0, dados["mes_ano"], fmt_celula)
     worksheet.write(11, 1, "1", fmt_celula)
     worksheet.write(11, 2, dados["descricao_servico"], fmt_celula_esq)
     worksheet.write(11, 3, "HR", fmt_celula)
     worksheet.write(11, 4, dados["qtd_horas"], fmt_celula)
     worksheet.write(11, 5, formatar_br(dados["preco_unitario"]), fmt_celula)
-    worksheet.write(11, 6, formatar_br(dados["preco_total"]), fmt_total_cinza)
-    worksheet.write(12, 2, "TOTAL", fmt_header)
-    worksheet.write(12, 6, formatar_br(dados["preco_total"]), fmt_total_cinza)
+    worksheet.write(11, 6, formatar_br(dados["preco_total"]), fmt_celula)
+    
+    worksheet.write(12, 0, "", fmt_celula)
+    worksheet.write(12, 1, "", fmt_celula)
+    worksheet.write(12, 2, "TOTAL", fmt_total_label)
+    worksheet.write(12, 3, "", fmt_celula)
+    worksheet.write(12, 4, "", fmt_celula)
+    worksheet.write(12, 5, "", fmt_celula)
+    worksheet.write(12, 6, formatar_br(dados["preco_total"]), fmt_total_valor)
+    
+    worksheet.write("E14", "* Duplicatas a serem emitidas", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
+    worksheet.write("E15", f"HP SERVIÇOS ADM, valor total de R$ {formatar_br(dados['preco_total'])}", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
+    
+    worksheet.write("A17", "* De acordo com a Medição Mensal", fmt_negrito)
+    
+    fmt_linha_assinatura = workbook.add_format({"top": 1, "top_color": cor_borda, "align": "left", "font_name": "Arial", "size": 8})
+    worksheet.write("A20", "HPtech Informática ME", fmt_linha_assinatura)
+    worksheet.write("F20", "CR Tecnologia da Informação Ltda", fmt_linha_assinatura)
+    
     workbook.close()
     return output.getvalue()
 
@@ -395,7 +452,7 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes, nome_
         return True, "E-mail enviado com sucesso!"
     except Exception as e: return False, f"Falha no envio SMTP: {str(e)}"
 
-# --- BOTÕES VISUAIS E POPUP ---
+# --- BOTÕES VISUAIS E POPUP DE CONFIRMAÇÃO INTEGRADO ---
 st.markdown("---")
 col_b1, col_b2 = st.columns(2)
 
@@ -403,38 +460,4 @@ nome_pdf = f"Medicao N {dados_faturamento['numero_medicao']} - {dados_faturament
 nome_xlsx = f"Medicao N {dados_faturamento['numero_medicao']} - {dados_faturamento['mes_ano']} (Implantacao) - HUDSON.xlsx"
 
 with col_b1:
-    st.download_button(label="📥 Baixar PDF da Medição", data=gerar_pdf_medicao_nova(dados_faturamento), file_name=nome_pdf, mime="application/pdf", use_container_width=True)
-with col_b2:
-    st.download_button(label="📊 Baixar Excel da Medição", data=gerar_xlsx_medicao_nova(dados_faturamento), file_name=nome_xlsx, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
-
-st.markdown("---")
-email_target = st.text_input("Destinatário da Medição:", "suellen@crti.com.br")
-
-# POPUP DE CONFIRMAÇÃO DO ENVIO + PASSO 3 GATILHO HISTÓRICO
-@st.dialog("⚠️ Confirmação de Envio")
-def confirmar_envio_popup(email, dados):
-    st.write(f"Você tem certeza que deseja enviar a medição para o e-mail **{email}**?")
-    st.markdown("---")
-    col_p1, col_p2 = st.columns(2)
-    with col_p1:
-        if st.button("✅ Sim, Enviar", use_container_width=True):
-            with st.spinner("Enviando..."):
-                p_b = gerar_pdf_medicao_nova(dados)
-                x_b = gerar_xlsx_medicao_nova(dados)
-                ok, r_msg = enviar_email_medicao_nova(email, dados, p_b, x_b, nome_pdf, nome_xlsx)
-            if ok:
-                st.success(f"🎉 {r_msg}")
-                # GATILHO DO HISTÓRICO SALVANDO NA PLANILHA COM SUCESSO
-                registrar_historico_sheets(tipo="Medição Mensal", identificador=dados["numero_medicao"], destinatario=email)
-                st.balloons()
-                time.sleep(3)
-            else:
-                st.error(r_msg)
-                time.sleep(4)
-            st.rerun()
-    with col_p2:
-        if st.button("❌ Não, Cancelar", use_container_width=True): st.rerun()
-
-if st.button("🚀 Enviar Medição por E-mail", use_container_width=True):
-    if not email_target: st.error("Preencha o e-mail.")
-    else: confirmar_envio_popup(email_target, dados_faturamento)
+    st.download_button(
