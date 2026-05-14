@@ -476,7 +476,7 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes, nome_
         server.login(email_remetente, senha_remetente)
         server.sendmail(email_remetente, email_destino, msg.as_string())
         server.quit()
-        return True, "E-mail enviado com sucesso com os nomes corrigidos!"
+        return True, "E-mail enviado com sucesso!"
     except Exception as e: 
         return False, f"Falha no envio SMTP: {str(e)}"
 
@@ -531,7 +531,7 @@ def confirmar_envio_popup(email, dados):
             if ok:
                 st.success(f"🎉 {r_msg}") # Exibe o alerta verde na tela
                 st.balloons()            # Sobe os balões de celebração
-                time.sleep(10)            # Segura a mensagem na tela por 3 segundos antes de fechar
+                time.sleep(10)            # Segura a mensagem na tela por 10 segundos antes de fechar
             else:
                 st.error(r_msg)
                 time.sleep(4)            # Dá mais tempo para ler caso ocorra algum erro
