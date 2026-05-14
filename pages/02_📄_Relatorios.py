@@ -627,11 +627,11 @@ if st.session_state.relatorios_gerados:
                     key=f"btn_{path}" # Chave única para não dar conflito
                 )
 # =========================================================================
-# 1. FUNÇÃO DO POP-UP DE CONFIRMAÇÃO EM LOTE BLINDADA (FIM DO TIMEOUT)
+# 1. FUNÇÃO DO POP-UP DE CONFIRMAÇÃO EM LOTE BLINDADA (CORRIGIDA)
 # =========================================================================
 @st.dialog("⚠️ Confirmação de Disparo em Lote")
 def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha, destinatario):
-    # Agrupa os arquivos na memória RAM
+    # Agrupa os arquivos na memória RAM para a prévia visual
     agrupados_por_ra = {}
     for arq in arquivos_validos:
         base = arq.replace(".pdf", "").replace(".xlsx", "")
@@ -641,7 +641,7 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha,
         
     total_envios = len(agrupados_por_ra)
     
-    st.write(f"Você tem certeza que deseja disparar os relatórios de atendimento em lote?")
+    st.write("Você tem certeza que deseja disparar os relatórios de atendimento em lote?")
     st.write(f"• **Destinatário:** `{destinatario}`")
     st.write(f"• **Total de e-mails a serem gerados:** {total_envios} mensagens")
     st.markdown("---")
@@ -650,7 +650,7 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha,
     with col_p1:
         if st.button("✅ Sim, Disparar Todos", use_container_width=True):
             import time  
-            import smtplib # Garante a reimportação local para aplicar travas de rede
+            import smtplib 
             
             status_placeholder = st.empty()
             status_placeholder.markdown("🚀 **Conectando de forma segura ao SMTP do Google...**")
@@ -658,12 +658,11 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha,
             sucessos = 0
             falhas_lista = []
             
-            # Executa os disparos de forma isolada
+            # Executa os disparos de forma isolada em segundo plano
             for base, lista_anexos in agrupados_por_ra.items():
                 nome_base_limpo = os.path.basename(base)
                 
                 try:
-                    # Sobrescrevemos localmente a conexão com o HOST correto do Google Workspace e trava de segurança de 15s
                     msg_objeto = MIMEMultipart()
                     msg_objeto['From'] = email_remetente
                     msg_objeto['To'] = destinatario
@@ -687,7 +686,7 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha,
                         part.add_header('Content-Disposition', 'attachment', filename=nome_arq_orig)
                         msg_objeto.attach(part)
                     
-                    # TÚNEL SEGURO COM TIMEOUT ATIVO CONTRA CONGELAMENTO
+                    # Conexão segura com o host oficial do Google e timeout de 15 segundos
                     server = smtplib.SMTP("gmail.com", 587, timeout=15)
                     server.starttls()
                     server.login(email_remetente, senha)
@@ -700,7 +699,7 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha,
             
             status_placeholder.empty()
             
-            # Entrega do veredito na interface
+            # Entrega do resultado final na interface do usuário
             if sucessos == total_envios:
                 st.success(f"🎉 Sucesso total! Todas as {sucessos} medições foram enviadas via SMTP.")
                 st.balloons()
@@ -718,14 +717,15 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha,
             st.rerun()
 
 # =========================================================================
-# 2. LOGICA DO GATILHO PRINCIPAL (MANTÉM INTEGRADO COM A SUA SIDEBAR)
+# 2. LÓGICA DO GATILHO PRINCIPAL (CORREÇÃO DA SINTAXE DO ARQUIVOS_VALIDOS)
 # =========================================================================
 if btn_enviar_emails:
     st.markdown("---")
     arquivos_pasta = glob.glob(os.path.join(PASTA_SAIDA, "*.*"))
     arquivos_validos = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx")]
     
-    if not archivos_validos:
+    # Correção da palavra: arquivos_validos (Garante o fim do NameError)
+    if not arquivos_validos:
         st.warning("⚠️ Gere os relatórios primeiro.")
         st.stop()
         
