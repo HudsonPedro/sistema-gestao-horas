@@ -159,11 +159,6 @@ def registrar_historico_sheets(tipo, identificador, destinatario):
 
 PASTA_SAIDA = "relatorios"
 LOGO = "crti.jpg"
-# ... (o resto do seu código original continua igual para baixo)
-
-
-PASTA_SAIDA = "relatorios"
-LOGO = "crti.jpg"
 os.makedirs(PASTA_SAIDA, exist_ok=True)
 
 class PDF(FPDF):
