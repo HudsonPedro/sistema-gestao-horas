@@ -93,7 +93,7 @@ with st.sidebar:
         st.switch_page("pages/03_📝_Lancamento.py")
     if st.button("💰 Medição Mensal", use_container_width=True):
         st.switch_page("pages/04_💰_Medicao_Mensal.py")
-    if st.button("pages/05_📜_Historico.py", use_container_width=True):
+    if st.button("📜 Historico", use_container_width=True):
         st.switch_page("pages/05_📜_Historico.py")
         
     st.divider()
