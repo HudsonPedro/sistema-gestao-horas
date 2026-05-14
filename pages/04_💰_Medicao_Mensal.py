@@ -444,13 +444,13 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes):
     smtp_porta = int(st.secrets["smtp"]["porta"])
     msg = MIMEMultipart(); msg["From"] = email_remetente; msg["To"] = email_destino
     msg["Subject"] = f"Medição N° {dados['numero_medicao']} {dados["mes_ano"]}(Implantação) - HUDSON"
-    corpo = f"<html><body><p>Prezada Sra. Suellen, espero que se encontre bem,</p><br><p>Conforme solicitado, segue em anexo a medição para aprovação, autorizando a emissão da NFS-e referente aos serviços de implantação no período de ({dados['data_inicio']} até {dados['data_fim']}).</p><br><p>Atenciosamente,<br>Hudson Valente</p></body></html>"
+    corpo = f"<html><body><p>Prezada Sra. Suellen, espero que se encontre bem,</p><br><p>Conforme solicitado, segue em anexo a medição para aprovação, autorizando a emissão da NFS-e referente aos serviços de implantação no período de ({dados['data_inicio']} até {dados['data_fim']}).</p><br><p>Atenciosamente,<br><br>Hudson Valente</p></body></html>"
     msg.attach(MIMEText(corpo, "html"))
     for b_data, ext in [(pdf_bytes, "pdf"), (xlsx_bytes, "xlsx")]:
         part = MIMEBase("application", "octet-stream")
         part.set_payload(b_data); encode_base64(part)
-        part.add_header("Content-Disposition", f"attachment; filename=Medicao_{dados['numero_medicao']}.{ext}")
-        msg.attach(part)
+        part.add_header("Content-Disposition", f"attachment; filename=Medição N° {dados['numero_medicao']} {dados["mes_ano"]}(Implantação) - HUDSON.{ext}")
+        msg.attach(part)  #Medicao_{dados['numero_medicao']}
     try:
         server = smtplib.SMTP(smtp_server, smtp_porta); server.starttls()
         server.login(email_remetente, senha_remetente); server.sendmail(email_remetente, email_destino, msg.as_string()); server.quit()
