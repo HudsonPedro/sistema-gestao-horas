@@ -53,26 +53,23 @@ def formatar_br(valor):
     except:
         return "0,00"
 
-# --- GRAVAÇÃO DE LOG DE AUDITORIA NO GOOGLE SHEETS ---
 def registrar_historico_sheets(tipo, identificador, destinatario):
+    """Grava o log do envio com sucesso na aba HISTORICO_ENVIOS do Google Sheets"""
     import gspread
     from google.oauth2.service_account import Credentials
     try:
         escopos = ["googleapis.com"]
         credenciais = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=escopos)
         cliente_sheets = gspread.authorize(credenciais)
-        
         id_planilha = "1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE"
         planilha = cliente_sheets.open_by_key(id_planilha)
         aba_log = planilha.worksheet("HISTORICO_ENVIOS")
-        
         data_atual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         usuario_atual = st.user.get("email") or "hudson.valente@crti.com.br"
-        
         nova_linha = [data_atual, tipo, str(identificador), destinatario, usuario_atual]
         aba_log.append_row(nova_linha)
-    except Exception as e:
-        st.sidebar.error(f"Erro ao registrar log de auditoria: {e}")
+    except:
+        pass
 
 # --- CARREGAR BASE DE DADOS DO GOOGLE SHEETS ---
 @st.cache_data(ttl=600)
@@ -110,7 +107,6 @@ with st.sidebar:
 st.title("💰 Medição Mensal de Prestação de Serviços")
 st.markdown("---")
 
-# Conectando à planilha
 with st.spinner("Analisando dados das planilhas..."):
     try:
         dict_abas = carregar_planilha_todas_abas()
@@ -119,7 +115,7 @@ with st.spinner("Analisando dados das planilhas..."):
         st.error(f"Erro ao baixar planilha base: {e}")
         st.stop()
 
-# --- CONTROLES DE FILTRO DIRETOS NA TELA ---
+# --- CONTROLES DE FILTRO ---
 col_f1, col_f2, col_f3 = st.columns(3)
 with col_f1:
     abas_faturamento = [a for a in abas_disponiveis if a.upper() not in ["HISTORICO_ENVIOS", "PÁGINA1", "SHEET1"]]
@@ -129,36 +125,29 @@ with col_f2:
 with col_f3:
     valor_hora = st.number_input("**Preço da Hora (R$):**", min_value=0.0, value=80.00, step=5.0)
 
-# Processando dados da aba selecionada
 df_mes = dict_abas[aba_selecionada].copy()
 
 if "TOTAL_HR" not in df_mes.columns:
-    st.warning(f"⚠️ A aba '{aba_selecionada}' não possui a coluna de horas 'TOTAL_HR'. Selecione um mês válido.")
+    st.warning(f"⚠️ A aba '{aba_selecionada}' não possui a coluna 'TOTAL_HR'. Selecione outra aba.")
     st.stop()
 
 df_mes["TOTAL_HR"] = df_mes["TOTAL_HR"].fillna("").astype(str).str.strip()
 
-# LÓGICA DE TRATAMENTO DINÂMICO DE DATAS DO CALENDÁRIO
 try:
     nome_aba_limpo = str(aba_selecionada).strip()
     partes_abas = nome_aba_limpo.split(" ")
-    
     meses_map = {
         "janeiro": 1, "fevereiro": 2, "março": 3, "abril": 4, "maio": 5, "junho": 6,
         "julho": 7, "agosto": 8, "setembro": 9, "outubro": 10, "novembro": 11, "dezembro": 12
     }
-    
     mes_nome_doc = partes_abas[0].lower()
     ano_doc = int(partes_abas[1]) if len(partes_abas) > 1 else datetime.now().year
     mes_num_doc = meses_map.get(mes_nome_doc, datetime.now().month)
-    
     data_inicio_real = f"01/{mes_num_doc:02d}/{ano_doc}"
-    
     if mes_num_doc == 12:
         ultimo_dia_mes = 31
     else:
         ultimo_dia_mes = (datetime(ano_doc, mes_num_doc + 1, 1) - timedelta(days=1)).day
-        
     data_fim_real = f"{ultimo_dia_mes:02d}/{mes_num_doc:02d}/{ano_doc}"
     mes_ano_tabela = f"{mes_nome_doc}/{ano_doc}"
 except:
@@ -196,7 +185,6 @@ if coluna_usuario:
         if "hudson" in c.lower() or "valente" in c.lower():
             index_padrao = i
             break
-            
     consultor_sel = st.selectbox("**Filtrar por Consultor / Usuário:**", lista_consultores, index=index_padrao)
     df_filtrado = df_mes[df_mes[coluna_usuario] == consultor_sel]
 else:
@@ -221,7 +209,7 @@ for val in df_filtrado["TOTAL_HR"]:
                 m = int(partes[1]) if len(partes) > 1 else 0
                 s = int(partes[2]) if len(partes) > 2 else 0
                 total_segundos += (h * 3600) + (m * 60) + s
-            except (ValueError, IndexError):
+            except:
                 continue
 
 horas_inteiras = int(total_segundos // 3600)
@@ -242,7 +230,7 @@ col_m1.metric("Total de Horas Encontradas", total_horas_faturar)
 col_m2.metric("Preço Unitário da Hora", f"R$ {formatar_br(valor_hora)}")
 col_m3.metric("Preço Total Calculado", f"R$ {formatar_br(preco_total_calculado)}")
 
-# --- CLASSE DO PDF REVISADA ---
+# --- CONFIGURAÇÃO DO DOCUMENTO PDF ---
 class PDFMedicaoNovo(FPDF):
     def moldura_topo(self, x, y, w, h, dados):
         self.set_draw_color(180, 180, 180)  
@@ -250,7 +238,6 @@ class PDFMedicaoNovo(FPDF):
         self.rect(x, y, w, h)
         self.set_font("Arial", "", 9)
         self.set_text_color(0, 0, 0)
-        
         linhas = [
             f"Parceiro:     {dados['parceiro']}",
             f"Endereço:   {dados['endereco']}",
@@ -262,7 +249,6 @@ class PDFMedicaoNovo(FPDF):
         for linha in linhas:
             self.text(x + 4, curr_y, linha)
             curr_y += 5.2
-            
         self.line(x + 110, y, x + 110, y + h)
         self.text(x + 114, y + 8, "Medição Número:")
         self.set_font("Arial", "B", 10)
@@ -273,23 +259,18 @@ class PDFMedicaoNovo(FPDF):
 def gerar_pdf_medicao_nova(dados):
     pdf = PDFMedicaoNovo(orientation="P", unit="mm", format="A4")
     pdf.add_page()
-    
     ARQUIVO_LOGO = "crti.jpg"
     if os.path.exists(ARQUIVO_LOGO):
         pdf.image(ARQUIVO_LOGO, x=150, y=10, w=45)
-        
     pdf.set_font("Arial", "B", 15)
     pdf.text(15, 20, "Medição Mensal de Prestação de Serviços")
     pdf.moldura_topo(15, 28, 180, 32, dados)
-    
     pdf.set_font("Arial", "B", 10)
     pdf.text(15, 70, "* Serviços Executados")
     pdf.set_y(74); pdf.set_x(15)
     pdf.set_draw_color(180, 180, 180); pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 8)
-    
     headers = [("Mês/Ano", 18), ("Item", 10), ("Descrição", 72), ("Unidade", 15), ("Qtd", 20), ("Preço Unitário", 22), ("Preço Total", 23)]
     for txt, w in headers: pdf.cell(w, 7, txt, border=1, align="C", fill=True)
-    
     pdf.set_y(81); pdf.set_x(15); pdf.set_font("Arial", "", 8)
     pdf.cell(18, 10, dados["mes_ano"], border=1, align="C")
     pdf.cell(10, 10, "1", border=1, align="C")
@@ -298,16 +279,13 @@ def gerar_pdf_medicao_nova(dados):
     pdf.cell(20, 10, dados["qtd_horas"], border=1, align="C")
     pdf.cell(22, 10, formatar_br(dados["preco_unitario"]), border=1, align="C")
     pdf.cell(23, 10, formatar_br(dados["preco_total"]), border=1, align="C")
-    
     pdf.set_y(91); pdf.set_x(15)
     pdf.cell(28, 7, "", border=0); pdf.set_font("Arial", "B", 8)
     pdf.cell(72, 7, "TOTAL", border=1, align="L", fill=True); pdf.cell(57, 7, "", border=0)
     pdf.cell(23, 7, formatar_br(dados["preco_total"]), border=1, align="C")
-    
     pdf.set_text_color(100, 100, 100); pdf.set_font("Arial", "I", 7)
     pdf.text(115, 104, "* Duplicatas a serem emitidas")
     pdf.text(115, 107, f"HP SERVIÇOS ADM, valor total de R$ {formatar_br(dados['preco_total'])}")
-    
     pdf.set_text_color(0, 0, 0); pdf.set_font("Arial", "B", 9)
     pdf.text(15, 122, "* De acordo com a Medição Mensal")
     pdf.set_draw_color(180, 180, 180)
@@ -315,12 +293,11 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HP SERVIÇOS ADM"); pdf.text(125, 146, "CRTI")
     return pdf.output(dest="S").encode("latin1")
 
-# --- GERADOR PLANILHA EXCEL RESTAURADO ---
+# --- NOVO GERADOR EXCEL REESTRUTURADO (LAYOUT PERFEITO INTEGRADO) ---
 def gerar_xlsx_medicao_nova(dados):
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {"in_memory": True})
     worksheet = workbook.add_worksheet("Medição")
-    
     worksheet.hide_gridlines(2)
     
     fmt_titulo = workbook.add_format({"bold": True, "size": 15, "font_name": "Arial"})
@@ -331,11 +308,9 @@ def gerar_xlsx_medicao_nova(dados):
     fmt_canto_esq_sup = workbook.add_format({"left": 1, "top": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
     fmt_canto_esq_inf = workbook.add_format({"left": 1, "bottom": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
     fmt_linha_esq      = workbook.add_format({"left": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
-    
     fmt_canto_dir_sup = workbook.add_format({"right": 1, "top": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
     fmt_canto_dir_inf = workbook.add_format({"right": 1, "bottom": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
     fmt_linha_dir      = workbook.add_format({"right": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
-    
     fmt_tampa_sup     = workbook.add_format({"top": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
     fmt_tampa_inf     = workbook.add_format({"bottom": 1, "border_color": cor_borda, "font_name": "Arial", "size": 9})
     fmt_miolo_limpo   = workbook.add_format({"font_name": "Arial", "size": 9})
@@ -358,13 +333,9 @@ def gerar_xlsx_medicao_nova(dados):
         "bold": True, "border": 1, "border_color": cor_borda, "align": "center", "valign": "vcenter", "font_name": "Arial", "size": 9
     })
 
-    worksheet.set_column("A:A", 14)  
-    worksheet.set_column("B:B", 8)   
-    worksheet.set_column("C:C", 48)  
-    worksheet.set_column("D:D", 10)  
-    worksheet.set_column("E:E", 14)  
-    worksheet.set_column("F:F", 16)  
-    worksheet.set_column("G:G", 18)  
+    worksheet.set_column("A:A", 14); worksheet.set_column("B:B", 8); worksheet.set_column("C:C", 48)
+    worksheet.set_column("D:D", 10); worksheet.set_column("E:E", 14); worksheet.set_column("F:F", 16)
+    worksheet.set_column("G:G", 18)
     
     worksheet.write("A2", "Medição Mensal de Prestação de Serviços", fmt_titulo)
     
@@ -372,34 +343,29 @@ def gerar_xlsx_medicao_nova(dados):
     if os.path.exists(ARQUIVO_LOGO):
         worksheet.insert_image("G1", ARQUIVO_LOGO, {"x_scale": 0.85, "y_scale": 0.85, "x_offset": -15, "y_offset": 5})
     
+    # Quadro 1: Parceiro
     worksheet.write("A4", f"  Parceiro: {dados['parceiro']}", fmt_canto_esq_sup)
     worksheet.write("B4", "", fmt_tampa_sup); worksheet.write("C4", "", fmt_tampa_sup); worksheet.write("D4", "", fmt_canto_dir_sup)
-    
     worksheet.write("A5", f"  Endereço: {dados['endereco']}", fmt_linha_esq)
     worksheet.write("B5", "", fmt_miolo_limpo); worksheet.write("C5", "", fmt_miolo_limpo); worksheet.write("D5", "", fmt_linha_dir)
-    
     worksheet.write("A6", f"  Cidade / UF: {dados['cidade_uf']}", fmt_linha_esq)
     worksheet.write("B6", "", fmt_miolo_limpo); worksheet.write("C6", "", fmt_miolo_limpo); worksheet.write("D6", "", fmt_linha_dir)
-    
     worksheet.write("A7", f"  CEP:       {dados['cep']}", fmt_linha_esq)
     worksheet.write("B7", "", fmt_miolo_limpo); worksheet.write("C7", "", fmt_miolo_limpo); worksheet.write("D7", "", fmt_linha_dir)
-    
     worksheet.write("A8", f"  CNPJ:     {dados['cnpj']}", fmt_canto_esq_inf)
     worksheet.write("B8", "", fmt_tampa_inf); worksheet.write("C8", "", fmt_tampa_inf); worksheet.write("D8", "", fmt_canto_dir_inf)
 
+    # Quadro 2: Medição
     worksheet.write("E4", "  Medição Número:", fmt_canto_esq_sup)
     worksheet.write("F4", dados["numero_medicao"], fmt_negrito)
     worksheet.write("G4", "", fmt_canto_dir_sup)
-    
     worksheet.write("E5", "", fmt_linha_esq); worksheet.write("F5", "", fmt_miolo_limpo); worksheet.write("G5", "", fmt_linha_dir)
     worksheet.write("E6", f"  Período: {dados['data_inicio']} até {dados['data_fim']}", fmt_linha_esq)
     worksheet.write("F6", "", fmt_miolo_limpo); worksheet.write("G6", "", fmt_linha_dir)
-    
     worksheet.write("E7", "", fmt_linha_esq); worksheet.write("F7", "", fmt_miolo_limpo); worksheet.write("G7", "", fmt_linha_dir)
     worksheet.write("E8", "", fmt_canto_esq_inf); worksheet.write("F8", "", fmt_tampa_inf); worksheet.write("G8", "", fmt_canto_dir_inf)
     
     worksheet.write("A10", "* Serviços Executados", fmt_negrito)
-    
     headers = ["Mês/Ano", "Item", "Descrição", "Unidade", "Qtd", "Preço Unitário", "Preço Total"]
     for col_idx, text in enumerate(headers): worksheet.write(10, col_idx, text, fmt_header)
         
@@ -411,19 +377,15 @@ def gerar_xlsx_medicao_nova(dados):
     worksheet.write(11, 5, formatar_br(dados["preco_unitario"]), fmt_celula)
     worksheet.write(11, 6, formatar_br(dados["preco_total"]), fmt_celula)
     
-    worksheet.write(12, 0, "", fmt_celula)
-    worksheet.write(12, 1, "", fmt_celula)
+    worksheet.write(12, 0, "", fmt_celula); worksheet.write(12, 1, "", fmt_celula)
     worksheet.write(12, 2, "TOTAL", fmt_total_label)
-    worksheet.write(12, 3, "", fmt_celula)
-    worksheet.write(12, 4, "", fmt_celula)
-    worksheet.write(12, 5, "", fmt_celula)
+    worksheet.write(12, 3, "", fmt_celula); worksheet.write(12, 4, "", fmt_celula); worksheet.write(12, 5, "", fmt_celula)
     worksheet.write(12, 6, formatar_br(dados["preco_total"]), fmt_total_valor)
     
     worksheet.write("E14", "* Duplicatas a serem emitidas", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
     worksheet.write("E15", f"HP SERVIÇOS ADM, valor total de R$ {formatar_br(dados['preco_total'])}", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
     
     worksheet.write("A17", "* De acordo com a Medição Mensal", fmt_negrito)
-    
     fmt_linha_assinatura = workbook.add_format({"top": 1, "top_color": cor_borda, "align": "left", "font_name": "Arial", "size": 8})
     worksheet.write("A20", "HPtech Informática ME", fmt_linha_assinatura)
     worksheet.write("F20", "CR Tecnologia da Informação Ltda", fmt_linha_assinatura)
@@ -441,18 +403,18 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes, nome_
     msg["Subject"] = str(nome_pdf).replace(".pdf", "")
     corpo = f"<html><body><p>Olá,</p><p>Seguem anexados os relatórios da medição de serviços ({dados['data_inicio']} até {dados['data_fim']}).</p></body></html>"
     msg.attach(MIMEText(corpo, "html"))
-    for b_data, ext in [(pdf_bytes, nome_pdf), (xlsx_bytes, nome_xlsx)]:
+    for b_data, filename in [(pdf_bytes, nome_pdf), (xlsx_bytes, nome_xlsx)]:
         part = MIMEBase("application", "octet-stream")
         part.set_payload(b_data); encode_base64(part)
-        part.add_header("Content-Disposition", f"attachment; filename=\"{ext}\"")
+        part.add_header("Content-Disposition", f"attachment; filename=\"{filename}\"")
         msg.attach(part)
     try:
         server = smtplib.SMTP(smtp_server, smtp_porta); server.starttls()
-        server.login(email_remetente, senha_remetente); server.sendmail(email_remetente, email_destino, msg.as_string()); server.quit()
+        server.login(email_remetente, senate_remetente_correta); server.sendmail(email_remetente, email_destino, msg.as_string()); server.quit()
         return True, "E-mail enviado com sucesso!"
     except Exception as e: return False, f"Falha no envio SMTP: {str(e)}"
 
-# --- BOTÕES VISUAIS E POPUP DE CONFIRMAÇÃO INTEGRADO ---
+# --- BOTÕES VISUAIS E INTERFACE ---
 st.markdown("---")
 col_b1, col_b2 = st.columns(2)
 
@@ -460,4 +422,8 @@ nome_pdf = f"Medicao N {dados_faturamento['numero_medicao']} - {dados_faturament
 nome_xlsx = f"Medicao N {dados_faturamento['numero_medicao']} - {dados_faturamento['mes_ano']} (Implantacao) - HUDSON.xlsx"
 
 with col_b1:
-    st.download_button(
+    st.download_button(label="📥 Baixar PDF da Medição (Formatado BR)", data=gerar_pdf_medicao_nova(dados_faturamento), file_name=nome_pdf, mime="application/pdf", use_container_width=True)
+with col_b2:
+    st.download_button(label="📊 Baixar Excel da Medição (Formatado BR)", data=gerar_xlsx_medicao_nova(dados_faturamento), file_name=nome_xlsx, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+
+st.markdown("---")
