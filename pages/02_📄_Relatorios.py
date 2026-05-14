@@ -130,6 +130,38 @@ def data_por_extenso_pt(dt):
     ano = dt.year
     return f"{dia:02d} de {mes} de {ano}"
 
+# =========================================================================
+# AQUI ENTRA O PASSO 2: COLE A FUNÇÃO DE LOG EXATAMENTE NESTE ESPAÇO
+# =========================================================================
+def registrar_historico_sheets(tipo, identificador, destinatario):
+    """Grava o log do envio com sucesso na aba HISTORICO_ENVIOS do Google Sheets"""
+    import gspread
+    from google.oauth2.service_account import Credentials
+    from datetime import datetime
+    
+    try:
+        escopos = ["googleapis.com"]
+        credenciais = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=escopos)
+        cliente_sheets = gspread.authorize(credenciais)
+        
+        id_planilha = "1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE"
+        planilha = cliente_sheets.open_by_key(id_planilha)
+        aba_log = planilha.worksheet("HISTORICO_ENVIOS")
+        
+        data_atual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        usuario_atual = st.user.get("email") or "hudson.valente@crti.com.br"
+        
+        nova_linha = [data_atual, tipo, str(identificador), destinatario, usuario_atual]
+        aba_log.append_row(nova_linha)
+    except Exception as e:
+        st.sidebar.error(f"Erro ao registrar log de auditoria: {e}")
+# =========================================================================
+
+PASTA_SAIDA = "relatorios"
+LOGO = "crti.jpg"
+# ... (o resto do seu código original continua igual para baixo)
+
+
 PASTA_SAIDA = "relatorios"
 LOGO = "crti.jpg"
 os.makedirs(PASTA_SAIDA, exist_ok=True)
