@@ -627,10 +627,11 @@ if st.session_state.relatorios_gerados:
                     key=f"btn_{path}" # Chave única para não dar conflito
                 )
 # =========================================================================
-# 1. FUNÇÃO DO POP-UP DE CONFIRMAÇÃO DO ENVIO EM LOTE (CORRIGIDO)
+# 1. FUNÇÃO DO POP-UP DE CONFIRMAÇÃO EM LOTE OTIMIZADA (SEM TRAVAMENTO)
 # =========================================================================
 @st.dialog("⚠️ Confirmação de Disparo em Lote")
 def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha, destinatario):
+    # Agrupa os arquivos na memória RAM
     agrupados_por_ra = {}
     for arq in arquivos_validos:
         base = arq.replace(".pdf", "").replace(".xlsx", "")
@@ -650,31 +651,43 @@ def confirmar_envio_atendimentos_popup(arquivos_validos, email_remetente, senha,
         if st.button("✅ Sim, Disparar Todos", use_container_width=True):
             import time  
             
-            st.write("🚀 Iniciando disparo...")
-            sucessos = 0
-            barra = st.progress(0)
+            # Mensagem estática inicial para indicar atividade ao usuário
+            status_placeholder = st.empty()
+            status_placeholder.markdown("🚀 **Conectando ao servidor e iniciando disparos ocultos...**")
             
-            for i, (base, lista_anexos) in enumerate(agrupados_por_ra.items()):
-                # Forçamos o uso direto do endereço correto do Gmail "gmail.com" e porta 587
+            sucessos = 0
+            falhas_lista = []
+            
+            # O processamento agora roda limpo em segundo plano
+            for base, lista_anexos in agrupados_por_ra.items():
+                nome_base_limpo = os.path.basename(base)
+                
+                # Executa a sua função SMTP nativa utilizando o host oficial
                 sucesso, msg = enviar_relatorio_email(
                     lista_anexos, "gmail.com", 587, email_remetente, senha, destinatario
                 )
+                
                 if sucesso:
                     sucessos += 1
-                    st.success(msg)
-                else: 
-                    st.error(msg)
-                barra.progress((i + 1) / total_envios)
+                else:
+                    falhas_lista.append(f"❌ {nome_base_limpo}: {msg}")
             
+            # Limpa o texto temporário de carregamento
+            status_placeholder.empty()
+            
+            # Renderiza o veredito consolidado de uma só vez (Evita estouro de buffer visual)
             if sucessos == total_envios:
-                st.success(f"🎉 Todos os {sucessos} e-mails foram enviados com sucesso!")
+                st.success(f"🎉 Sucesso absoluto! Todas as {sucessos} mensagens foram enviadas.")
                 st.balloons()
-                time.sleep(3)  
+                time.sleep(3)  # Janela aberta por 3 segundos para visualização
             else:
-                st.warning(f"Processo concluído: {sucessos} enviados com sucesso e {total_envios - sucessos} falhas.")
-                time.sleep(4)
+                st.warning(f"Processo concluído: {sucessos} mensagens enviadas com sucesso.")
+                # Se houver erros, exibe a lista de falhas estruturada
+                for erro_msg in falhas_lista:
+                    st.error(erro_msg)
+                time.sleep(5)
                 
-            st.rerun()  
+            st.rerun()  # Atualiza a view e encerra o ciclo de vida do pop-up
             
     with col_p2:
         if st.button("❌ Não, Cancelar", use_container_width=True):
@@ -692,7 +705,7 @@ if btn_enviar_emails:
         st.warning("⚠️ Gere os relatórios primeiro.")
         st.stop()
         
-    # Abre a janela modal passando os dados corretos obtidos da sua barra lateral
+    # Aciona a janela flutuante injetando os parâmetros da barra lateral
     confirmar_envio_atendimentos_popup(
         arquivos_validos=arquivos_validos,
         email_remetente="hudson.valente@crti.com.br",
