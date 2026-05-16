@@ -46,7 +46,7 @@ try:
     img_base64 = get_image_base64("hptechICO.png")
     st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0; font-size: 2.5rem;">Emissão de Termos de Encerramento</h1><img src="data:image/png;base64,{img_base64}" style="height: 180px;"></div>', unsafe_allow_html=True)
 except:
-    st.title(" Emissão de Termos de Encerramento")
+    st.title("Emissão de Termos de Encerramento")
 
 st.markdown("---")
 
@@ -71,7 +71,7 @@ except:
     df_leg = pd.DataFrame()
     lista_clientes = []
 
-# Sua lista completa e original de módulos
+# Lista de Módulos Original
 TODOS_MODULOS = [
     "Compras", 
     "Suprimentos e Estoque", 
@@ -155,7 +155,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
     else:
         with st.spinner("⏳ Gerando arquivos (Word e PDF)..."):
             try:
-                # CORREÇÃO: Aponta de volta para o modelo 'geral.docx' que deu certo
+                # CORREÇÃO DEFINITIVA: Mapeado com o nome correto 'encerramento.docx' enviado por você
                 if tipo_documento == "Termo de Homologação e Encerramento":
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 else:
@@ -163,7 +163,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
  
                 doc = DocxTemplate(caminho_modelo)
  
-                # Função RichText original para os não homologados (com marcador)
+                # Função RichText para as pendências encostarem à esquerda corretamente
                 rt_nao_homologados = RichText()
                 if modulos_nao_homologados:
                     for i, mod in enumerate(modulos_nao_homologados):
@@ -172,9 +172,9 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 else:
                     rt_nao_homologados.add("Nenhum módulo pendente.")
 
-                # Contexto estruturado por tipo de documento
+                # Processamento do Contexto por Tipo de Documento Escolhido
                 if tipo_documento == "Termo de Homologação e Encerramento":
-                    # Funções RichText restauradas que alinham as tabelas perfeitamente
+                    # Estrutura estável RichText que injeta os valores sem quebrar as colunas horizontais
                     rt_nomes = RichText()
                     for i, item in enumerate(dados_homologados_tabela):
                         rt_nomes.add(str(item['nome']))
@@ -185,23 +185,24 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         rt_datas.add(str(item['data']))
                         if i < len(dados_homologados_tabela) - 1: rt_datas.add('\n')
 
+                    # CHAVES AJUSTADAS PARA AS TAGS FIXAS DA SUA TABELA DO WORD
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_crti": gerente_crti,
                         "gerente_cliente": gerente_cliente,
                         "data_inicio": data_inicio.strftime("%d/%m/%Y"),
                         "data_fim": data_fim.strftime("%d/%m/%Y"),
-                        "nomes_homologados": rt_nomes,
-                        "datas_homologados": rt_datas,
-                        "texto_nao_homologados": rt_nao_homologados,
+                        "nomes_homologados": rt_nomes,               # Preenche {{ nomes_homologados }}
+                        "datas_homologados": rt_datas,               # Preenche {{ datas_homologados }}
+                        "texto_nao_homologados": rt_nao_homologados, # Preenche {{ texto_nao_homologados }}
                         "data_extenso": data_extenso_str
                     }
                 else:
-                    # Contexto do novo arquivo 'naohonologado.docx'
+                    # Contexto do documento isolado 'naohonologado.docx'
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_cliente": gerente_cliente,
-                        "texto_nao_homologados": rt_nao_homologados,
+                        "texto_nao_homologados": rt_nao_homologados, # Preenche {{ texto_nao_homologados }}
                         "data_extenso": data_extenso_str
                     }
  
