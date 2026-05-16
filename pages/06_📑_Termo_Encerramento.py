@@ -155,7 +155,8 @@ data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_f
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)1
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)2
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)3
-# 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)
+# 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)4
+# 5. GERAÇÃO DOS ARQUIVOS (WORD E PDF)
 if st.button("Gerar Termo de Encerramento", type="primary"):
     if not cliente_selecionado:
         st.warning("Selecione um cliente para prosseguir.")
@@ -167,21 +168,27 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
                 caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 doc = DocxTemplate(caminho_modelo)
                 
-                # Tratamento para não deixar o quadro de não homologados em branco
-                if not modulos_nao_homologados:
-                    lista_nao_homologados_contexto = ["Nenhum módulo pendente nesta fase."]
-                else:
-                    lista_nao_homologados_contexto = modulos_nao_homologados
+                # --- PROCESSAMENTO DOS MÓDULOS HOMOLOGADOS ---
+                # Junta todos os nomes e todas as datas pulando uma linha (\n) para cada um
+                nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
+                datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
                 
-                # Contexto direto mapeado para as tabelas do Word
+                # --- PROCESSAMENTO DOS MÓDULOS NÃO HOMOLOGADOS ---
+                if modulos_nao_homologados:
+                    texto_nao_homologados_str = "\n".join([f"📌 {mod}" for mod in modulos_nao_homologados])
+                else:
+                    texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
+                
+                # --- CONTEXTO LIMPO ENVIADO AO WORD ---
                 contexto = {
                     "cliente": cliente_selecionado,
                     "gerente_crti": gerente_crti,
                     "gerente_cliente": gerente_cliente,
                     "data_inicio": data_inicio.strftime("%d/%m/%Y"),
                     "data_fim": data_fim.strftime("%d/%m/%Y"),
-                    "homologados": dados_homologados_tabela, # Contém lista de dicionários [{'nome':..., 'data':...}]
-                    "nao_homologados": lista_nao_homologados_contexto,
+                    "nomes_homologados": nomes_homologados_str,   # Alimenta a Coluna 1
+                    "datas_homologados": datas_homologados_str,   # Alimenta a Coluna 2
+                    "texto_nao_homologados": texto_nao_homologados_str,
                     "data_extenso": data_extenso_str
                 }
                 
@@ -216,5 +223,7 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
                 with col_down2:
                     st.download_button(label="📥 Baixar Termo em Word (.docx)", data=buffer_docx, file_name=f"{nome_download_bonito}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
             except Exception as e:
+                st.error(f"Erro ao processar o documento físico: {e}")
+
                 st.error(f"Erro ao processar o documento físico: {e}")
 
