@@ -111,8 +111,8 @@ modulo = st.selectbox(
 
 # CAMINHOS AJUSTADOS EXATAMENTE COMO ESTÃO NO SEU GITHUB (Com "DO_MODULO_DE_GESTÃO" removendo acentos)
 MAPA_MODELOS = {
-    "Gestão de Compras": "modelos/TERMO_DE_HOMOLOGACAO_DO_MODULO_DE_COMPRAS.docx",
-    "Gestão de Suprimentos": "modelos/TERMO_DE_HOMOLOGACAO_DO_MODULO_DE_SUPRIMENTOS.docx"
+    "Gestão de Compras": "modelos/compras.docx",
+    "Gestão de Suprimentos": "modelos/suprimentos.docx"
 }
 
 if lista_clientes:
