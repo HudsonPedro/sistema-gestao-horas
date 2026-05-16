@@ -158,7 +158,7 @@ if st.button("Gerar Documento", type="primary"):
                 doc.save(buffer_docx)
                 buffer_docx.seek(0)
                 
-                nome_base = f"Termo_de_Homologacao_{modulo.replace(' ', '_')}_{cliente_selecionado.replace(' ', '_')}"
+                nome_base = f"Termo de Homologacao {modulo.replace(' ', ' ')}-{cliente_selecionado.replace(' ', ' ')}"
                 arquivo_docx_temporario = f"{nome_base}.docx"
                 arquivo_pdf_gerado = f"{nome_base}.pdf"
                 
