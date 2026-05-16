@@ -65,7 +65,7 @@ with st.sidebar:
 
 # 4. CONTEÚDO PRINCIPAL
 #st.title("📄 Gerador de Termos de Homologação")
-st.write("Selecione o cliente e o módulo para gerar o documento customizado.")
+#st.write("Selecione o cliente e o módulo para gerar o documento customizado.")
 # Função para converter imagem local para Base64 (para funcionar dentro do HTML)
 def get_image_base64(path):
     with open(path, "rb") as img_file:
@@ -84,6 +84,7 @@ try:
         """, 
         unsafe_allow_html=True
     )
+    st.markdown("Selecione o cliente e o módulo para gerar o Termo de Homologação.")
 except:
     # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
     st.title("📄 Gerador de Termos de Homologação")
