@@ -153,6 +153,7 @@ data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_f
 
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)1
+# 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)2
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)
 if st.button("Gerar Termo de Encerramento", type="primary"):
     if not cliente_selecionado:
@@ -165,35 +166,41 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
                 caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 doc = DocxTemplate(caminho_modelo)
                 
-                # --- CONSTRUÇÃO DA TABELA 1 (HOMOLOGADOS) EM PYTHON ---
+                # --- CONSTRUÇÃO DA TABELA 1 (HOMOLOGADOS) ---
                 subdoc_h = doc.new_subdoc()
                 tabela_h = subdoc_h.add_table(rows=1, cols=2)
-                tabela_h.style = 'Table Grid' # Força bordas pretas padrão do Word
+                tabela_h.style = 'Table Grid' # Força o estilo com bordas visíveis
                 
-                # Cabeçalhos da Tabela Homologados
+                # Configura Cabeçalhos
                 hdr_h = tabela_h.rows[0].cells
                 hdr_h[0].text = 'Módulos'
                 hdr_h[1].text = 'Data de Início em Produção'
-                hdr_h[0].paragraphs[0].runs[0].font.bold = True
-                hdr_h[1].paragraphs[0].runs[0].font.bold = True
                 
-                # Adiciona cada módulo homologado linha por linha (para baixo)
+                # Aplica negrito no cabeçalho
+                for cell in hdr_h:
+                    for paragraph in cell.paragraphs:
+                        for run in paragraph.runs:
+                            run.font.bold = True
+                
+                # Alimenta as linhas com os módulos homologados
                 for item in dados_homologados_tabela:
                     linha_celulas = tabela_h.add_row().cells
                     linha_celulas[0].text = str(item['nome'])
                     linha_celulas[1].text = str(item['data'])
                 
-                # --- CONSTRUÇÃO DA TABELA 2 (NÃO HOMOLOGADOS) EM PYTHON ---
+                # --- CONSTRUÇÃO DA TABELA 2 (NÃO HOMOLOGADOS) ---
                 subdoc_nh = doc.new_subdoc()
                 tabela_nh = subdoc_nh.add_table(rows=1, cols=1)
-                tabela_nh.style = 'Table Grid'
+                tabela_nh.style = 'Table Grid' # Força o estilo com bordas visíveis
                 
-                # Cabeçalho da Tabela Não Homologados
+                # Configura Cabeçalho
                 hdr_nh = tabela_nh.rows[0].cells
                 hdr_nh[0].text = 'Módulos / Rotinas Não Homologados'
-                hdr_nh[0].paragraphs[0].runs[0].font.bold = True
+                for paragraph in hdr_nh[0].paragraphs:
+                    for run in paragraph.runs:
+                        run.font.bold = True
                 
-                # Adiciona cada módulo não homologado linha por linha
+                # Alimenta as linhas com os módulos não homologados
                 if modulos_nao_homologados:
                     for mod in modulos_nao_homologados:
                         linha_celulas = tabela_nh.add_row().cells
@@ -209,14 +216,14 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
                     "gerente_cliente": gerente_cliente,
                     "data_inicio": data_inicio.strftime("%d/%m/%Y"),
                     "data_fim": data_fim.strftime("%d/%m/%Y"),
-                    "tabela_homologados": subdoc_h,      # Injeta a Tabela 1 pronta
-                    "tabela_nao_homologados": subdoc_nh,  # Injeta a Tabela 2 pronta
+                    "tabela_homologados": subdoc_h,
+                    "tabela_nao_homologados": subdoc_nh,
                     "data_extenso": data_extenso_str
                 }
                 
                 doc.render(contexto)
                 
-                # Código de salvamento na memória e arquivos temporários (Mantido igual)
+                # Código de salvamento na memória e tratamento de PDF
                 buffer_docx = io.BytesIO()
                 doc.save(buffer_docx)
                 buffer_docx.seek(0)
@@ -246,4 +253,3 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
                     st.download_button(label="📥 Baixar Termo em Word (.docx)", data=buffer_docx, file_name=f"{nome_download_bonito}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
             except Exception as e:
                 st.error(f"Erro ao processar o documento físico: {e}")
-
