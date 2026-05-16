@@ -43,18 +43,19 @@ with st.sidebar:
     st.markdown("---")
     st.title("Menu Principal")
     
+     # Navegação Atualizada
     if st.button("🏠 Home", use_container_width=True):
         st.switch_page("app.py")
     if st.button("📊 Dashboard", use_container_width=True):
-        st.switch_page("01_📊_Dashboard")
+        st.switch_page("pages/01_📊_Dashboard.py")
     if st.button("📄 Relatórios", use_container_width=True):
-        st.switch_page("02_📄_Relatorios")
+        st.switch_page("pages/02_📄_Relatorios.py")
     if st.button("📝 Lançamento", use_container_width=True):
-        st.switch_page("03_📝_Lancamento")
+        st.switch_page("pages/03_📝_Lancamento.py")
     if st.button("💰 Medição Mensal", use_container_width=True):
-        st.switch_page("04_💰_Medicao_Mensal")
-    if st.button("📋 Gerador de Termos", use_container_width=True):
-        st.switch_page("05_📋_Termos")
+        st.switch_page("pages/04_💰_Medicao_Mensal.py")
+    if st.button("📋 Gerador de Termos", use_container_width=True): 
+        st.switch_page("pages/05_📋_Termos")
     
     st.divider()
     st.caption("v1.0 - 11052026")
