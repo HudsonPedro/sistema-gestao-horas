@@ -166,7 +166,7 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
     else:
         with st.spinner("⏳ Gerando termos customizados (Word e PDF)..."):
             try:
-                caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramnto.docx")
+                caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 doc = DocxTemplate(caminho_modelo)
                 
                 # --- PROCESSAMENTO DOS MÓDULOS HOMOLOGADOS ---
