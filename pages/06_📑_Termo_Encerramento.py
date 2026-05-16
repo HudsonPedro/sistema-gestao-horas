@@ -56,9 +56,9 @@ def get_image_base64(path):
     with open(path, "rb") as img_file: return base64.b64encode(img_file.read()).decode()
 try:
     img_base64 = get_image_base64("hptechICO.png")
-    st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0; font-size: 2.5rem;">Termo de Homologação Geral</h1><img src="data:image/png;base64,{img_base64}" style="height: 180px;"></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0; font-size: 2.5rem;">Termo de Homologação</h1><img src="data:image/png;base64,{img_base64}" style="height: 180px;"></div>', unsafe_allow_html=True)
 except:
-    st.title("📜 Termo de Homologação Geral")
+    st.title("📜 Termo de Homologação e Encerramento")
 
 st.markdown("---")
 
@@ -128,7 +128,7 @@ meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)
-if st.button("Gerar Termo de Encerramento Geral", type="primary"):
+if st.button("Gerar Termo de Encerramento", type="primary"):
     if not cliente_selecionado:
         st.warning("Selecione um cliente para prosseguir.")
     elif not modulos_homologados and not modulos_nao_homologados:
@@ -136,7 +136,7 @@ if st.button("Gerar Termo de Encerramento Geral", type="primary"):
     else:
         with st.spinner("⏳ Gerando termos customizados (Word e PDF)..."):
             try:
-                caminho_modelo = os.path.join(BASE_DIR, "modelos", "geral.docx")
+                caminho_modelo = os.path.join(BASE_DIR, "modelos", ".docx")
                 doc = DocxTemplate(caminho_modelo)
                 
                 contexto = {
@@ -156,7 +156,7 @@ if st.button("Gerar Termo de Encerramento Geral", type="primary"):
                 doc.save(buffer_docx)
                 buffer_docx.seek(0)
                 
-                nome_base = f"Termo_Encerramento_Geral_{cliente_selecionado.replace(' ', '_')}"
+                nome_base = f"Termo de Homologação e Encerramento-{cliente_selecionado.replace(' ', ' ')}"
                 arquivo_docx_temporario = f"{nome_base}.docx"
                 arquivo_pdf_gerado = f"{nome_base}.pdf"
                 
