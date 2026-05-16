@@ -7,6 +7,8 @@ import os
 import subprocess
 import base64
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Gerador de Termos HPTECH", page_icon="hptech.png", layout="wide")
 
