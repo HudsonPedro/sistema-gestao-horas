@@ -50,7 +50,7 @@ except:
 
 st.markdown("---")
 
-# SELETOR DO DOCUMENTO
+# SELETOR DO DOCUMENTO (Nomes idênticos à sua interface em produção)
 tipo_documento = st.selectbox(
     "Selecione o Tipo de Documento que deseja emitir:",
     ["Termo de Homologação e Encerramento", "Documento de Não Homologação (Apenas Pendências)"]
@@ -61,7 +61,7 @@ st.markdown("---")
 # Carregamento de Legendas (Planilha Google)
 @st.cache_data(ttl=600)
 def carregar_legendas():
-    url = url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
+   url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
     return pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
 
 try:
@@ -71,7 +71,7 @@ except:
     df_leg = pd.DataFrame()
     lista_clientes = []
 
-# Sua lista de módulos original restaurada por completo
+# Lista de Módulos Original
 TODOS_MODULOS = [
     "Compras", "Suprimentos e Estoque", "Frota - Equipamentos", 
     "Contratos e Medições de Terceiros", "Custos e Resultados", 
@@ -90,10 +90,10 @@ cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
-    if solicitantes: gerente_cliente_sugerido = solicitantes[0]
+    if solicitantes: gerente_cliente_sugerido = solicitantes
 
-# --- 2. MONTAGEM DA INTERFACE DINÂMICA COM VALIDAÇÃO CORRIGIDA ---
-if "Geral" in tipo_documento:
+# --- 2. MONTAGEM DA INTERFACE DINÂMICA (CORRIGIDA EXATAMENTE COM O NOME DO SELECTBOX) ---
+if tipo_documento == "Termo de Homologação e Encerramento":
     col1, col2 = st.columns(2)
     with col1:
         gerente_crti = st.text_input("Gerente de implantação na CRTI:", value="SUELLEN GOMES", disabled=True)
@@ -117,7 +117,7 @@ if "Geral" in tipo_documento:
     modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS:", options=opcoes_restantes)
 
 else:
-    # MODO APENAS NÃO HOMOLOGADOS (Documento de Pendências)
+    # MODO APENAS NÃO HOMOLOGADOS
     col_aux1, col_aux2 = st.columns(2)
     with col_aux1:
         gerente_cliente = st.text_input("Nome do Gestor do Projeto (Assinatura):", value=gerente_cliente_sugerido)
@@ -135,22 +135,22 @@ data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_f
 if st.button("Gerar Documento Selecionado", type="primary"):
     if not cliente_selecionado:
         st.warning("Selecione um cliente para prosseguir.")
-    elif "Geral" not in tipo_documento and not modulos_nao_homologados:
+    elif tipo_documento == "Documento de Não Homologação (Apenas Pendências)" and not modulos_nao_homologados:
         st.warning("Selecione ao menos um módulo não homologado para gerar o documento.")
     else:
         with st.spinner("⏳ Gerando arquivos (Word e PDF)..."):
             try:
-                # Carrega o modelo correto com base no termo escolhido no selectbox
-                if "Geral" in tipo_documento:
+                # VALIDAÇÃO CORRIGIDA: Usa exatamente o nome do selectbox do topo
+                if tipo_documento == "Termo de Homologação e Encerramento":
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
-                    # Se você renomeou o arquivo físico no GitHub para encerramento.docx, use a linha comentada abaixo:
+                    # Se você renomeou o arquivo físico para encerramento.docx, descomente a linha abaixo:
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 else:
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "naohonologado.docx")
  
                 doc = DocxTemplate(caminho_modelo)
  
-                # Tratamento de RichText para os não homologados (com bolinha de marcador)
+                # Função RichText para as pendências encostarem à esquerda
                 rt_nao_homologados = RichText()
                 if modulos_nao_homologados:
                     for i, mod in enumerate(modulos_nao_homologados):
@@ -159,8 +159,8 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 else:
                     rt_nao_homologados.add("Nenhum módulo pendente.")
 
-                # Injeção de Contexto baseado na seleção
-                if "Geral" in tipo_documento:
+                # Processamento do Contexto Baseado na Seleção Exata
+                if tipo_documento == "Termo de Homologação e Encerramento":
                     rt_nomes = RichText()
                     for i, item in enumerate(dados_homologados_tabela):
                         rt_nomes.add(str(item['nome']))
@@ -171,7 +171,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         rt_datas.add(str(item['data']))
                         if i < len(dados_homologados_tabela) - 1: rt_datas.add('\n')
 
-                    # CHAVES SINCRONIZADAS PARA AS SUAS TAGS SIMPLES DO WORD:
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_crti": gerente_crti,
@@ -212,7 +211,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 
                 st.success("✨ Documento gerado com sucesso!")
                 
-                prefixo = "Termo_Geral" if "Geral" in tipo_documento else "Doc_Não_Homologação"
+                prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento" else "Doc_Não_Homologação"
                 nome_download_bonito = f"{prefixo} - {cliente_selecionado}".replace("/", "-")
  
                 col_down1, col_down2 = st.columns(2)
