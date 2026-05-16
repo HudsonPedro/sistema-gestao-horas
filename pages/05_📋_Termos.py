@@ -40,37 +40,33 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     st.markdown("---")
     st.title("Menu Principal")
-    # Navegação Atualizada
+    
+    # Navegação com rotas limpas para evitar erros de compilação
     if st.button("🏠 Home", use_container_width=True):
         st.switch_page("app.py")
     if st.button("📊 Dashboard", use_container_width=True):
-        st.switch_page("pages/01_📊_Dashboard.py")
+        st.switch_page("01_📊_Dashboard")
     if st.button("📄 Relatórios", use_container_width=True):
-        st.switch_page("pages/02_📄_Relatorios.py")
+        st.switch_page("02_📄_Relatorios")
     if st.button("📝 Lançamento", use_container_width=True):
-        st.switch_page("pages/03_📝_Lancamento.py")
+        st.switch_page("03_📝_Lancamento")
     if st.button("💰 Medição Mensal", use_container_width=True):
-        st.switch_page("pages/04_💰_Medicao_Mensal.py")
+        st.switch_page("04_💰_Medicao_Mensal")
     if st.button("📋 Gerador de Termos", use_container_width=True): 
-        st.switch_page("pages/05_📋_Termos.py")
+        st.switch_page("05_📑_Termos")
     
     st.divider()
     st.caption("v1.0 - 11052026")
     st.caption("Todos os direitos reservados")
     st.caption("Copyright ©2026 HPtech Informática ME")
 
-# 4. CONTEÚDO PRINCIPAL
-#st.title("📄 Gerador de Termos de Homologação")
-#st.write("Selecione o cliente e o módulo para gerar o documento customizado.")
-# Função para converter imagem local para Base64 (para funcionar dentro do HTML)
+# 4. CONTEÚDO PRINCIPAL (COM LOGO)
 def get_image_base64(path):
     with open(path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-# Tenta carregar a imagem que está no repositório GitHub
 try:
     img_base64 = get_image_base64("hptechICO.png")
-    
     st.markdown(
         f"""
         <div style="display: flex; align-items: center;">
@@ -82,7 +78,6 @@ try:
     )
     st.markdown("Selecione o cliente e o módulo para gerar o Termo de Homologação.")
 except:
-    # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
     st.title("📄 Gerador de Termos de Homologação")
 
 st.markdown("---")
@@ -103,36 +98,36 @@ except Exception as e:
 modulo = st.selectbox(
     "Selecione o Módulo de Treinamento:",
     ["Compras", 
-	 "Suprimentos e Estoque", 
-	 "Frota - Equipamentos", 
-	 "Contratos e Medições de Terceiros", 
-	 "Custos e Resultados", 
-	 "Financeiro", 
-	 "CRTI Emissor Nfe/NFCe", 
-	 "CRTI Emissor CTe", 
-	 "CRTI Emissor MDFe", 
-	 "CRTI Emissor NFSe", 
-	 "Gestão de Vendas (Produção)", 
-	 "Engenharia, Contratos e Medições de Obras", 
-	 "Locação de Equipamentos"
-	]
+     "Suprimentos e Estoque", 
+     "Frota - Equipamentos", 
+     "Contratos e Medições de Terceiros", 
+     "Custos e Resultados", 
+     "Financeiro", 
+     "CRTI Emissor Nfe/NFCe", 
+     "CRTI Emissor CTe", 
+     "CRTI Emissor MDFe", 
+     "CRTI Emissor NFSe", 
+     "Gestão de Vendas (Produção)", 
+     "Engenharia, Contratos e Medições de Obras", 
+     "Locação de Equipamentos"
+    ]
 )
 
-# CAMINHOS AJUSTADOS EXATAMENTE COMO ESTÃO NO SEU GITHUB (Com "DO_MODULO_DE_GESTÃO" removendo acentos)
+# MAPA CORRIGIDO (Removido o parêntese incorreto na linha do suprimentos)
 MAPA_MODELOS = {
     "Compras": os.path.join(BASE_DIR, "modelos", "compras.docx"),
-    "Suprimentos e Estoque": os.path.join(BASE_DIR, "modelos", "suprimentos.docx)",
-	"Frota - Equipamentos": os.path.join(BASE_DIR, "modelos", "frotas.docx"),
-	"Contratos e Medições de Terceiros": os.path.join(BASE_DIR, "modelos", "terceiros.docx"),
-	"Custos e Resultados": os.path.join(BASE_DIR, "modelos", "custos.docx"),
-	"Financeiro": os.path.join(BASE_DIR, "modelos", "financeiro.docx"),
-	"CRTI Emissor Nfe/NFCe": os.path.join(BASE_DIR, "modelos", "nfe.docx"),
-	"CRTI Emissor CTe": os.path.join(BASE_DIR, "modelos", "cte.docx"),
-	"CRTI Emissor MDFe": os.path.join(BASE_DIR, "modelos", "mdfe.docx"),
-	"CRTI Emissor NFSe": os.path.join(BASE_DIR, "modelos", "nfse.docx"),
-	"Gestão de Vendas (Produção)": os.path.join(BASE_DIR, "modelos", "vendas.docx"),
-	"Engenharia, Contratos e Medições de Obras": os.path.join(BASE_DIR, "modelos", "engenharia.docx"),
-	"Locação de Equipamentos": os.path.join(BASE_DIR, "modelos", "locacao.docx")
+    "Suprimentos e Estoque": os.path.join(BASE_DIR, "modelos", "suprimentos.docx"),
+    "Frota - Equipamentos": os.path.join(BASE_DIR, "modelos", "frotas.docx"),
+    "Contratos e Medições de Terceiros": os.path.join(BASE_DIR, "modelos", "terceiros.docx"),
+    "Custos e Resultados": os.path.join(BASE_DIR, "modelos", "custos.docx"),
+    "Financeiro": os.path.join(BASE_DIR, "modelos", "financeiro.docx"),
+    "CRTI Emissor Nfe/NFCe": os.path.join(BASE_DIR, "modelos", "nfe.docx"),
+    "CRTI Emissor CTe": os.path.join(BASE_DIR, "modelos", "cte.docx"),
+    "CRTI Emissor MDFe": os.path.join(BASE_DIR, "modelos", "mdfe.docx"),
+    "CRTI Emissor NFSe": os.path.join(BASE_DIR, "modelos", "nfse.docx"),
+    "Gestão de Vendas (Produção)": os.path.join(BASE_DIR, "modelos", "vendas.docx"),
+    "Engenharia, Contratos e Medições de Obras": os.path.join(BASE_DIR, "modelos", "engenharia.docx"),
+    "Locação de Equipamentos": os.path.join(BASE_DIR, "modelos", "locacao.docx")
 }
 
 if lista_clientes:
@@ -159,28 +154,22 @@ if st.button("Gerar Documento", type="primary"):
                 
                 doc.render(contexto)
                 
-                # Gerar o arquivo Word em memória para download
                 buffer_docx = io.BytesIO()
                 doc.save(buffer_docx)
                 buffer_docx.seek(0)
                 
-                # Configurar nomes para a conversão em PDF
-                nome_base = f"Termo de Homologação {modulo.replace(' ', ' ')}-{cliente_selecionado.replace(' ', ' ')}"
+                nome_base = f"Termo_de_Homologacao_{modulo.replace(' ', '_')}_{cliente_selecionado.replace(' ', '_')}"
                 arquivo_docx_temporario = f"{nome_base}.docx"
                 arquivo_pdf_gerado = f"{nome_base}.pdf"
                 
-                # Salva o arquivo temporário no servidor para o conversor ler
                 doc.save(arquivo_docx_temporario)
                 
-                # Executa o LibreOffice em segundo plano no Linux para criar o PDF
                 cmd = f"libreoffice --headless --convert-to pdf {arquivo_docx_temporario}"
                 subprocess.run(cmd, shell=True, check=True)
                 
-                # Lê o PDF gerado de volta para a memória
                 with open(arquivo_pdf_gerado, "rb") as f:
                     buffer_pdf = io.BytesIO(f.read())
                 
-                # Deleta os arquivos soltos no servidor por segurança
                 if os.path.exists(arquivo_docx_temporario):
                     os.remove(arquivo_docx_temporario)
                 if os.path.exists(arquivo_pdf_gerado):
@@ -188,7 +177,7 @@ if st.button("Gerar Documento", type="primary"):
                 
                 st.success("✨ Documentos gerados com sucesso!")
                 
-                # Mostra dois botões alinhados para o usuário baixar o formato que quiser
+                # BOTÕES DE DOWNLOAD CORRIGIDOS E FINALIZADOS LADO A LADO
                 col_down1, col_down2 = st.columns(2)
                 
                 with col_down1:
@@ -210,7 +199,7 @@ if st.button("Gerar Documento", type="primary"):
                     )
                 
             except subprocess.CalledProcessError:
-                st.error("Erro ao converter para PDF. Verifique se o arquivo 'packages.txt' com o texto 'libreoffice' foi criado corretamente na raiz do seu GitHub.")
+                st.error("Erro ao converter para PDF. Verifique se o arquivo packages.txt com o texto 'libreoffice' foi criado na raiz do GitHub.")
             except FileNotFoundError:
                 st.error(f"Erro: O arquivo de modelo não foi localizado em: {caminho_modelo}")
             except Exception as e:
