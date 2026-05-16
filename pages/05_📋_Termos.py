@@ -100,13 +100,37 @@ except Exception as e:
 
 modulo = st.selectbox(
     "Selecione o Módulo de Treinamento:",
-    ["Gestão de Compras", "Gestão de Suprimentos"]
+    ["Compras", 
+	 "Suprimentos e Estoque",
+	 "Frota - Equipamentos",
+	 "Contratos e Medições de Terceiros",
+	 "Custos e Resultados",
+	 "Financeiro",
+	 "CRTI Emissor Nfe/NFCe",
+	 "CRTI Emissor CTe",
+	 "CRTI Emissor MDFe",
+	 "CRTI Emissor NFSe",
+	 "Gestão de Vendas (Produção)",
+	 "Engenharia, Contratos e Medições de Obras",
+	 "Locação de Equipamentos"
+	]
 )
 
 # CAMINHOS AJUSTADOS EXATAMENTE COMO ESTÃO NO SEU GITHUB (Com "DO_MODULO_DE_GESTÃO" removendo acentos)
 MAPA_MODELOS = {
-    "Gestão de Compras": "modelos/compras.docx",
-    "Gestão de Suprimentos": "modelos/suprimentos.docx"
+    "Compras": "modelos/compras.docx",
+    "Suprimentos e Estoque": "modelos/suprimentos.docx",
+	"Frota - Equipamentos": "modelos/frotas.docx",
+	"Contratos e Medições de Terceiros": "modelos/terceiros.docx",
+	"Custos e Resultados": "modelos/custos.docx",
+	"Financeiro": "modelos/financeiro.docx",
+	"CRTI Emissor Nfe/NFCe": "modelos/nfe.docx",
+	"CRTI Emissor CTe": "modelos/cte.docx",
+	"CRTI Emissor MDFe": "modelos/mdfe.docx",
+	"CRTI Emissor NFSe": "modelos/nfse.docx",
+	"Gestão de Vendas (Produção)": "modelos/vendas.docx",
+	"Engenharia, Contratos e Medições de Obras": "modelos/engenharia.docx",
+	"Locação de Equipamentos": "modelos/locacao.docx"
 }
 
 if lista_clientes:
@@ -139,7 +163,7 @@ if st.button("Gerar Documento", type="primary"):
                 buffer_docx.seek(0)
                 
                 # Configurar nomes para a conversão em PDF
-                nome_base = f"Termo_{modulo.replace(' ', '_')}_{cliente_selecionado.replace(' ', '_')}"
+                nome_base = f"Termo de Homologação {modulo.replace(' ', ' ')}-{cliente_selecionado.replace(' ', ' ')}"
                 arquivo_docx_temporario = f"{nome_base}.docx"
                 arquivo_pdf_gerado = f"{nome_base}.pdf"
                 
