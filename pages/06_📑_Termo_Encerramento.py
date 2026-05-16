@@ -21,7 +21,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Menu Lateral Padrão (Ajustado com os emojis exatos da sua árvore de arquivos)
+# Menu Lateral Padrão
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -50,7 +50,7 @@ except:
 
 st.markdown("---")
 
-# SELETOR DO DOCUMENTO (Nomes idênticos à sua interface em produção)
+# SELETOR DO DOCUMENTO
 tipo_documento = st.selectbox(
     "Selecione o Tipo de Documento que deseja emitir:",
     ["Termo de Homologação e Encerramento", "Documento de Não Homologação (Apenas Pendências)"]
@@ -61,7 +61,7 @@ st.markdown("---")
 # Carregamento de Legendas (Planilha Google)
 @st.cache_data(ttl=600)
 def carregar_legendas():
-   url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
     return pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
 
 try:
@@ -90,9 +90,9 @@ cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
-    if solicitantes: gerente_cliente_sugerido = solicitantes
+    if solicitantes: gerente_cliente_sugerido = solicitantes[0]
 
-# --- 2. MONTAGEM DA INTERFACE DINÂMICA (CORRIGIDA EXATAMENTE COM O NOME DO SELECTBOX) ---
+# --- 2. MONTAGEM DA INTERFACE DINÂMICA ---
 if tipo_documento == "Termo de Homologação e Encerramento":
     col1, col2 = st.columns(2)
     with col1:
@@ -140,17 +140,15 @@ if st.button("Gerar Documento Selecionado", type="primary"):
     else:
         with st.spinner("⏳ Gerando arquivos (Word e PDF)..."):
             try:
-                # VALIDAÇÃO CORRIGIDA: Usa exatamente o nome do selectbox do topo
+                # Gerenciador estrito de caminhos de arquivos físicos
                 if tipo_documento == "Termo de Homologação e Encerramento":
-                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
-                    # Se você renomeou o arquivo físico para encerramento.docx, descomente a linha abaixo:
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 else:
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "naohonologado.docx")
  
                 doc = DocxTemplate(caminho_modelo)
  
-                # Função RichText para as pendências encostarem à esquerda
+                # Função RichText para as pendências
                 rt_nao_homologados = RichText()
                 if modulos_nao_homologados:
                     for i, mod in enumerate(modulos_nao_homologados):
@@ -159,7 +157,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 else:
                     rt_nao_homologados.add("Nenhum módulo pendente.")
 
-                # Processamento do Contexto Baseado na Seleção Exata
                 if tipo_documento == "Termo de Homologação e Encerramento":
                     rt_nomes = RichText()
                     for i, item in enumerate(dados_homologados_tabela):
@@ -177,16 +174,16 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         "gerente_cliente": gerente_cliente,
                         "data_inicio": data_inicio.strftime("%d/%m/%Y"),
                         "data_fim": data_fim.strftime("%d/%m/%Y"),
-                        "nomes_homologados": rt_nomes,         # Alimenta {{ nomes_homologados }}
-                        "datas_homologados": rt_datas,         # Alimenta {{ datas_homologados }}
-                        "texto_nao_homologados": rt_nao_homologados, # Alimenta {{ texto_nao_homologados }}
+                        "nomes_homologados": rt_nomes,
+                        "datas_homologados": rt_datas,
+                        "texto_nao_homologados": rt_nao_homologados,
                         "data_extenso": data_extenso_str
                     }
                 else:
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_cliente": gerente_cliente,
-                        "texto_nao_homologados": rt_nao_homologados, # Alimenta {{ texto_nao_homologados }}
+                        "texto_nao_homologados": rt_nao_homologados,
                         "data_extenso": data_extenso_str
                     }
  
