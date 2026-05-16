@@ -163,11 +163,11 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
             try:
                 caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 doc = DocxTemplate(caminho_modelo)
-# ADICIONE ESSE TRATAMENTO AQUI:
-if not modulos_nao_homologados:
-    lista_nao_homologados_contexto = ["Nenhum módulo pendente nesta fase."]
-else:
-    lista_nao_homologados_contexto = modulos_nao_homologados
+                # ADICIONE ESSE TRATAMENTO AQUI:
+                if not modulos_nao_homologados:
+                    lista_nao_homologados_contexto = ["Nenhum módulo pendente nesta fase."]
+                else:
+                    lista_nao_homologados_contexto = modulos_nao_homologados
 
                 contexto = {
                     "cliente": cliente_selecionado,
