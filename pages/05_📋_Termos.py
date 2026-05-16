@@ -3,32 +3,24 @@ import pandas as pd
 from docxtpl import DocxTemplate
 from datetime import datetime
 import io
-import base64
-import io
 import os
 import subprocess
+import base64
 
-# 1. CONFIGURAÇÃO DA PÁGINA (Deve ser a primeira linha de comandos)
-st.set_page_config(page_title="Gerador de Termos - HPTECH", page_icon="hptech.png", layout="wide")
+# 1. CONFIGURAÇÃO DA PÁGINA
+st.set_page_config(page_title="Gerador de Termos HPTECH", page_icon="hptech.png", layout="wide")
 
 # 2. CSS PARA OCULTAR O MENU PADRÃO E APLICAR SEU DESIGN
 st.markdown("""
     <style>
-        /* Esconde o menu nativo do Streamlit */
         [data-testid="stSidebarNav"] {display: none;}
-        
-        /* Zera o espaçamento do topo */
         [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
-        
-        /* Estilo da caixinha de usuário */
         .user-block {
             background-color: #f0f2f6;
             padding: 8px;
             border-radius: 8px;
             margin-top: -10px;
         }
-        
-        /* Cor do título principal */
         h1 { color: #b0231d; }
     </style>
 """, unsafe_allow_html=True)
@@ -46,8 +38,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     st.markdown("---")
     st.title("Menu Principal")
-    
-     # Navegação Atualizada
+    # Navegação Atualizada
     if st.button("🏠 Home", use_container_width=True):
         st.switch_page("app.py")
     if st.button("📊 Dashboard", use_container_width=True):
@@ -130,31 +121,71 @@ if st.button("Gerar Documento", type="primary"):
     if not cliente_selecionado or cliente_selecionado == "Erro ao carregar":
         st.warning("Por favor, selecione um cliente válido.")
     else:
-        try:
-            caminho_modelo = MAPA_MODELOS.get(modulo)
-            doc = DocxTemplate(caminho_modelo)
-            
-            contexto = {
-                "cliente": cliente_selecionado,
-                "data": data_formatada
-            }
-            
-            doc.render(contexto)
-            
-            buffer = io.BytesIO()
-            doc.save(buffer)
-            buffer.seek(0)
-            
-            st.success("✨ Documento gerado com sucesso!")
-            
-            st.download_button(
-                label=f"📥 Baixar Termo de Homologação {modulo} (.docx)",
-                data=buffer,
-                file_name=f"Termo de Homologação {modulo.replace(' ', ' ')}-{cliente_selecionado}.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
-            
-        except FileNotFoundError:
-            st.error(f"Erro: O arquivo de modelo não foi localizado em: {caminho_modelo}")
-        except Exception as e:
-            st.error(f"Ocorreu um erro ao processar o documento: {e}")
+        with st.spinner("⏳ Gerando arquivos (Word e PDF)..."):
+            try:
+                caminho_modelo = MAPA_MODELOS.get(modulo)
+                doc = DocxTemplate(caminho_modelo)
+                
+                contexto = {
+                    "cliente": cliente_selecionado,
+                    "data": data_formatada
+                }
+                
+                doc.render(contexto)
+                
+                # Gerar o arquivo Word em memória para download
+                buffer_docx = io.BytesIO()
+                doc.save(buffer_docx)
+                buffer_docx.seek(0)
+                
+                # Configurar nomes para a conversão em PDF
+                nome_base = f"Termo_{modulo.replace(' ', '_')}_{cliente_selecionado.replace(' ', '_')}"
+                arquivo_docx_temporario = f"{nome_base}.docx"
+                arquivo_pdf_gerado = f"{nome_base}.pdf"
+                
+                # Salva o arquivo temporário no servidor para o conversor ler
+                doc.save(arquivo_docx_temporario)
+                
+                # Executa o LibreOffice em segundo plano no Linux para criar o PDF
+                cmd = f"libreoffice --headless --convert-to pdf {arquivo_docx_temporario}"
+                subprocess.run(cmd, shell=True, check=True)
+                
+                # Lê o PDF gerado de volta para a memória
+                with open(arquivo_pdf_gerado, "rb") as f:
+                    buffer_pdf = io.BytesIO(f.read())
+                
+                # Deleta os arquivos soltos no servidor por segurança
+                if os.path.exists(arquivo_docx_temporario):
+                    os.remove(arquivo_docx_temporario)
+                if os.path.exists(arquivo_pdf_gerado):
+                    os.remove(arquivo_pdf_gerado)
+                
+                st.success("✨ Documentos gerados com sucesso!")
+                
+                # Mostra dois botões alinhados para o usuário baixar o formato que quiser
+                col_down1, col_down2 = st.columns(2)
+                
+                with col_down1:
+                    st.download_button(
+                        label="📥 Baixar em PDF (.pdf)",
+                        data=buffer_pdf,
+                        file_name=f"{nome_base}.pdf",
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
+                    
+                with col_down2:
+                    st.download_button(
+                        label="📥 Baixar em Word (.docx)",
+                        data=buffer_docx,
+                        file_name=f"{nome_base}.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        use_container_width=True
+                    )
+                
+            except subprocess.CalledProcessError:
+                st.error("Erro ao converter para PDF. Verifique se o arquivo 'packages.txt' com o texto 'libreoffice' foi criado corretamente na raiz do seu GitHub.")
+            except FileNotFoundError:
+                st.error(f"Erro: O arquivo de modelo não foi localizado em: {caminho_modelo}")
+            except Exception as e:
+                st.error(f"Ocorreu um erro ao processar o documento: {e}")
