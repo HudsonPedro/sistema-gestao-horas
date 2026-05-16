@@ -94,7 +94,7 @@ with st.sidebar:
     if st.button("💰 Medição Mensal", use_container_width=True):
         st.switch_page("pages/04_💰_Medicao_Mensal.py")
     if st.button("📋 Gerador de Termos", use_container_width=True): 
-        st.switch_page("pages/05_📋_Termos")
+        st.switch_page("pages/05_📋_Termos.py")
            
     st.divider()
     st.caption("v1.0 - 11052026")
