@@ -78,14 +78,25 @@ TODOS_MODULOS = [
     "Frota - Equipamentos", 
     "Contratos e Medições de Terceiros", 
     "Custos e Resultados", 
+    "Apropriações e Apontamentos", 
+    "Produção", 
     "Financeiro", 
-    "CRTI Emissor Nfe/NFCe", 
-    "CRTI Emissor CTe", 
-    "CRTI Emissor MDFe", 
+    "Contábil", 
+    "Patrimonial",  
+    "Fiscal", 
+    "CRTI Buscador",  
+    "CRTI Emissor NFe/NFCe", 
+    "CRTI Emissor CTe",  
+    "CRTI Emissor MDFe",  
     "CRTI Emissor NFSe", 
-    "Gestão de Vendas (Produção)", 
+    "CRTI Emissor Fatura de Locação",  
+    "Gestão de Vendas (Produção)",  
+    "Gestão de Vendas (Agronegócio)",  
     "Engenharia, Contratos e Medições de Obras", 
-    "Locação de Equipamentos"
+    "Locação de Equipamentos", 
+    "Qualidade/Avaliação/Documentação", 
+    "Cadastros Globais", 
+    "Configuração do Sistema"
 ]
 
 # --- 1. ENTRADAS COMUNS DE CLIENTE ---
