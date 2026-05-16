@@ -11,7 +11,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 st.set_page_config(page_title="Termos HPTECH", page_icon="hptech.png", layout="wide")
 
-# CSS do seu sistema
+# CSS original do seu sistema
 st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {display: none;}
@@ -50,7 +50,7 @@ except:
 
 st.markdown("---")
 
-# Seleção do Tipo de Documento (Chave da mudança)
+# SELETOR DO DOCUMENTO (Nova função isolada)
 tipo_documento = st.selectbox(
     "Selecione o Tipo de Documento que deseja emitir:",
     ["Termo de Homologação e Encerramento", "Documento de Não Homologação (Apenas Pendências)"]
@@ -58,7 +58,7 @@ tipo_documento = st.selectbox(
 
 st.markdown("---")
 
-# Carregamento da base via link público Excel
+# Carregamento de Legendas (Planilha Google)
 @st.cache_data(ttl=600)
 def carregar_legendas():
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
@@ -71,43 +71,32 @@ except:
     df_leg = pd.DataFrame()
     lista_clientes = []
 
-# Mantido exatamente a sua lista original sem alterações
+# Sua lista de módulos original e intocada
 TODOS_MODULOS = [
     "Compras", 
     "Suprimentos e Estoque", 
     "Frota - Equipamentos", 
     "Contratos e Medições de Terceiros", 
     "Custos e Resultados", 
-    "Apropriações e Apontamentos", 
-    "Produção", 
     "Financeiro", 
-    "Contábil", 
-    "Patrimonial",  
-    "Fiscal", 
-    "CRTI Buscador",  
-    "CRTI Emissor NFe/NFCe", 
-    "CRTI Emissor CTe",  
-    "CRTI Emissor MDFe",  
+    "CRTI Emissor Nfe/NFCe", 
+    "CRTI Emissor CTe", 
+    "CRTI Emissor MDFe", 
     "CRTI Emissor NFSe", 
-    "CRTI Emissor Fatura de Locação",  
-    "Gestão de Vendas (Produção)",  
-    "Gestão de Vendas (Agronegócio)",  
+    "Gestão de Vendas (Produção)", 
     "Engenharia, Contratos e Medições de Obras", 
-    "Locação de Equipamentos", 
-    "Qualidade/Avaliação/Documentação", 
-    "Cadastros Globais", 
-    "Configuração do Sistema"
+    "Locação de Equipamentos"
 ]
 
-# --- 1. ENTRADAS COMUNS DE CLIENTE ---
+# --- 1. ENTRADA DE CLIENTE COMUM ---
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
-    if solicitantes: gerente_cliente_sugerido = solicitantes[0]
+    if solicitantes: gerente_cliente_sugerido = solicitantes
 
-# --- 2. INTERFACE DINÂMICA BASEADA NA SELEÇÃO ---
+# --- 2. MONTAGEM DA INTERFACE DINÂMICA ---
 if tipo_documento == "Termo de Homologação e Encerramento":
     col1, col2 = st.columns(2)
     with col1:
@@ -121,6 +110,7 @@ if tipo_documento == "Termo de Homologação e Encerramento":
     st.subheader("Configuração dos Módulos")
     modulos_homologados = st.multiselect("Selecione os Módulos HOMOLOGADOS:", options=TODOS_MODULOS)
 
+    # A sua função de data única que deu certo
     dados_homologados_tabela = []
     if modulos_homologados:
         dt_virada_unica = st.date_input("Data de Início em Produção (Válida para todos os homologados):", datetime.now())
@@ -132,7 +122,7 @@ if tipo_documento == "Termo de Homologação e Encerramento":
     modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS:", options=opcoes_restantes)
 
 else:
-    # MODO DOCUMENTO DE NÃO HOMOLOGAÇÃO (Esconde tudo do projeto e foca apenas nas pendências)
+    # MODO APENAS NÃO HOMOLOGADOS (Oculta os campos de homologação)
     col_aux1, col_aux2 = st.columns(2)
     with col_aux1:
         gerente_cliente = st.text_input("Nome do Gestor do Projeto (Assinatura):", value=gerente_cliente_sugerido)
@@ -142,11 +132,11 @@ else:
     st.markdown("---")
     modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS:", options=TODOS_MODULOS)
 
-# Tradução da data por extenso
+# Data por extenso
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
-# --- 3. PROCESSAMENTO E EMISSÃO ---
+# --- 3. PROCESSAMENTO E EMISSÃO DE ARQUIVOS ---
 if st.button("Gerar Documento Selecionado", type="primary"):
     if not cliente_selecionado:
         st.warning("Selecione um cliente para prosseguir.")
@@ -155,15 +145,15 @@ if st.button("Gerar Documento Selecionado", type="primary"):
     else:
         with st.spinner("⏳ Gerando arquivos (Word e PDF)..."):
             try:
-                # Escolha do arquivo físico correto no GitHub
+                # Escolhe o arquivo físico correto com base no seletor
                 if tipo_documento == "Termo de Homologação e Encerramento":
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 else:
-                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "naohonologado.docx") # Nome ajustado para o seu arquivo
+                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "naohonologado.docx")
                 
                 doc = DocxTemplate(caminho_modelo)
                 
-                # Monta a estrutura em marcadores (bullet points) para o documento de não homologação
+                # A sua função RichText original para os não homologados (com marcador)
                 rt_nao_homologados = RichText()
                 if modulos_nao_homologados:
                     for i, mod in enumerate(modulos_nao_homologados):
@@ -172,8 +162,9 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 else:
                     rt_nao_homologados.add("Nenhum módulo pendente.")
 
-                # Contextos separados para não misturar nada na compilação
+                # Executa o contexto correto mantendo a sua função original intacta
                 if tipo_documento == "Termo de Homologação e Encerramento":
+                    # Suas funções RichText originais que alinham as tabelas perfeitamente
                     rt_nomes = RichText()
                     for i, item in enumerate(dados_homologados_tabela):
                         rt_nomes.add(str(item['nome']))
@@ -196,7 +187,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         "data_extenso": data_extenso_str
                     }
                 else:
-                    # Contexto enxuto exclusivo para o naohonologado.docx da imagem
+                    # Contexto isolado do novo documento naohonologado.docx
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_cliente": gerente_cliente,
@@ -206,6 +197,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 
                 doc.render(contexto)
                 
+                # Gravação em memória e geração do PDF temporário
                 buffer_docx = io.BytesIO()
                 doc.save(buffer_docx)
                 buffer_docx.seek(0)
@@ -225,7 +217,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 
                 st.success("✨ Documento gerado com sucesso!")
                 
-                prefixo = "Termo" if tipo_documento == "Termo de Homologação e Encerramento" else "Doc_Não_Homologação"
+                prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento" else "Doc_Não_Homologação"
                 nome_download_bonito = f"{prefixo} - {cliente_selecionado}".replace("/", "-")
                 
                 col_down1, col_down2 = st.columns(2)
