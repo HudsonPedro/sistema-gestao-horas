@@ -95,6 +95,8 @@ with st.sidebar:
         st.switch_page("pages/04_💰_Medicao_Mensal.py")
     if st.button("📋 Gerador de Termos", use_container_width=True):
        st.switch_page("pages/05_📋_Termos.py")
+    if st.button("📜 Termo Geral", use_container_width=True): 
+        st.switch_page("06_📜_Termo_Encerramento.py")
   
 #   versionamento 
     st.divider()
