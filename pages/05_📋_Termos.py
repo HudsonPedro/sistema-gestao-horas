@@ -6,7 +6,7 @@ import io
 import base64
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Deve ser a primeira linha de comandos)
-st.set_page_config(page_title="Gerador de Termos CRTI", page_icon="hptech.png", layout="wide")
+st.set_page_config(page_title="Gerador de Termos - HPTECH", page_icon="hptech.png", layout="wide")
 
 # 2. CSS PARA OCULTAR O MENU PADRÃO E APLICAR SEU DESIGN
 st.markdown("""
