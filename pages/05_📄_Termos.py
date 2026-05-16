@@ -1,5 +1,5 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
+import pandas as pd
 from docxtpl import DocxTemplate
 from datetime import datetime
 import io
@@ -7,27 +7,31 @@ import io
 st.set_page_config(page_title="Gerador de Termos CRTI", page_icon="📄", layout="centered")
 
 st.title("📄 Gerador de Termos de Homologação")
-st.write("Selecione o cliente e o módulo para gerar o documento físico customizado.")
+st.write("Selecione o cliente e o módulo para gerar o documento customizado.")
 
-# --- 1. CONEXÃO COM GOOGLE SHEETS ---
+# --- 1. FUNÇÕES DE DADOS (Idêntica à sua lógica de produção) ---
+@st.cache_data(ttl=600)
+def carregar_legendas():
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
+    df = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
+    return df
+
+# --- 2. CARREGAMENTO DE LISTAS ---
 try:
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    df = conn.read(ttl="5m")
-    
-    # ATENÇÃO: Substitua 'Cliente' pelo nome exato da coluna da sua planilha google
-    lista_clientes = df['Cliente'].dropna().unique().tolist()
+    df_leg = carregar_legendas()
+    lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
 except Exception as e:
-    st.error(f"Erro ao conectar com o Google Sheets: {e}")
+    st.error(f"Erro ao carregar os clientes da planilha: {e}")
     lista_clientes = []
 
-# --- 2. INTERFACE DO USUÁRIO ---
+# --- 3. INTERFACE DO USUÁRIO ---
 
 modulo = st.selectbox(
     "Selecione o Módulo de Treinamento:",
     ["Gestão de Compras", "Gestão de Suprimentos"]
 )
 
-# Caminhos exatos dos arquivos que estão na sua pasta 'modelos'
+# Caminhos exatos dos arquivos mapeados na pasta 'modelos' do seu repositório
 MAPA_MODELOS = {
     "Gestão de Compras": "modelos/TERMO_DE_HOMOLOGACAO_DO_MODULO_DE_COMPRAS.docx",
     "Gestão de Suprimentos": "modelos/TERMO_DE_HOMOLOGACAO_DO_MODULO_DE_SUPRIMENTOS.docx"
@@ -41,18 +45,18 @@ else:
 data_selecionada = st.date_input("Data da Homologação:", datetime.now())
 data_formatada = data_selecionada.strftime("%d/%m/%Y")
 
-# --- 3. PROCESSAMENTO DO DOCUMENTO ---
+# --- 4. PROCESSAMENTO DO DOCUMENTO ---
 
 if st.button("Gerar Documento", type="primary"):
-    if not cliente_selecionado:
-        st.warning("Por favor, selecione ou digite o nome de um cliente.")
+    if not cliente_selecionado or cliente_selecionado == "Erro ao carregar":
+        st.warning("Por favor, selecione um cliente válido.")
     else:
         try:
-            # Busca o modelo correto baseado na escolha do selectbox
+            # Seleciona o arquivo correto com base no módulo escolhido
             caminho_modelo = MAPA_MODELOS.get(modulo)
             doc = DocxTemplate(caminho_modelo)
             
-            # Substitui as tags {{ cliente }} e {{ data }} mapeadas no Word
+            # Substitui as tags {{ cliente }} e {{ data }} que estão no seu Word
             contexto = {
                 "cliente": cliente_selecionado,
                 "data": data_formatada
@@ -60,14 +64,14 @@ if st.button("Gerar Documento", type="primary"):
             
             doc.render(contexto)
             
-            # Salva o arquivo na memória temporária do servidor
+            # Cria o arquivo em memória temporária para o Streamlit Cloud disponibilizar
             buffer = io.BytesIO()
             doc.save(buffer)
             buffer.seek(0)
             
             st.success("✨ Documento gerado com sucesso!")
             
-            # Botão de download nativo do Streamlit
+            # Botão nativo para baixar o arquivo pronto em Word (.docx)
             st.download_button(
                 label=f"📥 Baixar Termo de {modulo} (.docx)",
                 data=buffer,
@@ -78,5 +82,4 @@ if st.button("Gerar Documento", type="primary"):
         except FileNotFoundError:
             st.error(f"Erro: O arquivo de modelo não foi localizado em: {caminho_modelo}")
         except Exception as e:
-            st.error(f"Ocorreu um erro ao processar o arquivo: {e}")
-
+            st.error(f"Ocorreu um erro ao processar o documento: {e}")
