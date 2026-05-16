@@ -53,7 +53,7 @@ st.markdown("---")
 # SELETOR DO DOCUMENTO
 tipo_documento = st.selectbox(
     "Selecione o Tipo de Documento que deseja emitir:",
-    ["Termo de Homologação e Encerramento", "Documento de Não Homologação (Apenas Pendências)"]
+    ["Termo de Homologação e Encerramento Geral", "Documento de Não Homologação (Apenas Pendências)"]
 )
 
 st.markdown("---")
@@ -93,7 +93,7 @@ if not df_leg.empty and cliente_selecionado:
     if solicitantes: gerente_cliente_sugerido = solicitantes[0]
 
 # --- 2. MONTAGEM DA INTERFACE DINÂMICA ---
-if tipo_documento == "Termo de Homologação e Encerramento":
+if "Geral" in tipo_documento:
     col1, col2 = st.columns(2)
     with col1:
         gerente_crti = st.text_input("Gerente de implantação na CRTI:", value="SUELLEN GOMES", disabled=True)
@@ -135,20 +135,19 @@ data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_f
 if st.button("Gerar Documento Selecionado", type="primary"):
     if not cliente_selecionado:
         st.warning("Selecione um cliente para prosseguir.")
-    elif tipo_documento == "Documento de Não Homologação (Apenas Pendências)" and not modulos_nao_homologados:
+    elif "Geral" not in tipo_documento and not modulos_nao_homologados:
         st.warning("Selecione ao menos um módulo não homologado para gerar o documento.")
     else:
         with st.spinner("⏳ Gerando arquivos (Word e PDF)..."):
             try:
-                # Gerenciador estrito de caminhos de arquivos físicos
-                if tipo_documento == "Termo de Homologação e Encerramento":
+                if "Geral" in tipo_documento:
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 else:
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "naohonologado.docx")
  
                 doc = DocxTemplate(caminho_modelo)
  
-                # Função RichText para as pendências
+                # Função RichText para as pendências encostarem à esquerda
                 rt_nao_homologados = RichText()
                 if modulos_nao_homologados:
                     for i, mod in enumerate(modulos_nao_homologados):
@@ -157,7 +156,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 else:
                     rt_nao_homologados.add("Nenhum módulo pendente.")
 
-                if tipo_documento == "Termo de Homologação e Encerramento":
+                if "Geral" in tipo_documento:
                     rt_nomes = RichText()
                     for i, item in enumerate(dados_homologados_tabela):
                         rt_nomes.add(str(item['nome']))
@@ -168,22 +167,24 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         rt_datas.add(str(item['data']))
                         if i < len(dados_homologados_tabela) - 1: rt_datas.add('\n')
 
+                    # CORREÇÃO CRUCIAL: Adicionado os espaços nas chaves exatas da sua foto do Word
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_crti": gerente_crti,
                         "gerente_cliente": gerente_cliente,
                         "data_inicio": data_inicio.strftime("%d/%m/%Y"),
                         "data_fim": data_fim.strftime("%d/%m/%Y"),
-                        "nomes_homologados": rt_nomes,
-                        "datas_homologados": rt_datas,
-                        "texto_nao_homologados": rt_nao_homologados,
+                        "nomes_homologados": rt_nomes,                 # Mapeia para {{ nomes_homologados }}
+                        "datas_homologados": rt_datas,                 # Mapeia para {{ datas_homologados }}
+                        "texto_nao_homologados": rt_nao_homologados,   # Mapeia para {{ texto_nao_homologados }}
                         "data_extenso": data_extenso_str
                     }
                 else:
+                    # Contexto sincronizado com o documento naohonologado.docx
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_cliente": gerente_cliente,
-                        "texto_nao_homologados": rt_nao_homologados,
+                        "texto_nao_homologados": rt_nao_homologados,   # Mapeia para {{ texto_nao_homologados }}
                         "data_extenso": data_extenso_str
                     }
  
@@ -208,7 +209,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 
                 st.success("✨ Documento gerado com sucesso!")
                 
-                prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento" else "Doc_Não_Homologação"
+                prefixo = "Termo_Geral" if "Geral" in tipo_documento else "Doc_Não_Homologação"
                 nome_download_bonito = f"{prefixo} - {cliente_selecionado}".replace("/", "-")
  
                 col_down1, col_down2 = st.columns(2)
