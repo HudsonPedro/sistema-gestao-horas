@@ -147,7 +147,7 @@ if st.button("Gerar Documento", type="primary"):
             st.download_button(
                 label=f"📥 Baixar Termo de {modulo} (.docx)",
                 data=buffer,
-                file_name=f"Termo_{modulo.replace(' ', '_')}_{cliente_selecionado}.docx",
+                file_name=f"Termo de Homologação {modulo.replace(' ', '_')}_{cliente_selecionado}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
             
