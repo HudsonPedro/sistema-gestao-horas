@@ -153,6 +153,7 @@ data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_f
 
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)1
+# 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)
 if st.button("Gerar Termo de Encerramento", type="primary"):
     if not cliente_selecionado:
         st.warning("Selecione um cliente para prosseguir.")
@@ -163,70 +164,86 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
             try:
                 caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 doc = DocxTemplate(caminho_modelo)
-                # ADICIONE ESSE TRATAMENTO AQUI:
-                if not modulos_nao_homologados:
-                    lista_nao_homologados_contexto = ["Nenhum módulo pendente nesta fase."]
+                
+                # --- CONSTRUÇÃO DA TABELA 1 (HOMOLOGADOS) EM PYTHON ---
+                subdoc_h = doc.new_subdoc()
+                tabela_h = subdoc_h.add_table(rows=1, cols=2)
+                tabela_h.style = 'Table Grid' # Força bordas pretas padrão do Word
+                
+                # Cabeçalhos da Tabela Homologados
+                hdr_h = tabela_h.rows[0].cells
+                hdr_h[0].text = 'Módulos'
+                hdr_h[1].text = 'Data de Início em Produção'
+                hdr_h[0].paragraphs[0].runs[0].font.bold = True
+                hdr_h[1].paragraphs[0].runs[0].font.bold = True
+                
+                # Adiciona cada módulo homologado linha por linha (para baixo)
+                for item in dados_homologados_tabela:
+                    linha_celulas = tabela_h.add_row().cells
+                    linha_celulas[0].text = str(item['nome'])
+                    linha_celulas[1].text = str(item['data'])
+                
+                # --- CONSTRUÇÃO DA TABELA 2 (NÃO HOMOLOGADOS) EM PYTHON ---
+                subdoc_nh = doc.new_subdoc()
+                tabela_nh = subdoc_nh.add_table(rows=1, cols=1)
+                tabela_nh.style = 'Table Grid'
+                
+                # Cabeçalho da Tabela Não Homologados
+                hdr_nh = tabela_nh.rows[0].cells
+                hdr_nh[0].text = 'Módulos / Rotinas Não Homologados'
+                hdr_nh[0].paragraphs[0].runs[0].font.bold = True
+                
+                # Adiciona cada módulo não homologado linha por linha
+                if modulos_nao_homologados:
+                    for mod in modulos_nao_homologados:
+                        linha_celulas = tabela_nh.add_row().cells
+                        linha_celulas[0].text = str(mod)
                 else:
-                    lista_nao_homologados_contexto = modulos_nao_homologados
-
+                    linha_celulas = tabela_nh.add_row().cells
+                    linha_celulas[0].text = "Nenhum módulo pendente nesta fase."
+                
+                # --- CONTEXTO ENVIADO AO WORD ---
                 contexto = {
                     "cliente": cliente_selecionado,
                     "gerente_crti": gerente_crti,
                     "gerente_cliente": gerente_cliente,
                     "data_inicio": data_inicio.strftime("%d/%m/%Y"),
                     "data_fim": data_fim.strftime("%d/%m/%Y"),
-                    "homologados": dados_homologados_tabela,
-                    "nao_homologados": modulos_nao_homologados,
+                    "tabela_homologados": subdoc_h,      # Injeta a Tabela 1 pronta
+                    "tabela_nao_homologados": subdoc_nh,  # Injeta a Tabela 2 pronta
                     "data_extenso": data_extenso_str
                 }
                 
                 doc.render(contexto)
                 
-                # Gerar o arquivo Word em memória para o download nativo
+                # Código de salvamento na memória e arquivos temporários (Mantido igual)
                 buffer_docx = io.BytesIO()
                 doc.save(buffer_docx)
                 buffer_docx.seek(0)
                 
-                # NOME INTERNO (BLINDADO): Sem espaços para o Linux não se perder
                 arquivo_docx_temporario = "temp_termo_geral.docx"
                 arquivo_pdf_gerado = "temp_termo_geral.pdf"
                 
-                # Salva o arquivo de trabalho temporário no disco do servidor
                 doc.save(arquivo_docx_temporario)
                 
-                # Executa o LibreOffice usando o nome interno padronizado
                 cmd = f"libreoffice --headless --convert-to pdf {arquivo_docx_temporario}"
                 subprocess.run(cmd, shell=True, check=True)
                 
-                # Lê o PDF gerado de volta para a memória com segurança
                 with open(arquivo_pdf_gerado, "rb") as f:
                     buffer_pdf = io.BytesIO(f.read())
                 
-                # Exclusão segura dos arquivos intermediários usando o nome fixado
                 if os.path.exists(arquivo_docx_temporario): os.remove(arquivo_docx_temporario)
                 if os.path.exists(arquivo_pdf_gerado): os.remove(arquivo_pdf_gerado)
                 
                 st.success("✨ Documentos gerados com sucesso!")
                 
-                # NOME DE DOWNLOAD (BONITO): Aqui sim pode conter espaços e o nome do cliente formatado
                 nome_download_bonito = f"Termo de Homologação e Encerramento - {cliente_selecionado}".replace("/", "-")
                 
                 col_down1, col_down2 = st.columns(2)
                 with col_down1:
-                    st.download_button(
-                        label="📥 Baixar Termo em PDF (.pdf)", 
-                        data=buffer_pdf, 
-                        file_name=f"{nome_download_bonito}.pdf", 
-                        mime="application/pdf", 
-                        use_container_width=True
-                    )
+                    st.download_button(label="📥 Baixar Termo em PDF (.pdf)", data=buffer_pdf, file_name=f"{nome_download_bonito}.pdf", mime="application/pdf", use_container_width=True)
                 with col_down2:
-                    st.download_button(
-                        label="📥 Baixar Termo em Word (.docx)", 
-                        data=buffer_docx, 
-                        file_name=f"{nome_download_bonito}.docx", 
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
-                        use_container_width=True
-                    )
+                    st.download_button(label="📥 Baixar Termo em Word (.docx)", data=buffer_docx, file_name=f"{nome_download_bonito}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
             except Exception as e:
                 st.error(f"Erro ao processar o documento físico: {e}")
+
