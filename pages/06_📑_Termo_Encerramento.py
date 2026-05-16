@@ -152,6 +152,7 @@ meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)
+# 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)1
 if st.button("Gerar Termo de Encerramento", type="primary"):
     if not cliente_selecionado:
         st.warning("Selecione um cliente para prosseguir.")
@@ -176,31 +177,51 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
                 
                 doc.render(contexto)
                 
+                # Gerar o arquivo Word em memória para o download nativo
                 buffer_docx = io.BytesIO()
                 doc.save(buffer_docx)
                 buffer_docx.seek(0)
                 
-                nome_base = f"Termo de Homologação e Encerramento-{cliente_selecionado.replace(' ', ' ')}"
-                arquivo_docx_temporario = f"{nome_base}.docx"
-                arquivo_pdf_gerado = f"{nome_base}.pdf"
+                # NOME INTERNO (BLINDADO): Sem espaços para o Linux não se perder
+                arquivo_docx_temporario = "temp_termo_geral.docx"
+                arquivo_pdf_gerado = "temp_termo_geral.pdf"
                 
+                # Salva o arquivo de trabalho temporário no disco do servidor
                 doc.save(arquivo_docx_temporario)
                 
+                # Executa o LibreOffice usando o nome interno padronizado
                 cmd = f"libreoffice --headless --convert-to pdf {arquivo_docx_temporario}"
                 subprocess.run(cmd, shell=True, check=True)
                 
+                # Lê o PDF gerado de volta para a memória com segurança
                 with open(arquivo_pdf_gerado, "rb") as f:
                     buffer_pdf = io.BytesIO(f.read())
                 
+                # Exclusão segura dos arquivos intermediários usando o nome fixado
                 if os.path.exists(arquivo_docx_temporario): os.remove(arquivo_docx_temporario)
                 if os.path.exists(arquivo_pdf_gerado): os.remove(arquivo_pdf_gerado)
                 
                 st.success("✨ Documentos gerados com sucesso!")
                 
+                # NOME DE DOWNLOAD (BONITO): Aqui sim pode conter espaços e o nome do cliente formatado
+                nome_download_bonito = f"Termo de Homologação e Encerramento - {cliente_selecionado}".replace("/", "-")
+                
                 col_down1, col_down2 = st.columns(2)
                 with col_down1:
-                    st.download_button(label="📥 Baixar Termo em PDF (.pdf)", data=buffer_pdf, file_name=f"{nome_base}.pdf", mime="application/pdf", use_container_width=True)
+                    st.download_button(
+                        label="📥 Baixar Termo em PDF (.pdf)", 
+                        data=buffer_pdf, 
+                        file_name=f"{nome_download_bonito}.pdf", 
+                        mime="application/pdf", 
+                        use_container_width=True
+                    )
                 with col_down2:
-                    st.download_button(label="📥 Baixar Termo em Word (.docx)", data=buffer_docx, file_name=f"{nome_base}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
+                    st.download_button(
+                        label="📥 Baixar Termo em Word (.docx)", 
+                        data=buffer_docx, 
+                        file_name=f"{nome_download_bonito}.docx", 
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+                        use_container_width=True
+                    )
             except Exception as e:
                 st.error(f"Erro ao processar o documento físico: {e}")
