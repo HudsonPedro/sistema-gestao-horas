@@ -85,7 +85,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)  
     st.markdown("---")
         
-    # Botão Navegação Atualizada
+    # Navegação Atualizada
     if st.button("🏠 Home", use_container_width=True):
         st.switch_page("app.py")
     if st.button("📊 Dashboard", use_container_width=True):
@@ -97,9 +97,9 @@ with st.sidebar:
     if st.button("💰 Medição Mensal", use_container_width=True):
         st.switch_page("pages/04_💰_Medicao_Mensal.py")
     if st.button("📋 Termo Homologação", use_container_width=True): 
-       st.switch_page("05_📋_Termos.py")
+       st.switch_page("pages/05_📋_Termos.py")
     if st.button("📑 Termo Encerramento", use_container_width=True): 
-        st.switch_page("06_📑_Termo_Encerramento.py")
+        st.switch_page("pages/06_📑_Termo_Encerramento.py")
       
                
 # --- INÍCIO DA LÓGICA DO DASHBOARD ---
