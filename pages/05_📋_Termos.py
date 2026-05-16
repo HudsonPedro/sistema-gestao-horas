@@ -53,9 +53,9 @@ with st.sidebar:
     if st.button("💰 Medição Mensal", use_container_width=True):
         st.switch_page("04_💰_Medicao_Mensal")
     if st.button("📋 Termo Homologação", use_container_width=True): 
-       st.switch_page("05_📋_Termos.py")
+       st.switch_page("05_📋_Termos")
     if st.button("📑 Termo Encerramento", use_container_width=True): 
-        st.switch_page("06_📑_Termo_Encerramento.py")
+        st.switch_page("06_📑_Termo_Encerramento")
       
     
     st.divider()
