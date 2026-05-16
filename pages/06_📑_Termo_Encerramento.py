@@ -156,6 +156,7 @@ data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_f
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)2
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)3
 # 4. GERAÇÃO DOS ARQUIVOS (WORD E PDF)4
+# 5. GERAÇÃO DOS ARQUIVOS (WORD E PDF)5
 # 5. GERAÇÃO DOS ARQUIVOS (WORD E PDF)
 if st.button("Gerar Termo de Encerramento", type="primary"):
     if not cliente_selecionado:
@@ -165,11 +166,11 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
     else:
         with st.spinner("⏳ Gerando termos customizados (Word e PDF)..."):
             try:
-                caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
+                caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramnto.docx")
                 doc = DocxTemplate(caminho_modelo)
                 
                 # --- PROCESSAMENTO DOS MÓDULOS HOMOLOGADOS ---
-                # Junta todos os nomes e todas as datas pulando uma linha (\n) para cada um
+                # Transforma a lista em texto único pulando uma linha (\n) para cada item
                 nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                 datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
                 
@@ -179,16 +180,16 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
                 else:
                     texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
                 
-                # --- CONTEXTO LIMPO ENVIADO AO WORD ---
+                # --- CONTEXTO ALINHADO COM SUA IMAGEM ---
                 contexto = {
                     "cliente": cliente_selecionado,
                     "gerente_crti": gerente_crti,
                     "gerente_cliente": gerente_cliente,
                     "data_inicio": data_inicio.strftime("%d/%m/%Y"),
                     "data_fim": data_fim.strftime("%d/%m/%Y"),
-                    "nomes_homologados": nomes_homologados_str,   # Alimenta a Coluna 1
-                    "datas_homologados": datas_homologados_str,   # Alimenta a Coluna 2
-                    "texto_nao_homologados": texto_nao_homologados_str,
+                    "nomes_homologados": nomes_homologados_str,   # Mapeia para {{ nomes_homologados }}
+                    "datas_homologados": datas_homologados_str,   # Mapeia para {{ datas_homologados }}
+                    "texto_nao_homologados": texto_nao_homologados_str, # Mapeia para {{ texto_nao_homologados }}
                     "data_extenso": data_extenso_str
                 }
                 
@@ -225,5 +226,4 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
             except Exception as e:
                 st.error(f"Erro ao processar o documento físico: {e}")
 
-                st.error(f"Erro ao processar o documento físico: {e}")
 
