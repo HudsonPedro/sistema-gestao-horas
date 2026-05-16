@@ -125,20 +125,25 @@ with col2:
 st.markdown("---")
 
 # 2. SELEÇÃO DINÂMICA DE MÓDULOS (HOMOLOGADOS E NÃO HOMOLOGADOS)
+# 2. SELEÇÃO DINÂMICA DE MÓDULOS (HOMOLOGADOS E NÃO HOMOLOGADOS)
 st.subheader("Configuração dos Módulos")
 modulos_homologados = st.multiselect("Selecione os Módulos HOMOLOGADOS:", options=TODOS_MODULOS)
 
-# Inputs de data de virada de produção específicos para cada módulo homologado
+# Cria apenas UM campo de data único para todos os módulos homologados
 dados_homologados_tabela = []
 if modulos_homologados:
-    st.write("📅 Defina a Data de Início em Produção para cada módulo selecionado:")
-    col_m1, col_m2 = st.columns(2)
-    for i, mod in enumerate(modulos_homologados):
-        target_col = col_m1 if i % 2 == 0 else col_m2
-        with target_col:
-            dt_virada = st.date_input(f"Produção: {mod}", datetime.now(), key=f"date_{mod}")
-            dados_homologados_tabela.append({"nome": mod, "data": dt_virada.strftime("%d/%m/%Y")})
+    # Um único calendário na tela
+    dt_virada_unica = st.date_input("Data de Início em Produção (Válida para todos os módulos homologados):", datetime.now())
+    data_virada_formatada = dt_virada_unica.strftime("%d/%m/%Y")
+    
+    # Preenche a lista que vai para a tabela do Word com a mesma data para todos
+    for mod in modulos_homologados:
+        dados_homologados_tabela.append({
+            "nome": mod, 
+            "data": data_virada_formatada
+        })
 
+# Módulos não homologados continuam iguais
 opcoes_restantes = [m for m in TODOS_MODULOS if m not in modulos_homologados]
 modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS:", options=opcoes_restantes)
 
