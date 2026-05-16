@@ -77,11 +77,30 @@ except:
 
 # Lista padronizada de módulos da CRTI
 TODOS_MODULOS = [
-    "Compras", "Suprimentos e Estoque", "Frota - Equipamentos", 
-    "Contratos e Medições de Terceiros", "Custos e Resultados", "Financeiro", 
-    "CRTI Emissor Nfe/NFCe", "CRTI Emissor CTe", "CRTI Emissor MDFe", 
-    "CRTI Emissor NFSe", "Gestão de Vendas (Produção)", 
-    "Engenharia, Contratos e Medições de Obras", "Locação de Equipamentos"
+    "Compras", 
+    "Suprimentos e Estoque", 
+    "Frota - Equipamentos", 
+    "Contratos e Medições de Terceiros", 
+    "Custos e Resultados", 
+    "Apropriações e Apontamentos", 
+    "Produção", 
+    "Financeiro", 
+    "Contábil", 
+    "Patrimonial",  
+    "Fiscal", 
+    "CRTI Buscador",  
+    "CRTI Emissor NFe/NFCe", 
+    "CRTI Emissor CTe",  
+    "CRTI Emissor MDFe",  
+    "CRTI Emissor NFSe", 
+    "CRTI Emissor Fatura de Locação",  
+    "Gestão de Vendas (Produção)",  
+    "Gestão de Vendas (Agronegócio)",  
+    "Engenharia, Contratos e Medições de Obras", 
+    "Locação de Equipamentos", 
+    "Qualidade/Avaliação/Documentação", 
+    "Cadastros Globais", 
+    "Configuração do Sistema"
 ]
 
 # 1. ENTRADAS DO FORMULÁRIO (DADOS DO PROJETO)
