@@ -4,6 +4,9 @@ from docxtpl import DocxTemplate
 from datetime import datetime
 import io
 import base64
+import io
+import os
+import subprocess
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Deve ser a primeira linha de comandos)
 st.set_page_config(page_title="Gerador de Termos - HPTECH", page_icon="hptech.png", layout="wide")
