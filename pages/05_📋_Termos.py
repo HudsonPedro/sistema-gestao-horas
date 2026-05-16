@@ -100,19 +100,7 @@ except Exception as e:
 
 modulo = st.selectbox(
     "Selecione o Módulo de Treinamento:",
-    ["Compras", 
-	 "Suprimentos e Estoque",
-	 "Frota - Equipamentos",
-	 "Contratos e Medições de Terceiros",
-	 "Custos e Resultados",
-	 "Financeiro",
-	 "CRTI Emissor Nfe/NFCe",
-	 "CRTI Emissor CTe",
-	 "CRTI Emissor MDFe",
-	 "CRTI Emissor NFSe",
-	 "Gestão de Vendas (Produção)",
-	 "Engenharia, Contratos e Medições de Obras",
-	 "Locação de Equipamentos"]
+    ["Compras", "Suprimentos e Estoque", "Frota - Equipamentos", "Contratos e Medições de Terceiros", "Custos e Resultados", "Financeiro", "CRTI Emissor Nfe/NFCe", "CRTI Emissor CTe", "CRTI Emissor MDFe", "CRTI Emissor NFSe", "Gestão de Vendas (Produção)", "Engenharia, Contratos e Medições de Obras", "Locação de Equipamentos"]
 )
 
 # CAMINHOS AJUSTADOS EXATAMENTE COMO ESTÃO NO SEU GITHUB (Com "DO_MODULO_DE_GESTÃO" removendo acentos)
