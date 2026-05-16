@@ -54,6 +54,8 @@ with st.sidebar:
         st.switch_page("04_💰_Medicao_Mensal")
     if st.button("📋 Gerador de Termos", use_container_width=True): 
         st.switch_page("05_📑_Termos")
+    if st.button("📜 Termo Geral", use_container_width=True): 
+        st.switch_page("06_📜_Termo_Encerramento.py")
     
     st.divider()
     st.caption("v1.0 - 11052026")
