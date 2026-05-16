@@ -11,3 +11,4 @@ datetime
 requests
 gspread
 google-auth
+docxtpl
