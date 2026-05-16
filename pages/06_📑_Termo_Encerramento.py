@@ -56,7 +56,7 @@ def get_image_base64(path):
     with open(path, "rb") as img_file: return base64.b64encode(img_file.read()).decode()
 try:
     img_base64 = get_image_base64("hptechICO.png")
-    st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0; font-size: 2.5rem;">Termo de Homologação</h1><img src="data:image/png;base64,{img_base64}" style="height: 180px;"></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0; font-size: 2.5rem;">Termo de Encerramento</h1><img src="data:image/png;base64,{img_base64}" style="height: 180px;"></div>', unsafe_allow_html=True)
 except:
     st.title("📜 Termo de Homologação e Encerramento")
 
