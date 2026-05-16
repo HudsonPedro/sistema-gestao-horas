@@ -79,7 +79,7 @@ with st.sidebar:
     if st.button("📄 Relatórios", use_container_width=True): st.switch_page("pages/02_📄_Relatorios.py")
     if st.button("📝 Lançamento", use_container_width=True): st.switch_page("pages/03_📝_Lancamento.py")
     if st.button("💰 Medição Mensal", use_container_width=True): st.switch_page("pages/04_💰_Medicao_Mensal.py")
-    if st.button("📋 Gerador de Termos", use_container_width=True): st.switch_page("05_📋_Termos")
+    if st.button("📋 Gerador de Termos", use_container_width=True): st.switch_page("pages/05_📋_Termos")
     
     st.divider()
     st.markdown("### Configurações GERAIS")
