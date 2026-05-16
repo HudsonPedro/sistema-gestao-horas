@@ -3,6 +3,7 @@ import pandas as pd
 from docxtpl import DocxTemplate
 from datetime import datetime
 import io
+import base64
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Deve ser a primeira linha de comandos)
 st.set_page_config(page_title="Gerador de Termos CRTI", page_icon="hptech.png", layout="wide")
@@ -63,8 +64,31 @@ with st.sidebar:
     st.caption("Copyright ©2026 HPtech Informática ME")
 
 # 4. CONTEÚDO PRINCIPAL
-st.title("📄 Gerador de Termos de Homologação")
+#st.title("📄 Gerador de Termos de Homologação")
 st.write("Selecione o cliente e o módulo para gerar o documento customizado.")
+# Função para converter imagem local para Base64 (para funcionar dentro do HTML)
+def get_image_base64(path):
+    with open(path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# Tenta carregar a imagem que está no repositório GitHub
+try:
+    img_base64 = get_image_base64("hptechICO.png")
+    
+    st.markdown(
+        f"""
+        <div style="display: flex; align-items: center;">
+            <h1 style="margin: 0; font-size: 2.5rem;">Gerador de Termos de Homologação</h1>
+            <img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;">
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+except:
+    # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
+    st.title("📄 Gerador de Termos de Homologação")
+
+st.markdown("---")
 
 @st.cache_data(ttl=600)
 def carregar_legendas():
