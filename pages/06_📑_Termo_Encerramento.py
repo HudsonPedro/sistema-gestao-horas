@@ -90,7 +90,7 @@ cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
-    if solicitantes: gerente_cliente_sugerido = solicitantes[0]
+    if solicitantes: gerente_cliente_sugerido = solicitantes
 
 # --- 2. MONTAGEM DA INTERFACE DINÂMICA ---
 if "Geral" in tipo_documento:
@@ -117,7 +117,7 @@ if "Geral" in tipo_documento:
     modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS:", options=opcoes_restantes)
 
 else:
-    # MODO APENAS NÃO HOMOLOGADOS
+    # MODO APENAS NÃO HOMOLOGADOS (Documento de Pendências)
     col_aux1, col_aux2 = st.columns(2)
     with col_aux1:
         gerente_cliente = st.text_input("Nome do Gestor do Projeto (Assinatura):", value=gerente_cliente_sugerido)
@@ -140,6 +140,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
     else:
         with st.spinner("⏳ Gerando arquivos (Word e PDF)..."):
             try:
+                # Restabelecido estritamente o arquivo físico encerramento.docx
                 if "Geral" in tipo_documento:
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 else:
@@ -156,6 +157,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 else:
                     rt_nao_homologados.add("Nenhum módulo pendente.")
 
+                # Injeção de Contexto baseado na seleção
                 if "Geral" in tipo_documento:
                     rt_nomes = RichText()
                     for i, item in enumerate(dados_homologados_tabela):
@@ -167,25 +169,32 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         rt_datas.add(str(item['data']))
                         if i < len(dados_homologados_tabela) - 1: rt_datas.add('\n')
 
-                    # CORREÇÃO CRUCIAL: Adicionado os espaços nas chaves exatas da sua foto do Word
+                    # MAPEAMENTO DUPLO SEGURO (Mapeia com e sem espaços para garantir o acerto total no Word)
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_crti": gerente_crti,
                         "gerente_cliente": gerente_cliente,
                         "data_inicio": data_inicio.strftime("%d/%m/%Y"),
                         "data_fim": data_fim.strftime("%d/%m/%Y"),
-                        "nomes_homologados": rt_nomes,                 # Mapeia para {{ nomes_homologados }}
-                        "datas_homologados": rt_datas,                 # Mapeia para {{ datas_homologados }}
-                        "texto_nao_homologados": rt_nao_homologados,   # Mapeia para {{ texto_nao_homologados }}
-                        "data_extenso": data_extenso_str
+                        "data_extenso": data_extenso_str,
+                        
+                        # Variações sem espaços nas chaves
+                        "nomes_homologados": rt_nomes,
+                        "datas_homologados": rt_datas,
+                        "texto_nao_homologados": rt_nao_homologados,
+                        
+                        # Variações com espaços nas chaves (Exatamente como na foto)
+                        " nomes_homologados ": rt_nomes,
+                        " datas_homologados ": rt_datas,
+                        " texto_nao_homologados ": rt_nao_homologados
                     }
                 else:
-                    # Contexto sincronizado com o documento naohonologado.docx
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_cliente": gerente_cliente,
-                        "texto_nao_homologados": rt_nao_homologados,   # Mapeia para {{ texto_nao_homologados }}
-                        "data_extenso": data_extenso_str
+                        "data_extenso": data_extenso_str,
+                        "texto_nao_homologados": rt_nao_homologados,
+                        " texto_nao_homologados ": rt_nao_homologados
                     }
  
                 doc.render(contexto)
