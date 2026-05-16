@@ -120,19 +120,19 @@ modulo = st.selectbox(
 
 # CAMINHOS AJUSTADOS EXATAMENTE COMO ESTÃO NO SEU GITHUB (Com "DO_MODULO_DE_GESTÃO" removendo acentos)
 MAPA_MODELOS = {
-    "Compras": os.path.join(BASE_DIR, "modelos", "compras.docx",
-    "Suprimentos e Estoque": os.path.join(BASE_DIR, "modelos", "suprimentos.docx",
-	"Frota - Equipamentos": os.path.join(BASE_DIR, "modelos", "frotas.docx",
-	"Contratos e Medições de Terceiros": os.path.join(BASE_DIR, "modelos", "terceiros.docx",
-	"Custos e Resultados": os.path.join(BASE_DIR, "modelos", "custos.docx",
-	"Financeiro": os.path.join(BASE_DIR, "modelos", "financeiro.docx",
-	"CRTI Emissor Nfe/NFCe": os.path.join(BASE_DIR, "modelos", "nfe.docx",
-	"CRTI Emissor CTe": os.path.join(BASE_DIR, "modelos", "cte.docx",
-	"CRTI Emissor MDFe": os.path.join(BASE_DIR, "modelos", "mdfe.docx",
-	"CRTI Emissor NFSe": os.path.join(BASE_DIR, "modelos", "nfse.docx",
-	"Gestão de Vendas (Produção)": os.path.join(BASE_DIR, "modelos", "vendas.docx",
-	"Engenharia, Contratos e Medições de Obras": os.path.join(BASE_DIR, "modelos", "engenharia.docx",
-	"Locação de Equipamentos": os.path.join(BASE_DIR, "modelos", "locacao.docx"
+    "Compras": os.path.join(BASE_DIR, "modelos", "compras.docx"),
+    "Suprimentos e Estoque": os.path.join(BASE_DIR, "modelos", "suprimentos.docx)",
+	"Frota - Equipamentos": os.path.join(BASE_DIR, "modelos", "frotas.docx"),
+	"Contratos e Medições de Terceiros": os.path.join(BASE_DIR, "modelos", "terceiros.docx"),
+	"Custos e Resultados": os.path.join(BASE_DIR, "modelos", "custos.docx"),
+	"Financeiro": os.path.join(BASE_DIR, "modelos", "financeiro.docx"),
+	"CRTI Emissor Nfe/NFCe": os.path.join(BASE_DIR, "modelos", "nfe.docx"),
+	"CRTI Emissor CTe": os.path.join(BASE_DIR, "modelos", "cte.docx"),
+	"CRTI Emissor MDFe": os.path.join(BASE_DIR, "modelos", "mdfe.docx"),
+	"CRTI Emissor NFSe": os.path.join(BASE_DIR, "modelos", "nfse.docx"),
+	"Gestão de Vendas (Produção)": os.path.join(BASE_DIR, "modelos", "vendas.docx"),
+	"Engenharia, Contratos e Medições de Obras": os.path.join(BASE_DIR, "modelos", "engenharia.docx"),
+	"Locação de Equipamentos": os.path.join(BASE_DIR, "modelos", "locacao.docx")
 }
 
 if lista_clientes:
