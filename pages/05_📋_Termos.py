@@ -112,8 +112,7 @@ modulo = st.selectbox(
 	 "CRTI Emissor NFSe",
 	 "Gestão de Vendas (Produção)",
 	 "Engenharia, Contratos e Medições de Obras",
-	 "Locação de Equipamentos"
-	]
+	 "Locação de Equipamentos"]
 )
 
 # CAMINHOS AJUSTADOS EXATAMENTE COMO ESTÃO NO SEU GITHUB (Com "DO_MODULO_DE_GESTÃO" removendo acentos)
