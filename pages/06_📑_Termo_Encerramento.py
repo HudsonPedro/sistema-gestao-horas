@@ -176,7 +176,7 @@ if st.button("Gerar Termo de Encerramento", type="primary"):
                 
                 # --- PROCESSAMENTO DOS MÓDULOS NÃO HOMOLOGADOS ---
                 if modulos_nao_homologados:
-                    texto_nao_homologados_str = "\n".join([f"📌 {mod}" for mod in modulos_nao_homologados])
+                    texto_nao_homologados_str = "\n".join([f"{mod}" for mod in modulos_nao_homologados])
                 else:
                     texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
                 
