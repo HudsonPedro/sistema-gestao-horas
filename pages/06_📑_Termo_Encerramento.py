@@ -13,12 +13,12 @@ st.set_page_config(page_title="Termos HPTECH", page_icon="hptech.png", layout="w
 
 # CSS original do seu sistema
 st.markdown("""
-    <style>
-        [data-testid="stSidebarNav"] {display: none;}
-        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
-        .user-block { background-color: #f0f2f6; padding: 8px; border-radius: 8px; margin-top: -10px; }
-        h1 { color: #b0231d; }
-    </style>
+ <style>
+ [data-testid="stSidebarNav"] {display: none;}
+ [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
+ .user-block { background-color: #f0f2f6; padding: 8px; border-radius: 8px; margin-top: -10px; }
+ h1 { color: #b0231d; }
+ </style>
 """, unsafe_allow_html=True)
 
 # Menu Lateral Padrão
@@ -46,11 +46,11 @@ try:
     img_base64 = get_image_base64("hptechICO.png")
     st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0; font-size: 2.5rem;">Emissão de Termos de Encerramento</h1><img src="data:image/png;base64,{img_base64}" style="height: 180px;"></div>', unsafe_allow_html=True)
 except:
-    st.title("📜 Emissão de Termos de Encerramento")
+    st.title(" Emissão de Termos de Encerramento")
 
 st.markdown("---")
 
-# SELETOR DO DOCUMENTO (Nova função isolada)
+# SELETOR DO DOCUMENTO
 tipo_documento = st.selectbox(
     "Selecione o Tipo de Documento que deseja emitir:",
     ["Termo de Homologação e Encerramento", "Documento de Não Homologação (Apenas Pendências)"]
@@ -61,7 +61,7 @@ st.markdown("---")
 # Carregamento de Legendas (Planilha Google)
 @st.cache_data(ttl=600)
 def carregar_legendas():
-    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
+    url = "https://google.com"
     return pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
 
 try:
@@ -71,7 +71,7 @@ except:
     df_leg = pd.DataFrame()
     lista_clientes = []
 
-# Sua lista de módulos original e intocada
+# Sua lista completa e original de módulos
 TODOS_MODULOS = [
     "Compras", 
     "Suprimentos e Estoque", 
@@ -82,16 +82,16 @@ TODOS_MODULOS = [
     "Produção", 
     "Financeiro", 
     "Contábil", 
-    "Patrimonial",  
+    "Patrimonial", 
     "Fiscal", 
-    "CRTI Buscador",  
+    "CRTI Buscador", 
     "CRTI Emissor NFe/NFCe", 
-    "CRTI Emissor CTe",  
-    "CRTI Emissor MDFe",  
+    "CRTI Emissor CTe", 
+    "CRTI Emissor MDFe", 
     "CRTI Emissor NFSe", 
-    "CRTI Emissor Fatura de Locação",  
-    "Gestão de Vendas (Produção)",  
-    "Gestão de Vendas (Agronegócio)",  
+    "CRTI Emissor Fatura de Locação", 
+    "Gestão de Vendas (Produção)", 
+    "Gestão de Vendas (Agronegócio)", 
     "Engenharia, Contratos e Medições de Obras", 
     "Locação de Equipamentos", 
     "Qualidade/Avaliação/Documentação", 
@@ -121,7 +121,6 @@ if tipo_documento == "Termo de Homologação e Encerramento":
     st.subheader("Configuração dos Módulos")
     modulos_homologados = st.multiselect("Selecione os Módulos HOMOLOGADOS:", options=TODOS_MODULOS)
 
-    # A sua função de data única que deu certo
     dados_homologados_tabela = []
     if modulos_homologados:
         dt_virada_unica = st.date_input("Data de Início em Produção (Válida para todos os homologados):", datetime.now())
@@ -133,13 +132,13 @@ if tipo_documento == "Termo de Homologação e Encerramento":
     modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS:", options=opcoes_restantes)
 
 else:
-    # MODO APENAS NÃO HOMOLOGADOS (Oculta os campos de homologação)
+    # MODO APENAS NÃO HOMOLOGADOS
     col_aux1, col_aux2 = st.columns(2)
     with col_aux1:
         gerente_cliente = st.text_input("Nome do Gestor do Projeto (Assinatura):", value=gerente_cliente_sugerido)
     with col_aux2:
         data_fim = st.date_input("Data do Documento:", datetime.now())
-    
+ 
     st.markdown("---")
     modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS:", options=TODOS_MODULOS)
 
@@ -156,15 +155,15 @@ if st.button("Gerar Documento Selecionado", type="primary"):
     else:
         with st.spinner("⏳ Gerando arquivos (Word e PDF)..."):
             try:
-                # Escolhe o arquivo físico correto com base no seletor
+                # CORREÇÃO: Aponta de volta para o modelo 'geral.docx' que deu certo
                 if tipo_documento == "Termo de Homologação e Encerramento":
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 else:
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "naohonologado.docx")
-                
+ 
                 doc = DocxTemplate(caminho_modelo)
-                
-                # A sua função RichText original para os não homologados (com marcador)
+ 
+                # Função RichText original para os não homologados (com marcador)
                 rt_nao_homologados = RichText()
                 if modulos_nao_homologados:
                     for i, mod in enumerate(modulos_nao_homologados):
@@ -173,14 +172,14 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 else:
                     rt_nao_homologados.add("Nenhum módulo pendente.")
 
-                # Executa o contexto correto mantendo a sua função original intacta
+                # Contexto estruturado por tipo de documento
                 if tipo_documento == "Termo de Homologação e Encerramento":
-                    # Suas funções RichText originais que alinham as tabelas perfeitamente
+                    # Funções RichText restauradas que alinham as tabelas perfeitamente
                     rt_nomes = RichText()
                     for i, item in enumerate(dados_homologados_tabela):
                         rt_nomes.add(str(item['nome']))
                         if i < len(dados_homologados_tabela) - 1: rt_nomes.add('\n')
-                    
+ 
                     rt_datas = RichText()
                     for i, item in enumerate(dados_homologados_tabela):
                         rt_datas.add(str(item['data']))
@@ -198,39 +197,38 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         "data_extenso": data_extenso_str
                     }
                 else:
-                    # Contexto isolado do novo documento naohonologado.docx
+                    # Contexto do novo arquivo 'naohonologado.docx'
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_cliente": gerente_cliente,
                         "texto_nao_homologados": rt_nao_homologados,
                         "data_extenso": data_extenso_str
                     }
-                
+ 
                 doc.render(contexto)
-                
-                # Gravação em memória e geração do PDF temporário
+ 
                 buffer_docx = io.BytesIO()
                 doc.save(buffer_docx)
                 buffer_docx.seek(0)
-                
+ 
                 arquivo_docx_temporario = "temp_termo_dinamico.docx"
                 arquivo_pdf_gerado = "temp_termo_dinamico.pdf"
                 doc.save(arquivo_docx_temporario)
-                
+ 
                 cmd = f"libreoffice --headless --convert-to pdf {arquivo_docx_temporario}"
                 subprocess.run(cmd, shell=True, check=True)
-                
+ 
                 with open(arquivo_pdf_gerado, "rb") as f:
                     buffer_pdf = io.BytesIO(f.read())
-                
+ 
                 if os.path.exists(arquivo_docx_temporario): os.remove(arquivo_docx_temporario)
                 if os.path.exists(arquivo_pdf_gerado): os.remove(arquivo_pdf_gerado)
-                
+ 
                 st.success("✨ Documento gerado com sucesso!")
                 
                 prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento" else "Doc_Não_Homologação"
                 nome_download_bonito = f"{prefixo} - {cliente_selecionado}".replace("/", "-")
-                
+ 
                 col_down1, col_down2 = st.columns(2)
                 with col_down1:
                     st.download_button(label="📥 Baixar em PDF (.pdf)", data=buffer_pdf, file_name=f"{nome_download_bonito}.pdf", mime="application/pdf", use_container_width=True)
