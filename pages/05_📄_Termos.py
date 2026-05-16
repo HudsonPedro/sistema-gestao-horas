@@ -53,7 +53,7 @@ with st.sidebar:
         st.switch_page("03_📝_Lancamento")
     if st.button("💰 Medição Mensal", use_container_width=True):
         st.switch_page("04_💰_Medicao_Mensal")
-    if st.button("📋 Gerador de Termos", use_container_width=True):
+    if st.button("📄 Gerador de Termos", use_container_width=True):
         st.switch_page("05_📄_Termos")
     
     st.divider()
