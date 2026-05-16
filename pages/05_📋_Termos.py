@@ -102,24 +102,36 @@ except Exception as e:
 
 modulo = st.selectbox(
     "Selecione o Módulo de Treinamento:",
-    ["Compras", "Suprimentos e Estoque", "Frota - Equipamentos", "Contratos e Medições de Terceiros", "Custos e Resultados", "Financeiro", "CRTI Emissor Nfe/NFCe", "CRTI Emissor CTe", "CRTI Emissor MDFe", "CRTI Emissor NFSe", "Gestão de Vendas (Produção)", "Engenharia, Contratos e Medições de Obras", "Locação de Equipamentos"]
+    ["Compras", 
+	 "Suprimentos e Estoque", 
+	 "Frota - Equipamentos", 
+	 "Contratos e Medições de Terceiros", 
+	 "Custos e Resultados", 
+	 "Financeiro", 
+	 "CRTI Emissor Nfe/NFCe", 
+	 "CRTI Emissor CTe", 
+	 "CRTI Emissor MDFe", 
+	 "CRTI Emissor NFSe", 
+	 "Gestão de Vendas (Produção)", 
+	 "Engenharia, Contratos e Medições de Obras", 
+	 "Locação de Equipamentos"]
 )
 
 # CAMINHOS AJUSTADOS EXATAMENTE COMO ESTÃO NO SEU GITHUB (Com "DO_MODULO_DE_GESTÃO" removendo acentos)
 MAPA_MODELOS = {
-    "Compras": "modelos/compras.docx",
-    "Suprimentos e Estoque": "modelos/suprimentos.docx",
-	"Frota - Equipamentos": "modelos/frotas.docx",
-	"Contratos e Medições de Terceiros": "modelos/terceiros.docx",
-	"Custos e Resultados": "modelos/custos.docx",
-	"Financeiro": "modelos/financeiro.docx",
-	"CRTI Emissor Nfe/NFCe": "modelos/nfe.docx",
-	"CRTI Emissor CTe": "modelos/cte.docx",
-	"CRTI Emissor MDFe": "modelos/mdfe.docx",
-	"CRTI Emissor NFSe": "modelos/nfse.docx",
-	"Gestão de Vendas (Produção)": "modelos/vendas.docx",
-	"Engenharia, Contratos e Medições de Obras": "modelos/engenharia.docx",
-	"Locação de Equipamentos": "modelos/locacao.docx"
+    "Compras": os.path.join(BASE_DIR, "modelos/compras.docx",
+    "Suprimentos e Estoque": os.path.join(BASE_DIR, "modelos/suprimentos.docx",
+	"Frota - Equipamentos": os.path.join(BASE_DIR, "modelos/frotas.docx",
+	"Contratos e Medições de Terceiros": os.path.join(BASE_DIR, "modelos/terceiros.docx",
+	"Custos e Resultados": os.path.join(BASE_DIR, "modelos/custos.docx",
+	"Financeiro": os.path.join(BASE_DIR, "modelos/financeiro.docx",
+	"CRTI Emissor Nfe/NFCe": os.path.join(BASE_DIR, "modelos/nfe.docx",
+	"CRTI Emissor CTe": os.path.join(BASE_DIR, "modelos/cte.docx",
+	"CRTI Emissor MDFe": os.path.join(BASE_DIR, "modelos/mdfe.docx",
+	"CRTI Emissor NFSe": os.path.join(BASE_DIR, "modelos/nfse.docx",
+	"Gestão de Vendas (Produção)": os.path.join(BASE_DIR, "modelos/vendas.docx",
+	"Engenharia, Contratos e Medições de Obras": os.path.join(BASE_DIR, "modelos/engenharia.docx",
+	"Locação de Equipamentos": os.path.join(BASE_DIR, "modelos/locacao.docx"
 }
 
 if lista_clientes:
