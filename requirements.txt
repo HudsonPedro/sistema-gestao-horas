@@ -12,3 +12,4 @@ requests
 gspread
 google-auth
 docxtpl
+docxcompose
