@@ -193,6 +193,12 @@ if st.button("Gerar Documento Selecionado", type="primary"):
     else:
         with st.spinner("⏳ Gerando termos customizados (Word e PDF)..."):
             try:
+                # CORREÇÃO: Limpa a pasta local antes de gerar o novo termo para não sobrar lixo de outros clientes
+                import glob
+                for arquivo_antigo in glob.glob(os.path.join(PASTA_TERMOS, "*.*")):
+                    try: os.remove(arquivo_antigo)
+                    except: pass
+
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
                     if not os.path.exists(caminho_modelo):
@@ -208,7 +214,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                     texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
 
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
-                    # SUA LÓGICA VERTICAL DO TERMO GERAL ORIGINAL QUE DEU CERTO
                     nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                     datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
                     
@@ -271,6 +276,10 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                     st.download_button(label="📥 Baixar Termo em PDF (.pdf)", data=buffer_pdf, file_name=f"{nome_download_bonito}.pdf", mime="application/pdf", use_container_width=True)
                 with col_down2:
                     st.download_button(label="📥 Baixar Termo em Word (.docx)", data=buffer_docx, file_name=f"{nome_download_bonito}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
+                
+                # Guarda na sessão os dois arquivos exatos que foram gerados agora
+                st.session_state["arquivos_ativos_envio"] = [caminho_pdf_final, caminho_docx_final]
+                st.session_state["assunto_ativo_envio"] = nome_download_bonito
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo físico: {e}")
 
@@ -278,7 +287,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
 # 7. POP-UP DE CONFIRMAÇÃO DO DISPARO DE TERMOS
 # =========================================================================
 @st.dialog(" Confirmação de Disparo de Termos")
-def confirmar_envio_termos_popup_final(email, arquivos_lote):
+def confirmar_envio_termos_popup_final(email, arquivos_lote, assunto_nome):
     st.write("Você tem certeza que deseja disparar o termo gerado por e-mail?")
     st.write(f"• **Destinatário:** `{email}`")
     st.write(f"• **Arquivos em anexo:** PDF e Word do termo ativo")
@@ -288,11 +297,8 @@ def confirmar_envio_termos_popup_final(email, arquivos_lote):
     with col_p1:
         if st.button("Sim, Disparar Termo", use_container_width=True):
             with st.spinner("Compilando anexos do termo e enviando..."):
-                # CORREÇÃO CRUCIAL: Pega o primeiro item da lista convertido puramente em string de texto
-                arquivo_referencia = str(arquivos_lote[0])
-                nome_doc_assunto = os.path.basename(arquivo_referencia).replace(".pdf", "").replace(".docx", "")
-                
-                ok, r_msg = enviar_email_termos_logica_p04(email, nome_doc_assunto, arquivos_lote)
+                # CORREÇÃO: Dispara passando apenas os arquivos específicos da sessão ativa
+                ok, r_msg = enviar_email_termos_logica_p04(email, assunto_nome, arquivos_lote)
                 
                 if ok:
                     st.success(f" {r_msg}")
@@ -309,11 +315,12 @@ def confirmar_envio_termos_popup_final(email, arquivos_lote):
 
 # --- GATILHO DA SIDEBAR QUE CHAMA O POP-UP ---
 if btn_enviar_emails:
-    import glob
-    # Varre a pasta gerando a lista de caminhos de texto limpa
-    arquivos_pasta = [str(arq) for arq in (glob.glob(os.path.join(PASTA_TERMOS, "*.pdf")) + glob.glob(os.path.join(PASTA_TERMOS, "*.docx")))]
+    # CORREÇÃO DEFINITIVA: Resgata estritamente a lista de arquivos gerada nesta sessão ativa
+    arquivos_alvo = st.session_state.get("arquivos_ativos_envio", [])
+    assunto_alvo = st.session_state.get("assunto_ativo_envio", "Termo de Homologação")
     
-    if not arquivos_pasta:
+    if not arquivos_alvo:
         st.sidebar.warning(" Gere o documento na tela primeiro antes de disparar.")
     else:
-        confirmar_envio_termos_popup_final(email_destinatario, arquivos_pasta)
+        # Abre o pop-up injetando estritamente os dois arquivos do cliente selecionado
+        confirmar_envio_termos_popup_final(email_destinatario, arquivos_alvo, assunto_alvo)
