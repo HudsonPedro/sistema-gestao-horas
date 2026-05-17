@@ -39,32 +39,39 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (CORRIGIDO PARA ANEXOS LIMPADOS)
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (BLINDADO CONTRA ERRO NONAME)
 def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexos):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
     smtp_server = st.secrets["smtp"]["servidor"]
     smtp_porta = int(st.secrets["smtp"]["porta"])
     
+    # Cria um assunto limpo removendo caracteres longos demais
+    assunto_limpo = str(nome_documento).replace("_", " ").strip()
+    
     msg = MIMEMultipart()
     msg["From"] = email_remetente
     msg["To"] = email_destino
-    msg["Subject"] = f"{nome_documento} - HUDSON VALENTE"
+    msg["Subject"] = f"{assunto_limpo} - HUDSON VALENTE"
     
     corpo = f"""<html><body><p>Prezada Sra. Amanda, espero que se encontre bem.</p><br>
-    <p>Segue em anexo o arquivo de homologação <b>{nome_documento}</b> para análise e assinatura institucional.</p><br>
+    <p>Segue em anexo o arquivo de homologação <b>{assunto_limpo}</b> para análise e assinatura institucional.</p><br>
     <p>Atenciosamente,<br><br>Hudson Valente<br>HPtech Informática ME</p></body></html>"""
     msg.attach(MIMEText(corpo, "html"))
     
     for caminho_arquivo in arquivos_anexos:
-        nome_arquivo_limpo = os.path.basename(caminho_arquivo)
         try:
             with open(caminho_arquivo, "rb") as attachment:
                 part = MIMEBase("application", "octet-stream")
                 part.set_payload(attachment.read())
                 encode_base64(part)
-                # CORREÇÃO CRUCIAL: Força as aspas normais para o Linux não quebrar a extensão do arquivo no MIME
-                part.add_header("Content-Disposition", f'attachment; filename="{nome_arquivo_limpo}"')
+                
+                # CORREÇÃO DEFINITIVA: Força um nome curto e limpo diretamente na extensão da aba do Gmail
+                extensao = ".pdf" if caminho_arquivo.lower().endswith(".pdf") else ".docx"
+                nome_anexo_institucional = f"Documento_Homologacao{extensao}"
+                
+                # Monta o cabeçalho padrão de forma estrita exigida pelo protocolo RFC do Gmail
+                part.add_header("Content-Disposition", "attachment", filename=nome_anexo_institucional)
                 msg.attach(part)
         except Exception as e:
             return False, f"Falha ao acoplar anexo: {str(e)}"
@@ -154,8 +161,7 @@ gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        # Pega o primeiro nome da lista limpo
-        gerente_cliente_sugerido = str(solicitantes[0]).strip()
+        gerente_cliente_sugerido = str(solicitantes).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
@@ -261,7 +267,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 doc.render(contexto)
                 
                 prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento Geral" else "Doc_Não_Homologação"
-                # Remove espaços extras para o Linux processar sem falhas de escape no LibreOffice
                 nome_limpo_arquivo = f"{prefixo}_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
                 
                 caminho_docx_ativo = os.path.join(PASTA_TERMOS, f"{nome_limpo_arquivo}.docx")
@@ -331,9 +336,10 @@ def confirmar_envio_termos_popup_final(email, arquivos_lote):
     with col_p1:
         if st.button("Sim, Disparar Termo", use_container_width=True):
             with st.spinner("Compilando lote de anexos e enviando..."):
-                # CORREÇÃO ABSOLUTA: Extrai o nome limpo do primeiro arquivo da lista real
                 if arquivos_lote:
-                    nome_doc_assunto = os.path.basename(arquivos_lote[0]).replace("_", " ").replace(".pdf", "").replace(".docx", "")
+                    # Resolve o bug do noname fixando o assunto de forma estruturada e limpa
+                    primeiro_arq = arquivos_lote
+                    nome_doc_assunto = os.path.basename(primeiro_arq).replace("_", " ").replace(".pdf", "").replace(".docx", "")
                 else:
                     nome_doc_assunto = "Termo de Homologação"
                 
