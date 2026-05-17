@@ -39,36 +39,31 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (BLINDADO CONTRA ERRO NONAME)
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04
 def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexos):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
     smtp_server = st.secrets["smtp"]["servidor"]
     smtp_porta = int(st.secrets["smtp"]["porta"])
     
-    # Cria um assunto limpo e higienizado para o cabeçalho do e-mail
-    assunto_limpo = str(nome_documento).replace("_", " ").strip()
-    
     msg = MIMEMultipart()
     msg["From"] = email_remetente
     msg["To"] = email_destino
-    msg["Subject"] = f"{assunto_limpo} - HUDSON VALENTE"
+    msg["Subject"] = f"Termos de Encerramento e Pendências - HUDSON VALENTE"
     
     corpo = f"""<html><body><p>Prezada Sra. Amanda, espero que se encontre bem.</p><br>
-    <p>Segue em anexo o arquivo de homologação <b>{assunto_limpo}</b> para análise e assinatura institucional.</p><br>
+    <p>Segue em anexo o pacote completo contendo os <b>Termos de Homologação e o Documento de Não Homologação (Pendências)</b> para análise e assinatura institucional.</p><br>
     <p>Atenciosamente,<br><br>Hudson Valente<br>HPtech Informática ME</p></body></html>"""
     msg.attach(MIMEText(corpo, "html"))
     
     for caminho_arquivo in arquivos_anexos:
-        # CORREÇÃO CRUCIAL: Captura apenas o nome textual puro do arquivo final
-        nome_arquivo_real = str(os.path.basename(caminho_arquivo)).strip()
+        nome_arquivo_limpo = os.path.basename(caminho_arquivo)
         try:
             with open(caminho_arquivo, "rb") as attachment:
                 part = MIMEBase("application", "octet-stream")
                 part.set_payload(attachment.read())
                 encode_base64(part)
-                # Adiciona o cabeçalho padrão forçando aspas duplas limpas exigidas pelo Gmail
-                part.add_header("Content-Disposition", "attachment", filename=nome_arquivo_real)
+                part.add_header("Content-Disposition", f'attachment; filename="{nome_arquivo_limpo}"')
                 msg.attach(part)
         except Exception as e:
             return False, f"Falha ao acoplar anexo: {str(e)}"
@@ -79,7 +74,7 @@ def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexo
         server.login(email_remetente, senha_remetente)
         server.sendmail(email_remetente, email_destino, msg.as_string())
         server.quit()
-        return True, "E-mail enviado com sucesso!"
+        return True, "E-mail com o lote completo enviado com sucesso!"
     except Exception as e:
         return False, f"Falha no envio SMTP (Segurança de Rede): {str(e)}"
 
@@ -109,13 +104,13 @@ with st.sidebar:
     st.markdown("---")
     st.header("📬 Disparo de Termos")
     email_destinatario = st.text_input("Enviar para (Destinatário):", value="financeiro@crti.com.br", key="enc_email_dest_key")
-    btn_enviar_emails = st.button("🚀 **ENVIAR TERMOS POR E-MAIL**", type="primary", use_container_width=True, key="enc_email_btn_key")
+    btn_enviar_emails = st.button("🚀 **ENVIAR PACOTE COMPLETO**", type="primary", use_container_width=True, key="enc_email_btn_key")
     
     # BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR
     st.markdown("---")
     st.header("🗑️ Gerenciamento")
     if st.button("🗑️ Limpar Todos os Termos Emitidos", use_container_width=True):
-        arquivos_limpeza = glob.glob(os.path.join(BASE_DIR, "termos_emitidos", "*.*"))
+        arquivos_limpeza = glob.glob(os.path.join(PASTA_TERMOS, "*.*"))
         for arq in arquivos_limpeza:
             try: os.remove(arq)
             except: pass
@@ -154,50 +149,38 @@ TODOS_MODULOS = [
 
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
-# CORREÇÃO DO GESTOR: Extrai sem colchetes ou aspas na tela
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        # Pega a primeira string limpa diretamente pelo índice do pandas
-        gerente_cliente_sugerido = str(df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().iloc[0]).strip()
+        gerente_cliente_sugerido = str(solicitantes[0]).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
 
-tipo_documento = st.selectbox(
-    "Selecione o Tipo de Documento que deseja emitir:",
-    ["Termo de Homologação e Encerramento Geral", "Documento de Não Homologação (Apenas Pendências)"]
-)
-
 st.markdown("---")
+st.subheader("Configuração Unificada de Emissão de Documentos")
 
-# --- INTERFACE DINÂMICA ---
-if tipo_documento == "Termo de Homologação e Encerramento Geral":
-    col_datas_1, col_datas_2 = st.columns(2)
-    with col_datas_1:
-        data_inicio = st.date_input("Data de início da Implantação:", datetime.now())
-    with col_datas_2:
-        data_fim = st.date_input("Data da homologação da implantação:", datetime.now())
+# Exibe os dois blocos juntos na mesma tela de forma limpa
+col_datas_1, col_datas_2 = st.columns(2)
+with col_datas_1:
+    data_inicio = st.date_input("Data de início da Implantação Geral:", datetime.now())
+with col_datas_2:
+    data_fim = st.date_input("Data da homologação / emissão do documento:", datetime.now())
 
-    st.markdown("---")
-    st.subheader("Configuração dos Módulos")
+col_mod_1, col_mod_2 = st.columns(2)
+with col_mod_1:
     modulos_homologados = st.multiselect("Selecione os Módulos HOMOLOGADOS:", options=TODOS_MODULOS)
-
     dados_homologados_tabela = []
     if modulos_homologados:
-        dt_virada_unica = st.date_input("Data de Início em Produção (Válida para todos os homologados):", datetime.now())
+        dt_virada_unica = st.date_input("Data de Início em Produção (Para todos os homologados):", datetime.now())
         data_virada_formatada = dt_virada_unica.strftime("%d/%m/%Y")
         for mod in modulos_homologados:
             dados_homologados_tabela.append({"nome": mod, "data": data_virada_formatada})
 
+with col_mod_2:
     opcoes_restantes = [m for m in TODOS_MODULOS if m not in modulos_homologados]
-    modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS:", options=opcoes_restantes)
-
-else:
-    data_fim = st.date_input("Data do Documento Auxiliar:", datetime.now())
-    st.markdown("---")
-    modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS (Pendentes):", options=TODOS_MODULOS)
+    modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS (Pendências):", options=opcoes_restantes)
 
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
@@ -205,87 +188,67 @@ data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_f
 PASTA_TERMOS = os.path.join(BASE_DIR, "termos_emitidos")
 os.makedirs(PASTA_TERMOS, exist_ok=True)
 
-# --- 6. GERAÇÃO DOS RELATÓRIOS ---
-if st.button("Gerar Documento Selecionado", type="primary"):
+# --- 6. GERAÇÃO EM LOTE DOS DOIS DOCUMENTOS DE UMA VEZ ---
+if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Por favor, selecione um cliente para prosseguir.")
-    elif tipo_documento == "Documento de Não Homologação (Apenas Pendências)" and not modulos_nao_homologados:
-        st.warning("Por favor, selecione ao menos um módulo não homologado.")
     else:
-        with st.spinner("⏳ Gerando termos customizados (Word e PDF)..."):
+        with st.spinner("⏳ Compilando lote completo (Word e PDF)..."):
             try:
+                # Limpa a pasta para receber estritamente o lote novo
                 for arquivo_antigo in glob.glob(os.path.join(PASTA_TERMOS, "*.*")):
                     try: os.remove(arquivo_antigo)
                     except: pass
 
-                if tipo_documento == "Termo de Homologação e Encerramento Geral":
-                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_Campanha_encerramento.docx")
-                    if not os.path.exists(caminho_modelo):
-                        caminho_modelo = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
-                    if not os.path.exists(caminho_modelo):
-                        caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
-                else:
-                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "naohomologado.docx")
-                
-                doc = DocxTemplate(caminho_modelo)
-                
-                if modulos_nao_homologados:
-                    texto_nao_homologados_str = "\n".join([f"• {mod}" for mod in modulos_nao_homologados])
-                else:
-                    texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
+                texto_nao_homologados_str = "\n".join([f"• {mod}" for mod in modulos_nao_homologados]) if modulos_nao_homologados else "Nenhum módulo pendente nesta fase."
+                nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
+                datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
 
-                if tipo_documento == "Termo de Homologação e Encerramento Geral":
-                    nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
-                    datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
+                # --- DOCUMENTO 1: TERMO GERAL ---
+                if modulos_homologados:
+                    caminho_m1 = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_Campanha_encerramento.docx")
+                    if not os.path.exists(caminho_m1): caminho_m1 = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
+                    if not os.path.exists(caminho_m1): caminho_m1 = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                     
-                    contexto = {
-                        "cliente": cliente_selecionado,
-                        "gerente_crti": "SUELLEN GOMES",
-                        "gerente_cliente": gerente_cliente,
-                        "data_inicio": data_inicio.strftime("%d/%m/%Y"),
-                        "data_fim": data_fim.strftime("%d/%m/%Y"),
-                        "data_extenso": data_extenso_str,
-                        
-                        "nomes_homologados": nomes_homologados_str,
-                        "datas_homologados": datas_homologados_str,
-                        "texto_nao_homologados": texto_nao_homologados_str,
-                        
-                        " nomes_homologados ": nomes_homologados_str,
-                        " datas_homologados ": datas_homologados_str,
-                        " texto_nao_homologados ": texto_nao_homologados_str
+                    doc1 = DocxTemplate(caminho_m1)
+                    ctx1 = {
+                        "cliente": cliente_selecionado, "gerente_crti": "SUELLEN GOMES", "gerente_cliente": gerente_cliente,
+                        "data_inicio": data_inicio.strftime("%d/%m/%Y"), "data_fim": data_fim.strftime("%d/%m/%Y"), "data_extenso": data_extenso_str,
+                        "nomes_homologados": nomes_homologados_str, "datas_homologados": datas_homologados_str, "texto_nao_homologados": texto_nao_homologados_str,
+                        " nomes_homologados ": nomes_homologados_str, " datas_homologados ": datas_homologados_str, " texto_nao_homologados ": texto_nao_homologados_str
                     }
-                else:
-                    contexto = {
-                        "cliente": cliente_selecionado,
-                        "gerente_cliente": gerente_cliente,
-                        "data_extenso": data_extenso_str,
-                        "texto_nao_homologados": texto_nao_homologados_str,
-                        " texto_nao_homologados ": texto_nao_homologados_str
+                    doc1.render(ctx1)
+                    n_arq1 = f"Termo_Geral_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
+                    c_docx1 = os.path.join(PASTA_TERMOS, f"{n_arq1}.docx")
+                    doc1.save(c_docx1)
+                    subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{c_docx1}"', shell=True, check=True)
+
+                # --- DOCUMENTO 2: NÃO HOMOLOGAÇÃO ---
+                if modulos_nao_homologados:
+                    caminho_m2 = os.path.join(BASE_DIR, "modelos", "naohomologado.docx")
+                    doc2 = DocxTemplate(caminho_m2)
+                    ctx2 = {
+                        "cliente": cliente_selecionado, "gerente_cliente": gerente_cliente, "data_extenso": data_extenso_str,
+                        "texto_nao_homologados": texto_nao_homologados_str, " texto_nao_homologados ": texto_nao_homologados_str
                     }
-                
-                doc.render(contexto)
-                
-                prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento Geral" else "Doc_Não_Homologação"
-                nome_limpo_arquivo = f"{prefixo}_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
-                
-                caminho_docx_ativo = os.path.join(PASTA_TERMOS, f"{nome_limpo_arquivo}.docx")
-                doc.save(caminho_docx_ativo)
-                
-                cmd = f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{caminho_docx_ativo}"'
-                subprocess.run(cmd, shell=True, check=True)
-                
-                st.success("✨ Termo gerado com sucesso e armazenado na tela!")
+                    doc2.render(ctx2)
+                    n_arq2 = f"Doc_Não_Homologação_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
+                    c_docx2 = os.path.join(PASTA_TERMOS, f"{n_arq2}.docx")
+                    doc2.save(c_docx2)
+                    subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{c_docx2}"', shell=True, check=True)
+
+                st.success("✨ Todos os documentos do lote foram gerados e armazenados!")
                 time.sleep(1)
                 st.rerun()
             except Exception as e:
-                st.error(f"Erro ao processar o arquivo físico: {e}")
+                st.error(f"Erro ao processar lote físico: {e}")
 
 # --- PAINEL VISUAL DE DOWNLOAD E ZIP COMPACTADO ---
 arquivos_gerados_base = glob.glob(os.path.join(PASTA_TERMOS, "*.pdf")) + glob.glob(os.path.join(PASTA_TERMOS, "*.docx"))
 
 if arquivos_gerados_base:
     st.markdown("---")
-    st.subheader("📥 Download dos Arquivos Emitidos")
+    st.subheader("📥 Download do Pacote Completo Emitido")
     
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
@@ -294,19 +257,18 @@ if arquivos_gerados_base:
     zip_buffer.seek(0)
     
     st.download_button(
-        label="🎁 **BAIXAR TODOS OS TERMOS CONFIGURADOS (ZIP)**",
+        label="🎁 **BAIXAR PACOTE COMPLETO CONSOLIDADO (ZIP)**",
         data=zip_buffer,
-        file_name=f"Termos_HPTECH_{cliente_selecionado}.zip",
+        file_name=f"Pacote_Termos_HPTECH_{cliente_selecionado}.zip",
         mime="application/zip",
         use_container_width=True
     )
     
-    with st.expander("📄 Ver arquivos individuais...", expanded=True):
+    with st.expander("📄 Ver e baixar arquivos individuais do lote...", expanded=True):
         col_grade = st.columns(2)
         for idx, arq_caminho in enumerate(sorted(arquivos_gerados_base)):
             nome_real = os.path.basename(arq_caminho)
-            with open(arq_caminho, "rb") as f_leitura:
-                conteudo_bytes = f_leitura.read()
+            with open(arq_caminho, "rb") as f_leitura: conteudo_bytes = f_leitura.read()
             
             col_alvo = col_grade[idx % 2]
             extensao_label = "PDF" if nome_real.endswith(".pdf") else "Word"
@@ -322,28 +284,20 @@ if arquivos_gerados_base:
             )
 
 # =========================================================================
-# 7. POP-UP DE CONFIRMAÇÃO DO DISPARO DE TERMOS
+# 7. POP-UP DE CONFIRMAÇÃO DO DISPARO DO LOTE COMPLETO
 # =========================================================================
 @st.dialog(" Confirmação de Disparo de Termos")
 def confirmar_envio_termos_popup_final(email, arquivos_lote):
-    st.write("Você tem certeza que deseja disparar o termo gerado por e-mail?")
+    st.write("Você tem certeza que deseja disparar os termos gerados por e-mail?")
     st.write(f"• **Destinatário:** `{email}`")
-    st.write(f"• **Arquivos em anexo:** PDF e Word do lote ativo")
+    st.write(f"• **Arquivos em anexo:** PDF e Word de todos os termos gerados na tela")
     st.markdown("---")
     
     col_p1, col_p2 = st.columns(2)
     with col_p1:
-        if st.button("Sim, Disparar Termo", use_container_width=True):
-            with st.spinner("Compilando lote de anexos e enviando..."):
-                # CORREÇÃO DEFINITIVA DO ASSUNTO: Extrai o nome textual limpo sem quebrar a lista
-                if isinstance(arquivos_lote, list) and len(arquivos_lote) > 0:
-                    str_referencia = str(arquivos_lote[0])
-                    nome_doc_assunto = os.path.basename(str_referencia).replace("_", " ").replace(".pdf", "").replace(".docx", "")
-                else:
-                    nome_doc_assunto = "Termo de Homologacao"
-                
-                ok, r_msg = enviar_email_termos_logica_p04(email, nome_doc_assunto, arquivos_lote)
-                
+        if st.button("Sim, Disparar Lote", use_container_width=True):
+            with st.spinner("Compilando lote completo de anexos e enviando..."):
+                ok, r_msg = enviar_email_termos_logica_p04(email, f"Lote Termos {cliente_selecionado}", arquivos_lote)
                 if ok:
                     st.success(f" {r_msg}")
                     st.balloons()
@@ -360,6 +314,6 @@ def confirmar_envio_termos_popup_final(email, arquivos_lote):
 # --- GATILHO DA SIDEBAR QUE CHAMA O POP-UP ---
 if btn_enviar_emails:
     if not arquivos_gerados_base:
-        st.sidebar.warning(" Gere o documento na tela primeiro antes de disparar.")
+        st.sidebar.warning(" Gere os documentos na tela primeiro antes de disparar.")
     else:
         confirmar_envio_termos_popup_final(email_destinatario, arquivos_gerados_base)
