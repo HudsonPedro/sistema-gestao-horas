@@ -154,13 +154,13 @@ with col4:
 
 with col5:
     st.subheader("📋 Homologação")
-    st.write("Gere os Termos de Homologação e envie o lote por e-mail.")
+    st.write("Gere os Termos de Homologação.")
     if st.button("Novo Termo", key="btn_termo_homolog"):
         st.switch_page("pages/05_📋_Termos.py")
 
 with col6:
     st.subheader("📑 Encerramento")
-    st.write("Gere os Termos de Encerramento e envie o lote por e-mail.")
+    st.write("Gere os Termos de Encerramento.")
     if st.button("Novo Encerramento", key="btn_termo_encerra"):
         st.switch_page("pages/06_📑_Termo_Encerramento.py")        
 
