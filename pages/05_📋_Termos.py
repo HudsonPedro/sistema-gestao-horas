@@ -27,18 +27,42 @@ os.makedirs(PASTA_TERMOS_H, exist_ok=True)
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Gerador de Termos HPTECH", page_icon="hptech.png", layout="wide")
 
-# 2. CSS PARA OCULTAR O MENU PADRÃO E APLICAR SEU DESIGN
+# 2. CSS PARA OCULTAR O MENU E FORÇAR A LOGO NO TOPO
 st.markdown("""
     <style>
-    [data-testid="stSidebarNav"] {display: none;}
-    [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
-    h1 { color: #b0231d; }
-    .user-block {
-    background-color: #f0f2f6;
-    padding: 8px;
-    border-radius: 8px;
-    margin-top: -10px;
-    }
+        /* Esconde o menu de páginas padrão do Streamlit */
+        [data-testid="stSidebarNav"] {display: none;}
+        
+        /* Zera o espaçamento do topo para a logo subir */
+        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
+        
+        /* Cor do título para o padrão vermelho*/
+        h1 { color: #b0231d; } 
+    </style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+    <style>
+        /* Esconde o menu nativo */
+        [data-testid="stSidebarNav"] {display: none;}
+        
+        /* FORÇA A LOGO PARA O TOPO ABSOLUTO */
+        [data-testid="stSidebarContent"] {
+            padding-top: 0rem !important;
+        }
+
+        /* Ajuste da logo para não encostar nas laterais */
+        [data-testid="stSidebarHeader"] {
+            padding-top: 0rem !important;
+        }
+
+        /* Estilo da caixinha de usuário */
+        .user-block {
+            background-color: #f0f2f6;
+            padding: 8px;
+            border-radius: 8px;
+            margin-top: -10px; /* Puxa a caixinha um pouco para cima */
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -56,17 +80,17 @@ def enviar_email_homologacao_logica_p04(string_destinatarios, cliente_nome, arqu
     msg = MIMEMultipart()
     msg["From"] = email_remetente
     msg["To"] = ", ".join(lista_destinatarios)
-    msg["Subject"] = f"Lote de Termos de Homologação Disponíveis – {cliente_nome}"
+    msg["Subject"] = f"TERMO DE HOMOLOGAÇÃO DE TODOS OS MÓDULOS CRTI ERP – {cliente_nome}"
     
     corpo_html = f"""
     <html>
     <body>
-        <p>Prezados(as), espero que se encontre bem.</p>
+        <p>Prezada Sra. Amanda, espero que se encontre bem.</p>
         <p>Segue em anexo o pacote contendo os <b>Termos de Homologação</b> referentes aos módulos do sistema CRTI ERP implantado no cliente <b>{cliente_nome}</b>.</p>
         <p>Os documentos já foram validados e está pronto para análise e assinatura institucional do Sr(a). {gerente_cliente_nome}.</p>
         <br>
         <p>Me coloco à inteira disposição para possíveis esclarecimentos.</p>
-        <p>Atenciosamente,<br><b>Hudson Valente</b><br>HPtech Informática ME</p>
+        <p>Com Gratidão!!,<br><br>Hudson Valente</p>
     </body>
     </html>
     """
@@ -139,7 +163,9 @@ with st.sidebar:
         st.rerun()
 
     st.divider()
-    st.caption("v1.0 - 11052026")
+    st.caption("v1.1 - 17052026")
+    st.caption("Todos os direitos reservados")
+    st.caption("Copyright ©2026 HPtech Informática ME")
 
 # 5. CARREGAMENTO DE LISTAS
 @st.cache_data(ttl=600)
@@ -213,7 +239,7 @@ meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
 data_extenso_str = f"{data_selecionada.day} de {meses_br[data_selecionada.month - 1]} de {data_selecionada.year}"
 
 # --- 6. GERAÇÃO EM LOTE DOS TERMOS DE HOMOLOGAÇÃO ---
-if st.button("Gerar Todos os Documentos Selecionados", type="primary", use_container_width=True):
+if st.button("Gerar Todos os Termos Selecionados", type="primary", use_container_width=True):
     if not cliente_selecionado or cliente_selecionado == "Erro ao carregar":
         st.warning("Por favor, selecione um cliente válido.")
     elif not modulos_selecionados:
@@ -260,7 +286,7 @@ if st.button("Gerar Todos os Documentos Selecionados", type="primary", use_conta
                 time.sleep(1)
                 st.rerun()
             except Exception as e:
-                st.error(f"Erro ao processar e salvar o lote de documentos: {e}")
+                st.error(f"Erro ao processar e salvar o lote de Termos: {e}")
 
 # --- 7. PAINEL VISUAL DE DOWNLOAD E ZIP COMPACTADO ---
 arquivos_gerados_h = glob.glob(os.path.join(PASTA_TERMOS_H, "*.pdf")) + glob.glob(os.path.join(PASTA_TERMOS_H, "*.docx"))
@@ -336,6 +362,6 @@ def confirmar_envio_homologacao_popup(email, arquivos_lote):
 # --- GATILHO DA SIDEBAR QUE CHAMA O POP-UP ---
 if btn_enviar_emails:
     if not arquivos_gerados_h:
-        st.sidebar.warning("⚠️ Gere os documentos na tela primeiro antes de disparar.")
+        st.sidebar.warning("⚠️ Gere os Termos na tela primeiro antes de disparar.")
     else:
         confirmar_envio_homologacao_popup(email_destinatario, arquivos_gerados_h)
