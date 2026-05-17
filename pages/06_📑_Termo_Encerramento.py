@@ -41,7 +41,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (COM ASSUNTO E HTML DA PAGINA 1 DO MANUAL)
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04
 def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_virada_str, campos_fiscal, arquivos_anexos, gerente_cliente_nome):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
@@ -55,10 +55,8 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
     msg = MIMEMultipart()
     msg["From"] = email_remetente
     msg["To"] = ", ".join(lista_destinatarios)
-    # Assunto idêntico ao manual técnico (Page 1)
     msg["Subject"] = f"Solicitação da disponibilidade do suporte para a VIRADADA EM PRODUÇÃO – {cliente_nome}"
     
-    # Estrutura HTML oficial com marcação em vermelho (Page 1)
     corpo_html = f"""
     <html>
     <body>
@@ -68,7 +66,7 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
         
         <p><b>Tipo de virada:</b> {campos_fiscal['tipo_virada']}<br>
         <b>Período da Virada:</b> {campos_fiscal['periodo_virada']}<br>
-        <b>Solicitante:</b> {gerente_cliente_name}</p>
+        <b>Solicitante:</b> {gerente_cliente_nome}</p>
         
         <p>Em seguida, os últimos documentos emitidos serão encaminhados para a mudança da aplicação em produção.</p>
         
@@ -82,7 +80,7 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
         
         <p style="color: #b0231d; font-weight: bold;">Enviar os anexos: Termo de Homologação e Encerramento de Implantação do CRTI ERP e o Termo de NÃO Homologação de Módulos do CRTI ERP para assinatura institucional com as informações da data de corte atualizada.</p>
         
-        <p style="color: #b0231d; font-weight: bold;">Para virar o sistema em produção é obrigatória a assinatura de ambas as partes. O cliente Sr(a). {gerente_cliente_name} está ao par e no aguardo dos documentos para assinaturas.</p>
+        <p style="color: #b0231d; font-weight: bold;">Para virar o sistema em produção é obrigatória a assinatura de ambas as partes. O cliente Sr(a). {gerente_cliente_nome} está ao par e no aguardo dos documentos para assinaturas.</p>
         
         <br>
         <p>Caso encontre alguma divergência, favor criticar para as devidas correções.<br>
@@ -113,7 +111,7 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
         server.quit()
         return True, "Lote de suporte e documentação disparado com sucesso!"
     except Exception as e:
-        return False, f"Falha no envio SMTP: {str(e)}"
+        return False, f"Falha no envio SMTP (Segurança de Rede): {str(e)}"
 
 # 4. SIDEBAR COM MENU INTEGRADO
 with st.sidebar:
@@ -144,6 +142,18 @@ with st.sidebar:
     email_destinatario = st.text_input("Enviar para (Destinatários):", value="financeiro@crti.com.br", key="enc_email_dest_key")
     btn_enviar_emails = st.button("🚀 **ENVIAR PACOTE COMPLETO**", type="primary", use_container_width=True, key="enc_email_btn_key")
     
+    # BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR RESTAURADO
+    st.markdown("---")
+    st.header("🗑️ Gerenciamento")
+    if st.button("🗑️ Limpar Todos os Termos Emitidos", use_container_width=True):
+        arquivos_limpeza = glob.glob(os.path.join(PASTA_TERMOS, "*.*"))
+        for arq in arquivos_limpeza:
+            try: os.remove(arq)
+            except: pass
+        st.success("Pasta de histórico esvaziada!")
+        time.sleep(1.5)
+        st.rerun()
+
     st.divider()
     st.caption("v1.0 - 11052026")
 
@@ -173,9 +183,9 @@ TODOS_MODULOS = [
     "Qualidade/Avaliação/Documentação", "Cadastros Globais", "Configuração do Sistema"
 ]
 
-# --- ENTRADAS DA TELA PRINCIPAL ---
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
+# Ajuste do solicitante para não trazer lixo estrutural de listas
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
@@ -183,6 +193,7 @@ if not df_leg.empty and cliente_selecionado:
         gerente_cliente_sugerido = str(solicitantes).strip()
         
 gerente_cliente_name = st.text_input("Gerente de Implantação na EMPRESA CLIENTE (Solicitante):", value=gerente_cliente_sugerido)
+gerente_crti = "SUELLEN GOMES"
 
 st.markdown("---")
 st.subheader("Configuração Unificada de Emissão e Parâmetros de Virada")
@@ -193,7 +204,6 @@ with col_datas_1:
 with col_datas_2:
     data_fim = st.date_input("Data da homologação / emissão do documento:", datetime.now())
 
-# --- NOVOS CAMPOS EXIGIDOS PELA PÁGINA 1 DO MANUAL ---
 st.markdown("##### Parâmetros do Lote de Mudança")
 col_v1, col_v2, col_v3 = st.columns(3)
 with col_v1:
@@ -212,7 +222,6 @@ with col_f3: status_cte = st.selectbox("Último CT-e:", ["NÃO EMITE", "SIM"])
 with col_f4: status_nfse = st.selectbox("Último NFS-e:", ["SIM", "NÃO EMITE"])
 with col_f5: status_boletos = st.selectbox("Últimos Boletos:", ["NÃO EMITE", "SIM"])
 
-# Dicionário compactado com as flags fiscais da tela
 campos_fiscais_payload = {
     "tipo_virada": tipo_virada_sel, "periodo_virada": periodo_virada_str,
     "nfe": status_nfe, "mdfe": status_mdfe, "cte": status_cte, "nfse": status_nfse, "boletos": status_boletos
@@ -238,7 +247,7 @@ with col_mod_2:
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
-# --- 6. GERAÇÃO EM LOTE DOS DOIS DOCUMENTOS DE UMA VEZ ---
+# --- 6. GERAÇÃO EM LOTE ---
 if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Por favor, selecione um cliente para prosseguir.")
@@ -253,7 +262,6 @@ if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_contain
                 nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                 datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
 
-                # --- DOCUMENTO 1: TERMO GERAL ---
                 if modulos_homologados:
                     caminho_m1 = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_Campanha_encerramento.docx")
                     if not os.path.exists(caminho_m1): caminho_m1 = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
@@ -272,7 +280,6 @@ if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_contain
                     doc1.save(c_docx1)
                     subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{c_docx1}"', shell=True, check=True)
 
-                # --- DOCUMENTO 2: NÃO HOMOLOGAÇÃO ---
                 if modulos_nao_homologados:
                     caminho_m2 = os.path.join(BASE_DIR, "modelos", "naohomologado.docx")
                     doc2 = DocxTemplate(caminho_m2)
@@ -346,7 +353,8 @@ def confirmar_envio_termos_popup_final(email, arquivos_lote):
     with col_p1:
         if st.button("Sim, Disparar Mudança para Produção", use_container_width=True):
             with st.spinner("Conectando ao barramento SMTP seguro e enviando..."):
-                ok, r_msg = enviar_relatorio_email_termos(
+                # CORREÇÃO: Chamando o nome exato do motor declarado no bloco 3
+                ok, r_msg = enviar_email_termos_logica_p04(
                     email, cliente_selecionado, data_virada_formatada, campos_fiscais_payload, arquivos_lote, gerente_cliente_name
                 )
                 if ok:
