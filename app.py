@@ -87,18 +87,17 @@ with st.sidebar:
         st.switch_page("app.py")
     if st.button("📊 Dashboard", use_container_width=True):
         st.switch_page("pages/01_📊_Dashboard.py")
-    if st.button("📄 Relatórios", use_container_width=True):
-        st.switch_page("pages/02_📄_Relatorios.py")
-    if st.button("📝 Lançamento", use_container_width=True):
+    if st.button("📝 Lançamento Horas", use_container_width=True):
         st.switch_page("pages/03_📝_Lancamento.py")
+    if st.button("📄 Relatórios RA", use_container_width=True):
+        st.switch_page("pages/02_📄_Relatorios.py")    
     if st.button("💰 Medição Mensal", use_container_width=True):
         st.switch_page("pages/04_💰_Medicao_Mensal.py")
     if st.button("📋 Termo Homologação", use_container_width=True): 
        st.switch_page("pages/05_📋_Termos.py")
     if st.button("📑 Termo Encerramento", use_container_width=True): 
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
-      
-           
+             
     st.divider()
     st.caption("v1.0 - 11052026")
     st.caption("Todos os direitos reservados")
@@ -136,16 +135,16 @@ with col1:
         st.switch_page("pages/01_📊_Dashboard.py")
 
 with col2:
-    st.subheader("📄 Relatórios")
-    st.write("Gere PDFs e envie por e-mail.")
-    if st.button("Ir para Relatórios", key="btn_rel"):
-        st.switch_page("pages/02_📄_Relatorios.py")
+    st.subheader("📝 Lançamento de Horas")
+    st.write("Insira novos dados na Base.")
+    if st.button("Novo Lançamento de Horas", key="btn_input"):
+        st.switch_page("pages/03_📝_Lancamento.py")
 
 with col3:
-    st.subheader("📝 Lançamento")
-    st.write("Insira novos dados na planilha.")
-    if st.button("Novo Lançamento", key="btn_input"):
-        st.switch_page("pages/03_📝_Lancamento.py")
+    st.subheader("📄 Relatórios RA")
+    st.write("Gere RA e envie o lote por e-mail.")
+    if st.button("Ir para Relatórios RA", key="btn_rel"):
+        st.switch_page("pages/02_📄_Relatorios.py")
         
 with col4:
     st.subheader("💰 Medição")
@@ -153,5 +152,17 @@ with col4:
     if st.button("Nova Medição", key="btn_med"):
         st.switch_page("pages/04_💰_Medicao_Mensal.py")
 
+with col5:
+    st.subheader("📋 Termo Homologação")
+    st.write(""Gere os Termos de Homologação e envie o lote por e-mail.")
+    if st.button("Ir para Termo Homologação", key="btn_med"):
+        st.switch_page("pages/05_📋_Termos.py")
+
+with col6:
+    st.subheader("📑 Termo Encerramento")
+    st.write(""Gere os Termos de Encerramento e envie o lote por e-mail.")
+    if st.button("Ir para Termo Encerramento", key="btn_med"):
+        st.switch_page("pages/06_📑_Termo_Encerramento.py")        
+
 st.divider()
-st.info("Sistema integrado.")
+st.info("Sistema integrado HPtech Informática ME.")
