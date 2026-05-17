@@ -16,11 +16,15 @@ Gerar Relatórios
 📧 Disparo de E-mails
 🗑️ Gerenciamento de Arquivos
 
-
 📝 Lançamento
 Insira novos dados na planilha.
+
 Lançamento de Atividades
 Grava na planilha
+
+Gerar arquivo de Faturamento e enviar por e-mail(Em construção)
+Gerar Termos de homologação e envia por e-mail (Em construção)
+
 
 1- Inclusão direta do atendimento nesta planilha (data, hora, cliente, RA, consultor, descrição...)
 2- Gera o RA N°  em PDF e XLSX
@@ -28,6 +32,5 @@ Grava na planilha
 4- Dashboard (cliente, consultor, valor...)
 
 # EM CONSTRUÇÃO
-5- Gerar Termos de homologação e envia por e-mail (Em construção)
-6- Criar agendamentos direto na agenda do google (Em construção)
-7- Gerar arquivo de Faturamento e enviar por e-mail(Em construção)
+5- Criar agendamentos direto na agenda do google (Em construção)
+
