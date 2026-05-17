@@ -106,7 +106,7 @@ with st.sidebar:
     email_destinatario = st.text_input("Enviar para (Destinatário):", value="financeiro@crti.com.br", key="enc_email_dest_key")
     btn_enviar_emails = st.button("🚀 **ENVIAR TERMOS POR E-MAIL**", type="primary", use_container_width=True, key="enc_email_btn_key")
     
-    # --- NOVO: BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR IGUAL À SUA PÁGINA 02 ---
+    # BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR
     st.markdown("---")
     st.header("🗑️ Gerenciamento")
     if st.button("🗑️ Limpar Todos os Termos Emitidos", use_container_width=True):
@@ -149,11 +149,13 @@ TODOS_MODULOS = [
 
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
+# CORREÇÃO DEFINITIVA DO GERENTE DE IMPLANTAÇÃO DA EMPRESA CLIENTE
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        gerente_cliente_sugerido = str(solicitantes).strip()
+        # Extrai rigorosamente a primeira string de texto pura da lista, eliminando colchetes e aspas
+        gerente_cliente_sugerido = str(solicitantes[0]).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
@@ -207,7 +209,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
     else:
         with st.spinner("⏳ Gerando termos customizados (Word e PDF)..."):
             try:
-                # DESIGN SEGURO: Limpa a pasta local a cada nova geração para NUNCA acumular outros clientes
                 for arquivo_antigo in glob.glob(os.path.join(PASTA_TERMOS, "*.*")):
                     try: os.remove(arquivo_antigo)
                     except: pass
@@ -255,7 +256,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 
                 doc.render(contexto)
                 
-                # Nomes físicos e limpos para evitar falhas de escape no comando do Linux
                 prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento Geral" else "Doc_Não_Homologação"
                 nome_limpo_arquivo = f"{prefixo}_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
                 
@@ -271,21 +271,19 @@ if st.button("Gerar Documento Selecionado", type="primary"):
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo físico: {e}")
 
-# --- NOVO PANEL VISUAL DE DOWNLOAD E ZIP COMPACTADO (IGUALZINHO À SUA PÁGINA 02) ---
+# --- PAINEL VISUAL DE DOWNLOAD E ZIP COMPACTADO ---
 arquivos_gerados_base = glob.glob(os.path.join(PASTA_TERMOS, "*.*"))
 
 if arquivos_gerados_base:
     st.markdown("---")
     st.subheader("📥 Download dos Arquivos Emitidos")
     
-    # Cria o arquivo ZIP em memória em tempo real contendo apenas o lote do clique ativo
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for arq_caminho in arquivos_gerados_base:
             zip_file.write(arq_caminho, os.path.basename(arq_caminho))
     zip_buffer.seek(0)
     
-    # Botão Vermelho Mestre de Download do Pacote ZIP Completo
     st.download_button(
         label="🎁 **BAIXAR TODOS OS TERMOS CONFIGURADOS (ZIP)**",
         data=zip_buffer,
@@ -294,7 +292,6 @@ if arquivos_gerados_base:
         use_container_width=True
     )
     
-    # Expander de Visualização de Arquivos Individuais Lado a Lado
     with st.expander("📄 Ver arquivos individuais...", expanded=True):
         col_grade = st.columns(2)
         for idx, arq_caminho in enumerate(sorted(arquivos_gerados_base)):
@@ -302,7 +299,6 @@ if arquivos_gerados_base:
             with open(arq_caminho, "rb") as f_leitura:
                 conteudo_bytes = f_leitura.read()
             
-            # Divide os arquivos em duas colunas organizadas
             col_alvo = col_grade[idx % 2]
             extensao_label = "PDF" if nome_real.endswith(".pdf") else "Word"
             mime_tipo = "application/pdf" if nome_real.endswith(".pdf") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -330,7 +326,6 @@ def confirmar_envio_termos_popup_final(email, arquivos_lote):
     with col_p1:
         if st.button("Sim, Disparar Termo", use_container_width=True):
             with st.spinner("Compilando lote de anexos e enviando..."):
-                # Captura o primeiro arquivo para servir de assunto
                 arquivo_ref = str(arquivos_lote[0])
                 nome_doc_assunto = os.path.basename(arquivo_ref).replace("_", " ").replace(".pdf", "").replace(".docx", "")
                 
@@ -354,5 +349,4 @@ if btn_enviar_emails:
     if not arquivos_gerados_base:
         st.sidebar.warning(" Gere o documento na tela primeiro antes de disparar.")
     else:
-        # Passa rigorosamente apenas a lista de arquivos criada nesta sessão
         confirmar_envio_termos_popup_final(email_destinatario, arquivos_gerados_base)
