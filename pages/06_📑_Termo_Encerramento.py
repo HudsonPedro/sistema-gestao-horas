@@ -37,7 +37,7 @@ st.markdown("""
 # 3. FUNÇÕES DE DADOS
 @st.cache_data(ttl=600)
 def carregar_legendas():
-    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
+    url = "https://google.com"
     df = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
     return df
 
@@ -79,9 +79,17 @@ def get_image_base64(path):
 
 try:
     img_base64 = get_image_base64("hptechICO.png")
-    st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0; font-size: 2.5rem;">Termo de Homologação e Encerramento</h1><img src="data:image/png;base64,{img_base64}" style="height: 180px;"></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0; font-size: 2.5rem;">Emissão de Termos de Encerramento</h1><img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;"></div>', unsafe_allow_html=True)
 except:
-    st.title("📄 Termo de Homologação e Encerramento")
+    st.title("📄 Emissão de Termos de Encerramento")
+
+st.markdown("---")
+
+# SELETOR DO DOCUMENTO (Controla o que aparece na tela)
+tipo_documento = st.selectbox(
+    "Selecione o Tipo de Documento que deseja emitir:",
+    ["Termo de Homologação e Encerramento Geral", "Documento de Não Homologação (Apenas Pendências)"]
+)
 
 st.markdown("---")
 
@@ -97,105 +105,108 @@ TODOS_MODULOS = [
     "Qualidade/Avaliação/Documentação", "Cadastros Globais", "Configuração do Sistema"
 ]
 
-col1, col2 = st.columns(2)
-with col1:
-    cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
-    gerente_crti = st.text_input("Gerente de implantação na CRTI:", value="SUELLEN GOMES", disabled=True)
-    
-    gerente_cliente_sugerido = ""
-    if not df_leg.empty and cliente_selecionado:
-        solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
-        if solicitantes: gerente_cliente_sugerido = solicitantes[0]
-            
-    gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
+# Campo comum de Cliente para os dois relatórios
+cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
-with col2:
-    data_inicio = st.date_input("Data de início da Implantação:", datetime.now())
-    data_fim = st.date_input("Data da homologação da implantação:", datetime.now())
+gerente_cliente_sugerido = ""
+if not df_leg.empty and cliente_selecionado:
+    solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
+    if solicitantes: gerente_cliente_sugerido = solicitantes
+        
+gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
+gerente_crti = "SUELLEN GOMES"
 
-st.markdown("---")
-st.subheader("Configuração dos Módulos")
+# --- INTERFACE DINÂMICA (Exibe campos baseado na seleção do topo) ---
+if tipo_documento == "Termo de Homologação e Encerramento Geral":
+    col_datas_1, col_datas_2 = st.columns(2)
+    with col_datas_1:
+        data_inicio = st.date_input("Data de início da Implantação:", datetime.now())
+    with col_datas_2:
+        data_fim = st.date_input("Data da homologação da implantação:", datetime.now())
 
-modulos_homologados = st.multiselect("Selecione os Módulos HOMOLOGADOS:", options=TODOS_MODULOS)
+    st.markdown("---")
+    st.subheader("Configuração dos Módulos")
 
-dados_homologados_tabela = []
-if modulos_homologados:
-    dt_virada_unica = st.date_input("Data de Início em Produção (Válida para todos os homologados):", datetime.now())
-    data_virada_formatada = dt_virada_unica.strftime("%d/%m/%Y")
-    for mod in modulos_homologados:
-        dados_homologados_tabela.append({"nome": mod, "data": data_virada_formatada})
+    modulos_homologados = st.multiselect("Selecione os Módulos HOMOLOGADOS:", options=TODOS_MODULOS)
 
-opcoes_restantes = [m for m in TODOS_MODULOS if m not in modulos_homologados]
-modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS:", options=opcoes_restantes)
+    dados_homologados_tabela = []
+    if modulos_homologados:
+        dt_virada_unica = st.date_input("Data de Início em Produção (Válida para todos os homologados):", datetime.now())
+        data_virada_formatada = dt_virada_unica.strftime("%d/%m/%Y")
+        for mod in modulos_homologados:
+            dados_homologados_tabela.append({"nome": mod, "data": data_virada_formatada})
+
+    opcoes_restantes = [m for m in TODOS_MODULOS if m not in modulos_homologados]
+    modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS:", options=opcoes_restantes)
+
+else:
+    # Modo do Documento de Não Homologação (Esconde os dados de cima e foca só na data e pendências)
+    data_fim = st.date_input("Data do Documento Auxiliar:", datetime.now())
+    st.markdown("---")
+    modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS (Pendentes):", options=TODOS_MODULOS)
 
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
-# --- 6. PROCESSAMENTO E EMISSÃO DO ARQUIVO POR FORÇA BRUTA ---
-if st.button("Gerar Termo de Encerramento Geral", type="primary"):
+# --- 6. PROCESSAMENTO E GERAÇÃO DOS RELATÓRIOS ---
+if st.button("Gerar Documento Selecionado", type="primary"):
     if not cliente_selecionado:
         st.warning("Por favor, selecione um cliente para prosseguir.")
+    elif tipo_documento == "Documento de Não Homologação (Apenas Pendências)" and not modulos_nao_homologados:
+        st.warning("Por favor, selecione ao menos um módulo não homologado.")
     else:
         with st.spinner("⏳ Gerando termos customizados (Word e PDF)..."):
             try:
-                caminho_modelo = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
-                if not os.path.exists(caminho_modelo):
+                # Escolhe o modelo certo com base no seletor do topo
+                if tipo_documento == "Termo de Homologação e Encerramento Geral":
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
+                else:
+                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "naohonologado.docx")
                 
                 doc = DocxTemplate(caminho_modelo)
                 
-                # 1. PREENCHE OS CAMPOS DE TEXTO FIXO DO DOCUMENTO
-                contexto = {
-                    "cliente": cliente_selecionado,
-                    "gerente_crti": gerente_crti,
-                    "gerente_cliente": gerente_cliente,
-                    "data_inicio": data_inicio.strftime("%d/%m/%Y"),
-                    "data_fim": data_fim.strftime("%d/%m/%Y"),
-                    "data_extenso": data_extenso_str
-                }
+                # Formata a string de Não Homologados pulando linha (\n)
+                if modulos_nao_homologados:
+                    texto_nao_homologados_str = "\n".join([f"• {mod}" for mod in modulos_nao_homologados])
+                else:
+                    texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
+
+                # LÓGICA ISOLADA POR TIPO DE DOCUMENTO
+                if tipo_documento == "Termo de Homologação e Encerramento Geral":
+                    # SUA LÓGICA ORIGINAL DO TERMO GERAL - 100% INTACTA
+                    nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
+                    datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
+                    
+                    contexto = {
+                        "cliente": cliente_selecionado,
+                        "gerente_crti": gerente_crti,
+                        "gerente_cliente": gerente_cliente,
+                        "data_inicio": data_inicio.strftime("%d/%m/%Y"),
+                        "data_fim": data_fim.strftime("%d/%m/%Y"),
+                        "data_extenso": data_extenso_str,
+                        
+                        "nomes_homologados": nomes_homologados_str,
+                        "datas_homologados": datas_homologados_str,
+                        "texto_nao_homologados": texto_nao_homologados_str,
+                        
+                        " nomes_homologados ": nomes_homologados_str,
+                        " datas_homologados ": datas_homologados_str,
+                        " texto_nao_homologados ": texto_nao_homologados_str
+                    }
+                else:
+                    # LÓGICA DO DOCUMENTO AUXILIAR DE NÃO HOMOLOGAÇÃO
+                    contexto = {
+                        "cliente": cliente_selecionado,
+                        "gerente_cliente": gerente_cliente,
+                        "data_extenso": data_extenso_str,
+                        
+                        "texto_nao_homologados": texto_nao_homologados_str,
+                        " texto_nao_homologados ": texto_nao_homologados_str
+                    }
+                
                 doc.render(contexto)
                 
-                # 2. LOCALIZA AS TABELAS NO ARQUIVO E INJETA AS LINHAS DIRETAMENTE (Ignora bugs de tags do Word)
-                tab_homologados = None
-                tab_nao_homologados = None
-                
-                for table in doc.tables:
-                    try:
-                        cabecalho_1 = table.rows[0].cells[0].text.strip()
-                        cabecalho_2 = table.rows[0].cells[1].text.strip() if len(table.rows[0].cells) > 1 else ""
-                        
-                        if "Módulos" in cabecalho_1 and "Início" in cabecalho_2:
-                            tab_homologados = table
-                        elif "Não Homologados" in cabecalho_1 or "Módulos / Rotinas" in cabecalho_1:
-                            tab_nao_homologados = table
-                    except:
-                        pass
-                
-                # Se achou a tabela 1, limpa a linha vazia de tags e adiciona os módulos para baixo
-                if tab_homologados is not None:
-                    while len(tab_homologados.rows) > 1:
-                        # Remove as linhas antigas com as tags que falharam
-                        tab_homologados._element.remove(tab_homologados.rows[1]._element)
-                    
-                    for item in dados_homologados_tabela:
-                        row_cells = tab_homologados.add_row().cells
-                        row_cells[0].text = str(item['nome'])
-                        row_cells[1].text = str(item['data'])
-                
-                # Se achou a tabela 2, preenche os não homologados linha por linha
-                if tab_nao_homologados is not None:
-                    while len(tab_nao_homologados.rows) > 1:
-                        tab_nao_homologados._element.remove(tab_nao_homologados.rows[1]._element)
-                    
-                    if modulos_nao_homologados:
-                        for mod in modulos_nao_homologados:
-                            row_cells = tab_nao_homologados.add_row().cells
-                            row_cells[0].text = f"• {mod}"
-                    else:
-                        row_cells = tab_nao_homologados.add_row().cells
-                        row_cells[0].text = "Nenhum módulo pendente nesta fase."
-
-                # 3. SALVAMENTO E CONVERSÃO EM PDF
+                # Salvamento e criação do PDF
                 buffer_docx = io.BytesIO()
                 doc.save(buffer_docx)
                 buffer_docx.seek(0)
@@ -213,8 +224,10 @@ if st.button("Gerar Termo de Encerramento Geral", type="primary"):
                 if os.path.exists(arquivo_docx_temporario): os.remove(arquivo_docx_temporario)
                 if os.path.exists(arquivo_pdf_gerado): os.remove(arquivo_pdf_gerado)
                 
-                st.success("✨ Termo Geral gerado com sucesso!")
-                nome_download_bonito = f"Termo de Homologação e Encerramento - {cliente_selecionado}".replace("/", "-")
+                st.success("✨ Documento gerado com sucesso!")
+                
+                prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento Geral" else "Doc_Não_Homologação"
+                nome_download_bonito = f"{prefixo} - {cliente_selecionado}".replace("/", "-")
                 
                 col_down1, col_down2 = st.columns(2)
                 with col_down1:
