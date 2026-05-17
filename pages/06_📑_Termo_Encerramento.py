@@ -1,8 +1,6 @@
-#Por Hudson Valente - HPTECH
-#Criado em: 16/05/2026
 import streamlit as st
 import pandas as pd
-from docxtpl import DocxTemplate, RichText
+from docxtpl import DocxTemplate
 from datetime import datetime
 import io
 import os
@@ -11,10 +9,10 @@ import base64
 import time
 import importlib.util
 
-# Descobre a pasta raiz do projeto de forma absoluta no servidor Linux
+# Descobre o caminho absoluto da pasta raiz do projeto de forma segura para o Linux
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# --- CARREGAMENTO DINÂMICO DO MOTOR DE E-MAIL (Evita SyntaxError com emojis) ---
+# --- CARREGAMENTO DINÂMICO DO MOTOR DE E-MAIL (Evita o SyntaxError com emojis) ---
 caminho_pg2 = os.path.join(BASE_DIR, "pages", "02_📄_Relatorios.py")
 try:
     spec = importlib.util.spec_from_file_location("relatorios_modulo", caminho_pg2)
@@ -25,28 +23,50 @@ except Exception as e:
     st.error(f"Erro ao carregar o motor de e-mails da página 02: {e}")
 
 # 1. CONFIGURAÇÃO DA PÁGINA
-st.set_page_config(page_title="Termos HPTECH", page_icon="hptechICO.png", layout="wide")
+st.set_page_config(
+    page_title="Termos HPTECH", 
+    page_icon="hptech.png",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 # 2. CSS PARA OCULTAR O MENU E FORÇAR A LOGO NO TOPO
 st.markdown("""
     <style>
+        /* Esconde o menu de páginas padrão do Streamlit */
         [data-testid="stSidebarNav"] {display: none;}
+        
+        /* Zera o espaçamento do topo para a logo subir */
         [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
+        
+        /* Ajuste da logo para não encostar nas laterais */
         [data-testid="stSidebarHeader"] {padding-top: 0rem !important;}
+        
+        /* Cor do título para o padrão azul CRTI */
         h1 { color: #b0231d; }
+        
+        /* Estilo da caixinha de usuário */
         .user-block {
             background-color: #f0f2f6;
             padding: 8px;
             border-radius: 8px;
-            margin-top: -10px;
+            margin-top: -10px; /* Puxa a caixinha um pouco para cima */
         }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. SIDEBAR COM MENU INTEGRADO UNIFICADO (Resolve o erro de DuplicateElementId)
+# 3. FUNÇÕES DE DADOS
+@st.cache_data(ttl=600)
+def carregar_legendas():
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
+    df = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
+    return df
+
+# 4. SIDEBAR COM MENU INTEGRADO E ENVIAR POR E-MAIL UNIFICADO
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
+    # Identificação do Usuário
     u_email = st.user.get("email") or "hudson.valente@crti.com.br"
     st.markdown(f"""
         <div class="user-block">
@@ -57,48 +77,36 @@ with st.sidebar:
     st.markdown("---")
     st.title("Menu Principal")
     
-    # Navegação Ajustada rigorosamente com a sua árvore de arquivos físicos
-    if st.button("🏠 Home", use_container_width=True): 
-        st.switch_page("app.py")
-    if st.button("📊 Dashboard", use_container_width=True): 
-        st.switch_page("pages/01_📊_Dashboard.py")
-    if st.button("📄 Relatórios", use_container_width=True): 
-        st.switch_page("pages/02_📄_Relatorios.py")
-    if st.button("📝 Lançamento", use_container_width=True): 
-        st.switch_page("pages/03_📝_Lancamento.py")
-    if st.button("💰 Medição Mensal", use_container_width=True): 
-        st.switch_page("pages/04_💰_Medicao_Mensal.py")
-    if st.button("📋 Termo Homologação", use_container_width=True): 
-        st.switch_page("pages/05_📋_Termos.py")
-    if st.button("📑 Termo Encerramento", use_container_width=True): 
-        st.switch_page("pages/06_📑_Termo_Encerramento.py")
+    # Navegação com rotas e emojis exatos do seu sistema
+    if st.button("🏠 Home", use_container_width=True): st.switch_page("app.py")
+    if st.button("📊 Dashboard", use_container_width=True): st.switch_page("pages/01_📊_Dashboard.py")
+    if st.button("📄 Relatórios", use_container_width=True): st.switch_page("pages/02_📄_Relatorios.py")
+    if st.button("📝 Lançamento", use_container_width=True): st.switch_page("pages/03_📝_Lancamento.py")
+    if st.button("💰 Medição Mensal", use_container_width=True): st.switch_page("pages/04_💰_Medicao_Mensal.py")
+    if st.button("📄 Termo Homologação", use_container_width=True): st.switch_page("pages/05_📄_Termos.py")
+    if st.button("📄 Termo Encerramento", use_container_width=True): st.switch_page("pages/06_📑_Termo_Encerramento.py")
     
-    # --- INTERFACE DE CONFIGURAÇÃO E DISPARO DE E-MAIL (Movido para dentro do bloco único) ---
+    # --- INTERFACE DE CONFIGURAÇÃO E DISPARO DE E-MAIL ISOLADA COM KEYS ÚNICAS ---
     st.markdown("---")
     st.header("📬 Disparo de Termos")
-    email_destinatario = st.text_input("Enviar para (Destinatário):", value="financeiro@crti.com.br", key="envio_dest_key")
-    senha_app = st.text_input("Senha App Gmail:", value="fzau tvih zlsn xadi", type="password", key="envio_pass_key")
-    btn_enviar_emails = st.button("🚀 **ENVIAR TERMOS POR E-MAIL**", type="primary", use_container_width=True, key="envio_btn_key")
+    email_destinatario = st.text_input("Enviar para (Destinatário):", value="financeiro@crti.com.br", key="termo_email_dest")
+    senha_app = st.text_input("Senha App Gmail:", value="fzau tvih zlsn xadi", type="password", key="termo_email_pass")
+    btn_enviar_emails = st.button("🚀 **ENVIAR TERMOS POR E-MAIL**", type="primary", use_container_width=True, key="termo_email_btn")
     
     st.divider()
     st.caption("v1.0 - 11052026")
     st.caption("Todos os direitos reservados")
     st.caption("Copyright ©2026 HPtech Informática ME")
 
-# 4. CARREGAMENTO DE LISTAS
-@st.cache_data(ttl=600)
-def carregar_legendas():
-    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
-    df = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
-    return df
-
+# 5. CARREGAMENTO DE LISTAS
 try:
     df_leg = carregar_legendas()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
-except:
-    df_leg = pd.DataFrame()
+except Exception as e:
+    st.error(f"Erro ao carregar os clientes da planilha: {e}")
     lista_clientes = []
 
+# Título Customizado com Logo em Base64
 def get_image_base64(path):
     with open(path, "rb") as img_file: return base64.b64encode(img_file.read()).decode()
 
@@ -110,6 +118,7 @@ except:
 
 st.markdown("---")
 
+# SELETOR DO DOCUMENTO
 tipo_documento = st.selectbox(
     "Selecione o Tipo de Documento que deseja emitir:",
     ["Termo de Homologação e Encerramento Geral", "Documento de Não Homologação (Apenas Pendências)"]
@@ -117,6 +126,7 @@ tipo_documento = st.selectbox(
 
 st.markdown("---")
 
+# Lista Completa de Módulos
 TODOS_MODULOS = [
     "Compras", "Suprimentos e Estoque", "Frota - Equipamentos", 
     "Contratos e Medições de Terceiros", "Custos e Resultados", 
@@ -129,18 +139,19 @@ TODOS_MODULOS = [
     "Qualidade/Avaliação/Documentação", "Cadastros Globais", "Configuração do Sistema"
 ]
 
+# --- ENTRADAS DO FORMULÁRIO ---
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
-    if solicitantes: 
+    if solicitantes:
         gerente_cliente_sugerido = str(solicitantes[0]).strip()
-        
+            
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
 
-# --- INTERFACE DINÂMICA ---
+# --- INTERFACE DINÂMICA COMPATÍVEL ---
 if tipo_documento == "Termo de Homologação e Encerramento Geral":
     col_datas_1, col_datas_2 = st.columns(2)
     with col_datas_1:
@@ -154,7 +165,7 @@ if tipo_documento == "Termo de Homologação e Encerramento Geral":
 
     dados_homologados_tabela = []
     if modulos_homologados:
-        dt_virada_unica = st.date_input("Data de Início em Production (Válida para todos os homologados):", datetime.now())
+        dt_virada_unica = st.date_input("Data de Início em Produção (Válida para todos os homologados):", datetime.now())
         data_virada_formatada = dt_virada_unica.strftime("%d/%m/%Y")
         for mod in modulos_homologados:
             dados_homologados_tabela.append({"nome": mod, "data": data_virada_formatada})
@@ -167,14 +178,15 @@ else:
     st.markdown("---")
     modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS (Pendentes):", options=TODOS_MODULOS)
 
+# Tradução da data por extenso
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
-# Pasta física estável local para segurar as cópias dos arquivos temporariamente
+# Pasta física temporária estável local para guardar cópias dos anexos
 PASTA_TERMOS = "termos_emitidos"
 os.makedirs(PASTA_TERMOS, exist_ok=True)
 
-# --- GERAÇÃO DOS RELATÓRIOS (SUA LÓGICA DO TERMO GERAL ESTÁ COMPLETAMENTE PRESERVADA) ---
+# --- 6. PROCESSAMENTO E EMISSÃO DO RELATÓRIO (SUA LÓGICA DO TERMO GERAL INTACTA) ---
 if st.button("Gerar Documento Selecionado", type="primary"):
     if not cliente_selecionado:
         st.warning("Por favor, selecione um cliente para prosseguir.")
@@ -184,9 +196,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
         with st.spinner("⏳ Gerando termos customizados (Word e PDF)..."):
             try:
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
-                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
-                    if not os.path.exists(caminho_modelo):
-                        caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
+                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 else:
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "naohomologado.docx")
                 
@@ -219,7 +229,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         " texto_nao_homologados ": texto_nao_homologados_str
                     }
                 else:
-                    # LÓGICA DO SEGUNDO RELATÓRIO
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_cliente": gerente_cliente,
