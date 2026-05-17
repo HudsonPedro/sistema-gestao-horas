@@ -99,7 +99,7 @@ with st.sidebar:
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
              
     st.divider()
-    st.caption("v1.0 - 11052026")
+    st.caption("v1.0 - 11052026"hpetech)
     st.caption("Todos os direitos reservados")
     st.caption("Copyright ©2026 HPtech Informática ME")
     
