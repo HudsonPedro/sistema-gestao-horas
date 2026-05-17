@@ -20,7 +20,7 @@ from email.encoders import encode_base64
 # Descobre a pasta raiz do projeto de forma segura para o Linux
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# CORREÇÃO CRUCIAL: Pasta declarada no topo para o botão de limpeza reconhecer sem dar NameError
+# Pasta mestre dos termos emitidos
 PASTA_TERMOS = os.path.join(BASE_DIR, "termos_emitidos")
 os.makedirs(PASTA_TERMOS, exist_ok=True)
 
@@ -43,16 +43,23 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04
-def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexos):
+# 3. MOTOR DE DISPARO SMTP CORRIGIDO PARA MÚLTIPLOS DESTINATÁRIOS
+def enviar_email_termos_logica_p04(string_destinatarios, nome_documento, arquivos_anexos):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
     smtp_server = st.secrets["smtp"]["servidor"]
     smtp_porta = int(st.secrets["smtp"]["porta"])
     
+    # CORREÇÃO CRUCIAL: Divide os e-mails por vírgula e remove qualquer espaço em branco invisível das pontas
+    lista_destinatarios = [email.strip() for email in string_destinatarios.split(",") if email.strip()]
+    
+    if not lista_destinatarios:
+        return False, "Nenhum e-mail válido foi inserido."
+        
     msg = MIMEMultipart()
     msg["From"] = email_remetente
-    msg["To"] = email_destino
+    # No cabeçalho visual 'To', os e-mails precisam estar unidos de forma limpa por vírgula, sem quebras
+    msg["To"] = ", ".join(lista_destinatarios)
     msg["Subject"] = f"Termos de Encerramento e Pendências - HUDSON VALENTE"
     
     corpo = f"""<html><body><p>Prezada Sra. Amanda, espero que se encontre bem.</p><br>
@@ -83,13 +90,14 @@ def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexo
         server = smtplib.SMTP(smtp_server, smtp_porta)
         server.starttls()
         server.login(email_remetente, senha_remetente)
-        server.sendmail(email_remetente, email_destino, msg.as_string())
+        # O comando sendmail exige receber a lista pura do Python para fazer a entrega individual no lote
+        server.sendmail(email_remetente, lista_destinatarios, msg.as_string())
         server.quit()
-        return True, "E-mail com o lote completo enviado com sucesso!"
+        return True, "E-mail com o lote completo enviado com sucesso para todos!"
     except Exception as e:
         return False, f"Falha no envio SMTP (Segurança de Rede): {str(e)}"
 
-# 4. SIDEBAR COM OS EMOJIS EXATOS DA SUA ÁRVORE DE ARQUIVOS
+# 4. SIDEBAR COM MENU INTEGRADO
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -114,10 +122,11 @@ with st.sidebar:
     # INTERFACE DE DISPARO DA SIDEBAR
     st.markdown("---")
     st.header("📬 Disparo de Termos")
-    email_destinatario = st.text_input("Enviar para (Destinatário):", value="financeiro@crti.com.br", key="enc_email_dest_key")
+    st.caption("Separe os e-mails usando vírgula (,)")
+    email_destinatario = st.text_input("Enviar para (Destinatários):", value="financeiro@crti.com.br", key="enc_email_dest_key")
     btn_enviar_emails = st.button("🚀 **ENVIAR PACOTE COMPLETO**", type="primary", use_container_width=True, key="enc_email_btn_key")
     
-    # BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR (NameError Corrigido!)
+    # BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR
     st.markdown("---")
     st.header("🗑️ Gerenciamento")
     if st.button("🗑️ Limpar Todos os Termos Emitidos", use_container_width=True):
@@ -160,12 +169,12 @@ TODOS_MODULOS = [
 
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
-# CORREÇÃO DEFINITIVA DO SOLICITANTE: Extrai o primeiro item (iloc[0]) como texto limpo sem colchetes e aspas
+# BUSCA DO GESTOR: Extrai sem colchetes ou aspas na tela
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        gerente_cliente_sugerido = str(df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().iloc[0]).strip()
+        gerente_cliente_sugerido = str(solicitantes[0]).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
@@ -294,9 +303,9 @@ if arquivos_gerados_base:
 # 7. POP-UP DE CONFIRMAÇÃO DO DISPARO DO LOTE COMPLETO
 # =========================================================================
 @st.dialog(" Confirmação de Disparo de Termos")
-def confirmar_envio_termos_popup_final(email, archivos_lote):
+def confirmar_envio_termos_popup_final(email, arquivos_lote):
     st.write("Você tem certeza que deseja disparar os termos gerados por e-mail?")
-    st.write(f"• **Destinatário:** `{email}`")
+    st.write(f"• **Destinatários:** `{email}`")
     st.write(f"• **Arquivos em anexo:** PDF e Word de todos os termos gerados na tela")
     st.markdown("---")
     
@@ -304,7 +313,7 @@ def confirmar_envio_termos_popup_final(email, archivos_lote):
     with col_p1:
         if st.button("Sim, Disparar Lote", use_container_width=True):
             with st.spinner("Compilando lote completo de anexos e enviando..."):
-                ok, r_msg = enviar_email_termos_logica_p04(email, f"Lote Termos {cliente_selecionado}", archivos_lote)
+                ok, r_msg = enviar_email_termos_logica_p04(email, f"Lote Termos {cliente_selecionado}", arquivos_lote)
                 if ok:
                     st.success(f" {r_msg}")
                     st.balloons()
