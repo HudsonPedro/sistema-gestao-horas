@@ -42,7 +42,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (ADAPTADO COM TEXTO E HIGIENIZAÇÃO DO MANUAL)
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (NOMES DOS ANEXOS CORRIGIDOS E CORPO HTML)
 def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_virada_str, campos_fiscal, arquivos_anexos, gerente_cliente_nome):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
@@ -56,10 +56,8 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
     msg = MIMEMultipart()
     msg["From"] = email_remetente
     msg["To"] = ", ".join(lista_destinatarios)
-    # Assunto conforme manual operacional (Page 1)
     msg["Subject"] = f"Solicitação da disponibilidade do suporte para a VIRADADA EM PRODUÇÃO – {cliente_nome}"
     
-    # Estrutura HTML oficial com as marcações em vermelho exigidas no manual (Page 1)
     corpo_html = f"""
     <html>
     <body>
@@ -86,7 +84,7 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
         <p style="color: #b0231d; font-weight: bold;">Para virar o sistema em produção é obrigatória a assinatura de ambas as partes. O cliente Sr(a). {gerente_cliente_nome} está ao par e no aguardo dos documentos para assinaturas.</p>
         
         <br>
-        <p>Caso encontre alguma divergência, favor criticar para as devidas correções.<br>
+        <p>Caso encontre alguma divergência, favor criticar para as devidas corrections.<br>
         Me coloco à inteira disposição para possíveis esclarecimentos.</p>
         <p>Com Gratidão!!<br><b>Hudson Valente</b></p>
     </body>
@@ -97,13 +95,13 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
     for caminho_arquivo in arquivos_anexos:
         nome_original = os.path.basename(caminho_arquivo)
         
-        # Blindagem contra o bug do noname: força os nomes estruturados corretos nos anexos do Gmail
+        # CORREÇÃO CRUCIAL: Mapeia e força o nome exato solicitado sem variáveis mutáveis no cabeçalho do e-mail
         if "NÃO_Homologação" in nome_original or "Nao_Homologacao" in nome_original or "naohomologado" in nome_original:
             extensao = ".pdf" if nome_original.lower().endswith(".pdf") else ".docx"
-            nome_arquivo_limpo = f"Termo_de_NÃO_Homologação_de_Módulos_do_CRTI_ERP{extensao}"
+            nome_arquivo_limpo = f"Termo de NÃO Homologação de Módulos do CRTI ERP{extensao}"
         elif "Homologação" in nome_original or "Geral" in nome_original:
             extensao = ".pdf" if nome_original.lower().endswith(".pdf") else ".docx"
-            nome_arquivo_limpo = f"Termo_de_Homologação_e_Encerramento_de_Implantação_do_CRTI_ERP{extensao}"
+            nome_arquivo_limpo = f"Termo de Homologação e Encerramento de Implantação do CRTI ERP{extensao}"
         else:
             nome_arquivo_limpo = nome_original
             
@@ -218,7 +216,7 @@ with col_datas_1:
 with col_datas_2:
     data_fim = st.date_input("Data da homologação / emissão do documento:", datetime.now())
 
-# --- NOVOS CAMPOS EXIGIDOS PELA PAGE 1 DO MANUAL ---
+# Parâmetros do Lote de Mudança do manual
 st.markdown("##### Parâmetros do Lote de Mudança")
 col_v1, col_v2, col_v3 = st.columns(3)
 with col_v1:
@@ -277,7 +275,7 @@ if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_contain
                 nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                 datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
 
-                # --- DOCUMENTO 1: TERMO GERAL ---
+                # --- DOCUMENTO 1: TERMO GERAL (CORRIGIDO NOME FÍSICO ESTREITO) ---
                 if modulos_homologados:
                     caminho_m1 = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_Campanha_encerramento.docx")
                     if not os.path.exists(caminho_m1): caminho_m1 = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
@@ -296,7 +294,7 @@ if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_contain
                     doc1.save(c_docx1)
                     subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{c_docx1}"', shell=True, check=True)
 
-                # --- DOCUMENTO 2: NÃO HOMOLOGAÇÃO ---
+                # --- DOCUMENTO 2: NÃO HOMOLOGAÇÃO (CORRIGIDO NOME FÍSICO ESTREITO) ---
                 if modulos_nao_homologados:
                     caminho_m2 = os.path.join(BASE_DIR, "modelos", "naohomologado.docx")
                     doc2 = DocxTemplate(caminho_m2)
@@ -310,7 +308,7 @@ if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_contain
                     doc2.save(c_docx2)
                     subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{c_docx2}"', shell=True, check=True)
 
-                st.success("✨ Lote unificado gerado e armazenado com sucesso!")
+                st.success("✨ Todos os documentos do lote foram gerados e armazenados!")
                 time.sleep(1)
                 st.rerun()
             except Exception as e:
@@ -321,7 +319,7 @@ arquivos_gerados_base = glob.glob(os.path.join(PASTA_TERMOS, "*.pdf")) + glob.gl
 
 if arquivos_gerados_base:
     st.markdown("---")
-    st.subheader("📥 Download do Pacote Unificado Emitido")
+    st.subheader("📥 Download do Pacote Completo Emitido")
     
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
@@ -332,7 +330,7 @@ if arquivos_gerados_base:
     st.download_button(
         label="🎁 **BAIXAR TODOS OS TERMOS CONFIGURADOS (ZIP)**",
         data=zip_buffer,
-        file_name=f"Lote_Virada_{cliente_selecionado}.zip",
+        file_name=f"Pacote_Termos_HPTECH_{cliente_selecionado}.zip",
         mime="application/zip",
         use_container_width=True
     )
@@ -340,12 +338,12 @@ if arquivos_gerados_base:
     with st.expander("📄 Ver e baixar arquivos individuais do lote...", expanded=True):
         col_grade = st.columns(2)
         for idx, arq_caminho in enumerate(sorted(arquivos_gerados_base)):
-            nome_real = os.path.basename(arq_caminho)
+            nome_real = os.path.basename(arq_caminho).replace("_", " ")
             with open(arq_caminho, "rb") as f_leitura: conteudo_bytes = f_leitura.read()
             
             col_alvo = col_grade[idx % 2]
-            extensao_label = "PDF" if nome_real.endswith(".pdf") else "Word"
-            mime_tipo = "application/pdf" if nome_real.endswith(".pdf") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            extensao_label = "PDF" if arq_caminho.endswith(".pdf") else "Word"
+            mime_tipo = "application/pdf" if arq_caminho.endswith(".pdf") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             
             col_alvo.download_button(
                 label=f"📥 Baixar {extensao_label}: {nome_real}",
@@ -363,7 +361,7 @@ if arquivos_gerados_base:
 def confirmar_envio_termos_popup_final(email, arquivos_lote):
     st.write("Você tem certeza que deseja disparar os termos gerados por e-mail?")
     st.write(f"• **Destinatários:** `{email}`")
-    st.write(f"• **Arquivos em anexo:** PDF e Word de todos os termos gerados na tela")
+    st.write(f"• **Arquivos em anexo:** Lote de suporte oficial contendo os arquivos estruturados")
     st.markdown("---")
     
     col_p1, col_p2 = st.columns(2)
