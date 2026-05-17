@@ -106,13 +106,16 @@ TODOS_MODULOS = [
 ]
 
 # Campo comum de Cliente para os dois relatórios
+# --- 1. ENTRADA DE CLIENTE COMUM ---
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
-    solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist() #== cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
-    if solicitantes: gerente_cliente_sugerido = solicitantes
-        
+    solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
+    if solicitantes:
+        # CORREÇÃO: Pega apenas o primeiro nome da lista e remove espaços extras nas pontas
+        gerente_cliente_sugerido = str(solicitantes[0]).strip()
+
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
 
