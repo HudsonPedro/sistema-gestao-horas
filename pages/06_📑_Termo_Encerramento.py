@@ -43,7 +43,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. SIDEBAR COM MENU INTEGRADO (Corrigido com os emojis exatos do seu GitHub)
+# 3. SIDEBAR COM MENU INTEGRADO UNIFICADO (Resolve o erro de DuplicateElementId)
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -73,12 +73,12 @@ with st.sidebar:
     if st.button("📑 Termo Encerramento", use_container_width=True): 
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
     
-    # INTERFACE DE CONFIGURAÇÃO E DISPARO DE E-MAIL NA SIDEBAR
-    st.sidebar.markdown("---")
-    st.sidebar.header("📬 Disparo de Termos por E-mail")
-    email_destinatario = st.sidebar.text_input("Enviar para (Destinatário):", value="financeiro@crti.com.br")
-    senha_app = st.sidebar.text_input("Senha App Gmail:", value="fzau tvih zlsn xadi", type="password")
-    btn_enviar_emails = st.sidebar.button("🚀 **ENVIAR TERMOS POR E-MAIL**", type="primary", use_container_width=True)
+    # --- INTERFACE DE CONFIGURAÇÃO E DISPARO DE E-MAIL (Movido para dentro do bloco único) ---
+    st.markdown("---")
+    st.header("📬 Disparo de Termos")
+    email_destinatario = st.text_input("Enviar para (Destinatário):", value="financeiro@crti.com.br", key="envio_dest_key")
+    senha_app = st.text_input("Senha App Gmail:", value="fzau tvih zlsn xadi", type="password", key="envio_pass_key")
+    btn_enviar_emails = st.button("🚀 **ENVIAR TERMOS POR E-MAIL**", type="primary", use_container_width=True, key="envio_btn_key")
     
     st.divider()
     st.caption("v1.0 - 11052026")
@@ -140,6 +140,7 @@ if not df_leg.empty and cliente_selecionado:
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
 
+# --- INTERFACE DINÂMICA ---
 if tipo_documento == "Termo de Homologação e Encerramento Geral":
     col_datas_1, col_datas_2 = st.columns(2)
     with col_datas_1:
@@ -153,7 +154,7 @@ if tipo_documento == "Termo de Homologação e Encerramento Geral":
 
     dados_homologados_tabela = []
     if modulos_homologados:
-        dt_virada_unica = st.date_input("Data de Início em Produção (Válida para todos os homologados):", datetime.now())
+        dt_virada_unica = st.date_input("Data de Início em Production (Válida para todos os homologados):", datetime.now())
         data_virada_formatada = dt_virada_unica.strftime("%d/%m/%Y")
         for mod in modulos_homologados:
             dados_homologados_tabela.append({"nome": mod, "data": data_virada_formatada})
@@ -169,10 +170,11 @@ else:
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
+# Pasta física estável local para segurar as cópias dos arquivos temporariamente
 PASTA_TERMOS = "termos_emitidos"
 os.makedirs(PASTA_TERMOS, exist_ok=True)
 
-# --- 5. PROCESSAMENTO E EMISSÃO DO RELATÓRIO ---
+# --- GERAÇÃO DOS RELATÓRIOS (SUA LÓGICA DO TERMO GERAL ESTÁ COMPLETAMENTE PRESERVADA) ---
 if st.button("Gerar Documento Selecionado", type="primary"):
     if not cliente_selecionado:
         st.warning("Por favor, selecione um cliente para prosseguir.")
@@ -182,7 +184,9 @@ if st.button("Gerar Documento Selecionado", type="primary"):
         with st.spinner("⏳ Gerando termos customizados (Word e PDF)..."):
             try:
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
-                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
+                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
+                    if not os.path.exists(caminho_modelo):
+                        caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 else:
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "naohomologado.docx")
                 
@@ -194,6 +198,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                     texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
 
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
+                    # SUA LÓGICA VERTICAL DO TERMO GERAL ORIGINAL QUE DEU CERTO
                     nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                     datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
                     
@@ -214,6 +219,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         " texto_nao_homologados ": texto_nao_homologados_str
                     }
                 else:
+                    # LÓGICA DO SEGUNDO RELATÓRIO
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_cliente": gerente_cliente,
@@ -250,12 +256,12 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 with col_down2:
                     st.download_button(label="📥 Baixar Termo em Word (.docx)", data=buffer_docx, file_name=f"{nome_download_bonito}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
             except Exception as e:
-                st.error(f"Erro ao processar o documento físico: {e}")
+                st.error(f"Erro ao processar o arquivo físico: {e}")
 
 # =========================================================================
-# 6. POP-UP DE CONFIRMAÇÃO DO DISPARO DE TERMOS
+# 7. POP-UP DE CONFIRMAÇÃO DO DISPARO DE TERMOS
 # =========================================================================
-@st.dialog(" Confirmação de Disparo de Termos")
+@st.dialog("📧 Confirmação de Disparo de Termos")
 def confirmar_envio_termos_popup(arquivos_validos):
     st.write("Você tem certeza que deseja disparar o termo gerado por e-mail?")
     st.write(f"• **Destinatário:** `{email_destinatario}`")
@@ -270,7 +276,7 @@ def confirmar_envio_termos_popup(arquivos_validos):
                     arquivos_validos, "://gmail.com", 587, "hudson.valente@crti.com.br", senha_app, email_destinatario
                 )
                 if sucesso:
-                    st.success(" Termo enviado com sucesso para a análise!")
+                    st.success("🎉 Termo enviado com sucesso para a análise!")
                     st.balloons()
                     time.sleep(4)
                 else:
@@ -289,6 +295,6 @@ if btn_enviar_emails:
     arquivos_validos = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx") or f.endswith(".docx")]
     
     if not arquivos_validos:
-        st.sidebar.warning(" Gere o documento na tela primeiro antes de disparar.")
+        st.sidebar.warning("⚠️ Gere o documento na tela primeiro antes de disparar.")
     else:
         confirmar_envio_termos_popup(arquivos_validos)
