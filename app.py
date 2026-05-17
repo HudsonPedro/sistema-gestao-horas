@@ -98,7 +98,7 @@ with st.sidebar:
     if st.button("📑 Termo Encerramento", use_container_width=True): 
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
              
-    st.divider("hpetech")
+    st.divider(hpetech)
     st.caption("v1.0 - 11052026")
     st.caption("Todos os direitos reservados")
     st.caption("Copyright ©2026 HPtech Informática ME")
