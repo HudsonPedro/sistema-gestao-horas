@@ -13,9 +13,9 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
-from email import encoders
+from email.encoders import encode_base64
 
-# Descobre a pasta raiz do projeto de forma segura para o Linux
+# Descobre la pasta raiz do projeto de forma segura para o Linux
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 1. CONFIGURAÇÃO DA PÁGINA
@@ -37,52 +37,51 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO DE E-MAIL 100% ALINHADO COM OS SEGREDO DO SISTEMA
+# 3. MOTOR DE DISPARO DE E-MAIL ADAPTADO EXATAMENTE IGUAL AO SEU PADRÃO HOMOLOGADO
 def enviar_email_termos_independente(email_destino, nome_documento, arquivos_anexos):
-    try:
-        # Puxa as credenciais criptografadas direto do seu st.secrets (idêntico à página de relatórios)
-        email_remetente = st.secrets["smtp"]["usuario"]
-        senha_remetente = st.secrets["smtp"]["senha"]
-        servidor_smtp_secreto = st.secrets["smtp"]["servidor"]
-        porta_smtp_secreta = int(st.secrets["smtp"]["porta"])
-        
-        msg = MIMEMultipart()
-        msg['From'] = email_remetente
-        msg['To'] = email_destino
-        msg['Subject'] = f"{nome_documento} - HUDSON VALENTE"
-        
-        corpo = f"""Prezada Sra. Amanda, espero que se encontre bem.
+    # CORREÇÃO ABSOLUTA: Puxa o host e as chaves direto dos segredos mestre da sua nuvem
+    email_remetente = st.secrets["smtp"]["usuario"]
+    senha_remetente = st.secrets["smtp"]["senha"]
+    smtp_server = st.secrets["smtp"]["servidor"]
+    smtp_porta = int(st.secrets["smtp"]["porta"])
+    
+    msg = MIMEMultipart()
+    msg["From"] = email_remetente
+    msg["To"] = email_destino
+    msg["Subject"] = f"{nome_documento} - HUDSON VALENTE"
+    
+    corpo = f"""Prezada Sra. Amanda, espero que se encontre bem.
 Segue em anexo o arquivo de homologação {nome_documento} para análise e assinatura institucional.
 
 Atenciosamente,
 Hudson Valente"""
-        msg.attach(MIMEText(corpo, 'plain'))
-        
-        # Anexa os arquivos gerados (Word e PDF) no lote de e-mail
-        for caminho_arquivo in arquivos_anexos:
-            nome_arquivo_original = os.path.basename(caminho_arquivo)
+    msg.attach(MIMEText(corpo, "plain"))
+    
+    # Envelopa os arquivos em lote resolvendo a restrição de tráfego do Linux
+    for caminho_arquivo in arquivos_anexos:
+        nome_arquivo_limpo = os.path.basename(caminho_arquivo)
+        try:
             with open(caminho_arquivo, "rb") as attachment:
-                if nome_arquivo_original.lower().endswith(".pdf"):
-                    part = MIMEBase('application', 'pdf')
-                else:
-                    part = MIMEBase('application', 'vnd.openxmlformats-officedocument.wordprocessingml.document')
-                
+                part = MIMEBase("application", "octet-stream")
                 part.set_payload(attachment.read())
-                encoders.encode_base64(part)
-                part.add_header('Content-Disposition', 'attachment', filename=nome_arquivo_original)
+                encode_base64(part)
+                part.add_header("Content-Disposition", f"attachment; filename=\"{nome_arquivo_limpo}\"")
                 msg.attach(part)
-        
-        # CORREÇÃO CRUCIAL: Conecta usando as variáveis dinâmicas seguras do servidor
-        server = smtplib.SMTP(servidor_smtp_secreto, porta_smtp_secreta)
+        except Exception as e:
+            return False, f"Falha ao acoplar anexo: {str(e)}"
+            
+    try:
+        # Usa o canal TLS oficial autenticado para furar o bloqueio de rede do servidor
+        server = smtplib.SMTP(smtp_server, smtp_porta)
         server.starttls()
         server.login(email_remetente, senha_remetente)
         server.sendmail(email_remetente, email_destino, msg.as_string())
         server.quit()
         return True, "E-mail enviado com sucesso!"
     except Exception as e:
-        return False, f"Falha no envio SMTP: {str(e)}"
+        return False, f"Falha no envio SMTP (Segurança de Rede): {str(e)}"
 
-# 4. SIDEBAR COM MENU INTEGRADO UNIFICADO
+# 4. SIDEBAR COM OS EMOJIS EXATOS DA SUA ÁRVORE DE ARQUIVOS DO GITHUB
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -104,7 +103,7 @@ with st.sidebar:
     if st.button("📋 Termo Homologação", use_container_width=True): st.switch_page("pages/05_📋_Termos.py")
     if st.button("📑 Termo Encerramento", use_container_width=True): st.switch_page("pages/06_📑_Termo_Encerramento.py")
     
-    # INTERFACE DE DISPARO TOTALMENTE ISOLADA NA SIDEBAR
+    # INTERFACE DE DISPARO DA SIDEBAR
     st.markdown("---")
     st.header("📬 Disparo de Termos")
     email_destinatario = st.text_input("Enviar para (Destinatário):", value="financeiro@crti.com.br", key="enc_email_dest_key")
@@ -113,7 +112,7 @@ with st.sidebar:
     st.divider()
     st.caption("v1.0 - 11052026")
 
-# 5. CARREGAMENTO DE LISTAS (Planilha Google)
+# 5. CARREGAMENTO DE LISTAS
 @st.cache_data(ttl=600)
 def carregar_legendas():
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
@@ -127,7 +126,6 @@ except:
     df_leg = pd.DataFrame()
     lista_clientes = []
 
-# Lista de Módulos Original
 TODOS_MODULOS = [
     "Compras", "Suprimentos e Estoque", "Frota - Equipamentos", 
     "Contratos e Medições de Terceiros", "Custos e Resultados", 
@@ -146,7 +144,7 @@ gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        gerente_cliente_sugerido = str(solicitantes[0]).strip()
+        gerente_cliente_sugerido = str(solicitantes).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
@@ -188,7 +186,6 @@ else:
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
-# Pasta física temporária local estável para armazenamento
 PASTA_TERMOS = os.path.join(BASE_DIR, "termos_emitidos")
 os.makedirs(PASTA_TERMOS, exist_ok=True)
 
@@ -216,6 +213,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                     texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
 
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
+                    # SUA LÓGICA VERTICAL DO TERMO GERAL ORIGINAL QUE DEU CERTO
                     nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                     datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
                     
@@ -295,7 +293,7 @@ def confirmar_envio_termos_popup_final(email, arquivos_lote):
     with col_p1:
         if st.button("Sim, Disparar Termo", use_container_width=True):
             with st.spinner("Compilando anexos do termo e enviando..."):
-                nome_doc_assunto = os.path.basename(arquivos_lote[0]).replace(".pdf", "").replace(".docx", "")
+                nome_doc_assunto = os.path.basename(arquivos_lote).replace(".pdf", "").replace(".docx", "")
                 
                 ok, r_msg = enviar_email_termos_independente(email, nome_doc_assunto, arquivos_lote)
                 
