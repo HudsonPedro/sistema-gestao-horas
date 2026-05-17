@@ -87,7 +87,7 @@ with st.sidebar:
         st.switch_page("app.py")
     if st.button("📊 Dashboard", use_container_width=True):
         st.switch_page("pages/01_📊_Dashboard.py")
-    if st.button("📄 Relatórios", use_container_width=True):
+    if st.button("📄 Relatórios RA", use_container_width=True):
         st.switch_page("pages/02_📄_Relatorios.py")
     if st.button("📝 Lançamento", use_container_width=True):
         st.switch_page("pages/03_📝_Lancamento.py")
