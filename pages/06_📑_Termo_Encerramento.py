@@ -37,16 +37,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE ENVIO DE E-MAIL ISOLADO (Exatamente igual ao da sua página 02)
+# 3. MOTOR DE ENVIO DE E-MAIL ISOLADO
 def enviar_relatorio_email_termos(arquivos_anexos, servidor_smtp, porta, email_remetente, senha, destinatario):
     if not arquivos_anexos: 
         return False, "Nenhum arquivo para anexar."
     
-    if isinstance(arquivos_anexos, list):
-        primeiro_arquivo = arquivos_anexos[0] 
-    else:
-        primeiro_arquivo = arquivos_anexos
-    
+    arquivos_para_enviar = arquivos_anexos if isinstance(arquivos_anexos, list) else [arquivos_anexos]
+    primeiro_arquivo = arquivos_para_enviar[0]
     nome_base = os.path.basename(primeiro_arquivo).replace(".pdf", "").replace(".docx", "").strip()
     
     msg = MIMEMultipart()
@@ -61,8 +58,6 @@ Atenciosamente,
 Hudson Valente"""
     
     msg.attach(MIMEText(corpo, 'plain'))
-    
-    arquivos_para_enviar = arquivos_anexos if isinstance(arquivos_anexos, list) else [arquivos_anexos]
     
     for caminho_arquivo in arquivos_para_enviar:
         nome_arquivo_original = os.path.basename(caminho_arquivo)
@@ -140,7 +135,17 @@ except:
     df_leg = pd.DataFrame()
     lista_clientes = []
 
-# Sua lista de módulos original restaurada por completo
+def get_image_base64(path):
+    with open(path, "rb") as img_file: return base64.b64encode(img_file.read()).decode()
+
+try:
+    img_base64 = get_image_base64("hptechICO.png")
+    st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0; font-size: 2.5rem;">Emissão de Termos de Encerramento</h1><img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;"></div>', unsafe_allow_html=True)
+except:
+    st.title("📄 Emissão de Termos de Encerramento")
+
+st.markdown("---")
+
 TODOS_MODULOS = [
     "Compras", "Suprimentos e Estoque", "Frota - Equipamentos", 
     "Contratos e Medições de Terceiros", "Custos e Resultados", 
@@ -155,13 +160,15 @@ TODOS_MODULOS = [
 
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
+# CORREÇÃO DEFINITIVA DO SOLICITANTE SEM COLCHETES OU ASPAS
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        gerente_cliente_sugerido = str(solicitantes).strip()
+        gerente_cliente_sugerido = str(solicitantes[0]).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
+gerente_crti = "SUELLEN GOMES"
 
 tipo_documento = st.selectbox(
     "Selecione o Tipo de Documento que deseja emitir:",
@@ -200,8 +207,8 @@ else:
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
-# Pasta física temporária local para segurar as cópias dos arquivos antes de anexar
-PASTA_TERMOS = "termos_emitidos"
+# Pasta física estável local para segurar as cópias dos arquivos temporariamente
+PASTA_TERMOS = os.path.join(BASE_DIR, "termos_emitidos")
 os.makedirs(PASTA_TERMOS, exist_ok=True)
 
 # --- 6. PROCESSAMENTO E GERAÇÃO DOS RELATÓRIOS ---
@@ -228,7 +235,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                     texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
 
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
-                    # SUA LÓGICA VERTICAL DO TERMO GERAL ORIGINAL QUE DEU CERTO
                     nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                     datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
                     
@@ -259,25 +265,36 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 
                 doc.render(contexto)
                 
-                buffer_docx = io.BytesIO()
-                doc.save(buffer_docx)
-                buffer_docx.seek(0)
+                # NOME INTERNO TOTALMENTE LIMPO PARA O LINUX NÃO FALHAR NO COMANDO HEADLESS
+                caminho_docx_fisico = os.path.join(PASTA_TERMOS, "temp_processamento.docx")
+                doc.save(caminho_docx_fisico)
                 
+                # Executa o LibreOffice usando um nome temporário seguro e sem espaços no Linux
+                cmd = f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{caminho_docx_fisico}"'
+                subprocess.run(cmd, shell=True, check=True)
+                
+                caminho_pdf_gerado_lib = os.path.join(PASTA_TERMOS, "temp_processamento.pdf")
+                
+                # Configura os nomes bonitos finais para os botões de download e e-mail
                 prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento Geral" else "Doc_Não_Homologação"
                 nome_download_bonito = f"{prefixo} - {cliente_selecionado}".replace("/", "-")
                 
-                caminho_pdf_fisico = os.path.join(PASTA_TERMOS, f"{nome_download_bonito}.pdf")
-                caminho_docx_fisico = os.path.join(PASTA_TERMOS, f"{nome_download_bonito}.docx")
+                caminho_pdf_final = os.path.join(PASTA_TERMOS, f"{nome_download_bonito}.pdf")
+                caminho_docx_final = os.path.join(PASTA_TERMOS, f"{nome_download_bonito}.docx")
                 
-                doc.save(caminho_docx_fisico)
+                # Renomeia os arquivos para o nome final institucional formatado
+                if os.path.exists(caminho_pdf_final): os.remove(caminho_pdf_final)
+                if os.path.exists(caminho_docx_final): os.remove(caminho_docx_final)
+                os.rename(caminho_pdf_gerado_lib, caminho_pdf_final)
+                os.rename(caminho_docx_fisico, caminho_docx_final)
                 
-                cmd = f"libreoffice --headless --convert-to pdf --outdir {PASTA_TERMOS} {caminho_docx_fisico}"
-                subprocess.run(cmd, shell=True, check=True)
-                
-                with open(caminho_pdf_fisico, "rb") as f:
+                with open(caminho_pdf_final, "rb") as f:
                     buffer_pdf = io.BytesIO(f.read())
+                    
+                with open(caminho_docx_final, "rb") as f:
+                    buffer_docx = io.BytesIO(f.read())
                 
-                st.success("✨ Documento gerado e salvo na base de envios com sucesso!")
+                st.success("✨ Documento gerado e pronto para envio!")
                 
                 col_down1, col_down2 = st.columns(2)
                 with col_down1:
@@ -320,10 +337,9 @@ def confirmar_envio_termos_popup(arquivos_validos):
 # --- GATILHO DA SIDEBAR QUE CHAMA O POP-UP ---
 if btn_enviar_emails:
     import glob
-    arquivos_pasta = glob.glob(os.path.join(PASTA_TERMOS, "*.*"))
-    arquivos_validos = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx") or f.endswith(".docx")]
+    arquivos_pasta = glob.glob(os.path.join(PASTA_TERMOS, "*.pdf")) + glob.glob(os.path.join(PASTA_TERMOS, "*.docx"))
     
-    if not arquivos_validos:
+    if not arquivos_pasta:
         st.sidebar.warning("⚠️ Gere o documento na tela primeiro antes de disparar.")
     else:
-        confirmar_envio_termos_popup(arquivos_validos)
+        confirmar_envio_termos_popup(arquivos_pasta)
