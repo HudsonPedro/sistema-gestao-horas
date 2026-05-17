@@ -110,7 +110,7 @@ cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
-    solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist() #== cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
+    solicitantes = df_leg[df_leg["Clientes"] == [cliente_selecionado]["Solicitante1"].dropna().unique().tolist() #== cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: gerente_cliente_sugerido = solicitantes
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
