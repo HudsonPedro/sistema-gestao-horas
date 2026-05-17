@@ -37,15 +37,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE ENVIO DE E-MAIL OFICIAL RESTAURADO (Lógica idêntica à sua página 02)
+# 3. MOTOR DE ENVIO DE E-MAIL ADAPTADO PARA SSL (PORTA 465)
 def enviar_relatorio_email_termos(arquivos_anexos, servidor_smtp, porta, email_remetente, senha, destinatario):
     if not arquivos_anexos: 
         return False, "Nenhum arquivo para anexar."
     
-    # Garante que os arquivos estejam sempre envelopados em lista para o laço MIME não quebrar o DNS
     arquivos_para_enviar = arquivos_anexos if isinstance(arquivos_anexos, list) else [arquivos_anexos]
     primeiro_arquivo = arquivos_para_enviar[0]
-    
     nome_base = os.path.basename(primeiro_arquivo).replace(".pdf", "").replace(".docx", "").strip()
     
     msg = MIMEMultipart()
@@ -80,14 +78,14 @@ Hudson Valente"""
             return False, f"Erro ao anexar {nome_arquivo_original}: {str(e)}"
     
     try:
-        server = smtplib.SMTP(servidor_smtp, int(porta))
-        server.starttls()
+        # Mudança estratégica para usar o canal SSL direto do Gmail (Bura os bloqueios de DNS da porta 587)
+        server = smtplib.SMTP_SSL("://gmail.com", 465)
         server.login(email_remetente, senha)
         server.sendmail(email_remetente, destinatario, msg.as_string())
         server.quit()
         return True, f"Enviado com sucesso: {nome_base}"
     except Exception as e:
-        return False, f"Erro de conexão no envio: {str(e)}"
+        return False, f"Erro de conexão no envio SSL: {str(e)}"
 
 # 4. SIDEBAR COM MENU INTEGRADO UNIFICADO
 with st.sidebar:
@@ -137,7 +135,17 @@ except:
     df_leg = pd.DataFrame()
     lista_clientes = []
 
-# Sua lista de módulos original restaurada por completo
+def get_image_base64(path):
+    with open(path, "rb") as img_file: return base64.b64encode(img_file.read()).decode()
+
+try:
+    img_base64 = get_image_base64("hptechICO.png")
+    st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0; font-size: 2.5rem;">Emissão de Termos de Encerramento</h1><img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;"></div>', unsafe_allow_html=True)
+except:
+    st.title("📄 Emissão de Termos de Encerramento")
+
+st.markdown("---")
+
 TODOS_MODULOS = [
     "Compras", "Suprimentos e Estoque", "Frota - Equipamentos", 
     "Contratos e Medições de Terceiros", "Custos e Resultados", 
@@ -156,7 +164,6 @@ gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        # Mantém apenas o primeiro nome limpo extraído da lista da planilha
         gerente_cliente_sugerido = str(solicitantes[0]).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
@@ -198,11 +205,10 @@ else:
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
-# Pasta física temporária local para segurar as cópias dos arquivos antes de anexar
 PASTA_TERMOS = os.path.join(BASE_DIR, "termos_emitidos")
 os.makedirs(PASTA_TERMOS, exist_ok=True)
 
-# --- 6. PROCESSAMENTO E GERAÇÃO DOS RELATÓRIOS ---
+# --- GERAÇÃO DOS RELATÓRIOS ---
 if st.button("Gerar Documento Selecionado", type="primary"):
     if not cliente_selecionado:
         st.warning("Por favor, selecione um cliente para prosseguir.")
@@ -226,7 +232,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                     texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
 
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
-                    # SUA LÓGICA VERTICAL DO TERMO GERAL ORIGINAL QUE DEU CERTO
                     nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                     datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
                     
@@ -257,7 +262,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 
                 doc.render(contexto)
                 
-                # Nome interno limpo sem espaços para evitar falhas no comando headless do LibreOffice
                 caminho_docx_fisico = os.path.join(PASTA_TERMOS, "temp_processamento.docx")
                 doc.save(caminho_docx_fisico)
                 
@@ -272,7 +276,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 caminho_pdf_final = os.path.join(PASTA_TERMOS, f"{nome_download_bonito}.pdf")
                 caminho_docx_final = os.path.join(PASTA_TERMOS, f"{nome_download_bonito}.docx")
                 
-                # Gerencia a substituição dos arquivos de trabalho com segurança
                 if os.path.exists(caminho_pdf_final): os.remove(caminho_pdf_final)
                 if os.path.exists(caminho_docx_final): os.remove(caminho_docx_final)
                 os.rename(caminho_pdf_gerado_lib, caminho_pdf_final)
@@ -295,7 +298,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 st.error(f"Erro ao processar o arquivo físico: {e}")
 
 # =========================================================================
-# 7. POP-UP DE CONFIRMAÇÃO DO DISPARO DE TERMOS (USANDO O MOTOR ISOLADO CORRETO)
+# 7. POP-UP DE CONFIRMAÇÃO DO DISPARO DE TERMOS
 # =========================================================================
 @st.dialog("📧 Confirmação de Disparo de Termos")
 def confirmar_envio_termos_popup(arquivos_validos):
@@ -307,10 +310,9 @@ def confirmar_envio_termos_popup(arquivos_validos):
     col_p1, col_p2 = st.columns(2)
     with col_p1:
         if st.button("Sim, Disparar Termo", use_container_width=True):
-            with st.spinner("Enviando e-mail..."):
-                # Envia a lista completa de anexos para o laço seguro, corrigindo o erro de conexão
+            with st.spinner("Enviando e-mail por canal SSL seguro..."):
                 sucesso, msg = enviar_relatorio_email_termos(
-                    arquivos_validos, "://gmail.com", 587, "hudson.valente@crti.com.br", senha_app, email_destinatario
+                    arquivos_validos, "://gmail.com", 465, "hudson.valente@crti.com.br", senha_app, email_destinatario
                 )
                 if sucesso:
                     st.success("🎉 Termo enviado com sucesso para a análise!")
@@ -328,7 +330,6 @@ def confirmar_envio_termos_popup(arquivos_validos):
 # --- GATILHO DA SIDEBAR QUE CHAMA O POP-UP ---
 if btn_enviar_emails:
     import glob
-    # Varre a pasta pegando a lista completa de arquivos criados para envelopar no lote MIME
     arquivos_pasta = glob.glob(os.path.join(PASTA_TERMOS, "*.pdf")) + glob.glob(os.path.join(PASTA_TERMOS, "*.docx"))
     
     if not arquivos_pasta:
