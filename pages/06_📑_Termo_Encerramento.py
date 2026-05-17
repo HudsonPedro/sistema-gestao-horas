@@ -10,6 +10,8 @@ import subprocess
 import base64
 import time
 import smtplib
+import zipfile
+import glob
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -76,7 +78,7 @@ def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexo
     except Exception as e:
         return False, f"Falha no envio SMTP (Segurança de Rede): {str(e)}"
 
-# 4. SIDEBAR COM OS EMOJIS EXATOS DA SUA ÁRVORE DE ARQUIVOS DO GITHUB
+# 4. SIDEBAR COM OS EMOJIS EXATOS DA SUA ÁRVORE DE ARQUIVOS
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -104,6 +106,18 @@ with st.sidebar:
     email_destinatario = st.text_input("Enviar para (Destinatário):", value="financeiro@crti.com.br", key="enc_email_dest_key")
     btn_enviar_emails = st.button("🚀 **ENVIAR TERMOS POR E-MAIL**", type="primary", use_container_width=True, key="enc_email_btn_key")
     
+    # --- NOVO: BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR IGUAL À SUA PÁGINA 02 ---
+    st.markdown("---")
+    st.header("🗑️ Gerenciamento")
+    if st.button("🗑️ Limpar Todos os Termos Emitidos", use_container_width=True):
+        arquivos_limpeza = glob.glob(os.path.join(BASE_DIR, "termos_emitidos", "*.*"))
+        for arq in arquivos_limpeza:
+            try: os.remove(arq)
+            except: pass
+        st.success("Pasta de histórico esvaziada!")
+        time.sleep(1.5)
+        st.rerun()
+
     st.divider()
     st.caption("v1.0 - 11052026")
 
@@ -193,8 +207,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
     else:
         with st.spinner("⏳ Gerando termos customizados (Word e PDF)..."):
             try:
-                # CORREÇÃO: Limpa a pasta local antes de gerar o novo termo para não sobrar lixo de outros clientes
-                import glob
+                # DESIGN SEGURO: Limpa a pasta local a cada nova geração para NUNCA acumular outros clientes
                 for arquivo_antigo in glob.glob(os.path.join(PASTA_TERMOS, "*.*")):
                     try: os.remove(arquivo_antigo)
                     except: pass
@@ -224,11 +237,9 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         "data_inicio": data_inicio.strftime("%d/%m/%Y"),
                         "data_fim": data_fim.strftime("%d/%m/%Y"),
                         "data_extenso": data_extenso_str,
-                        
                         "nomes_homologados": nomes_homologados_str,
                         "datas_homologados": datas_homologados_str,
                         "texto_nao_homologados": texto_nao_homologados_str,
-                        
                         " nomes_homologados ": nomes_homologados_str,
                         " datas_homologados ": datas_homologados_str,
                         " texto_nao_homologados ": texto_nao_homologados_str
@@ -244,61 +255,86 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 
                 doc.render(contexto)
                 
-                caminho_docx_fisico = os.path.join(PASTA_TERMOS, "temp_processamento.docx")
-                doc.save(caminho_docx_fisico)
+                # Nomes físicos e limpos para evitar falhas de escape no comando do Linux
+                prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento Geral" else "Doc_Não_Homologação"
+                nome_limpo_arquivo = f"{prefixo}_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
                 
-                cmd = f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{caminho_docx_fisico}"'
+                caminho_docx_ativo = os.path.join(PASTA_TERMOS, f"{nome_limpo_arquivo}.docx")
+                doc.save(caminho_docx_ativo)
+                
+                cmd = f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{caminho_docx_ativo}"'
                 subprocess.run(cmd, shell=True, check=True)
                 
-                caminho_pdf_gerado_lib = os.path.join(PASTA_TERMOS, "temp_processamento.pdf")
-                
-                prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento Geral" else "Doc_Não_Homologação"
-                nome_download_bonito = f"{prefixo} - {cliente_selecionado}".replace("/", "-")
-                
-                caminho_pdf_final = os.path.join(PASTA_TERMOS, f"{nome_download_bonito}.pdf")
-                caminho_docx_final = os.path.join(PASTA_TERMOS, f"{nome_download_bonito}.docx")
-                
-                if os.path.exists(caminho_pdf_final): os.remove(caminho_pdf_final)
-                if os.path.exists(caminho_docx_final): os.remove(caminho_docx_final)
-                os.rename(caminho_pdf_gerado_lib, caminho_pdf_final)
-                os.rename(caminho_docx_fisico, caminho_docx_final)
-                
-                with open(caminho_pdf_final, "rb") as f:
-                    buffer_pdf = io.BytesIO(f.read())
-                    
-                with open(caminho_docx_final, "rb") as f:
-                    buffer_docx = io.BytesIO(f.read())
-                
-                st.success("✨ Documento gerado com sucesso!")
-                
-                col_down1, col_down2 = st.columns(2)
-                with col_down1:
-                    st.download_button(label="📥 Baixar Termo em PDF (.pdf)", data=buffer_pdf, file_name=f"{nome_download_bonito}.pdf", mime="application/pdf", use_container_width=True)
-                with col_down2:
-                    st.download_button(label="📥 Baixar Termo em Word (.docx)", data=buffer_docx, file_name=f"{nome_download_bonito}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
-                
-                # Guarda na sessão os dois arquivos exatos que foram gerados agora
-                st.session_state["arquivos_ativos_envio"] = [caminho_pdf_final, caminho_docx_final]
-                st.session_state["assunto_ativo_envio"] = nome_download_bonito
+                st.success("✨ Termo gerado com sucesso e armazenado na tela!")
+                time.sleep(1)
+                st.rerun()
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo físico: {e}")
+
+# --- NOVO PANEL VISUAL DE DOWNLOAD E ZIP COMPACTADO (IGUALZINHO À SUA PÁGINA 02) ---
+arquivos_gerados_base = glob.glob(os.path.join(PASTA_TERMOS, "*.*"))
+
+if arquivos_gerados_base:
+    st.markdown("---")
+    st.subheader("📥 Download dos Arquivos Emitidos")
+    
+    # Cria o arquivo ZIP em memória em tempo real contendo apenas o lote do clique ativo
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for arq_caminho in arquivos_gerados_base:
+            zip_file.write(arq_caminho, os.path.basename(arq_caminho))
+    zip_buffer.seek(0)
+    
+    # Botão Vermelho Mestre de Download do Pacote ZIP Completo
+    st.download_button(
+        label="🎁 **BAIXAR TODOS OS TERMOS CONFIGURADOS (ZIP)**",
+        data=zip_buffer,
+        file_name=f"Termos_HPTECH_{cliente_selecionado}.zip",
+        mime="application/zip",
+        use_container_width=True
+    )
+    
+    # Expander de Visualização de Arquivos Individuais Lado a Lado
+    with st.expander("📄 Ver arquivos individuais...", expanded=True):
+        col_grade = st.columns(2)
+        for idx, arq_caminho in enumerate(sorted(arquivos_gerados_base)):
+            nome_real = os.path.basename(arq_caminho)
+            with open(arq_caminho, "rb") as f_leitura:
+                conteudo_bytes = f_leitura.read()
+            
+            # Divide os arquivos em duas colunas organizadas
+            col_alvo = col_grade[idx % 2]
+            extensao_label = "PDF" if nome_real.endswith(".pdf") else "Word"
+            mime_tipo = "application/pdf" if nome_real.endswith(".pdf") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            
+            col_alvo.download_button(
+                label=f"📥 Baixar {extensao_label}: {nome_real}",
+                data=conteudo_bytes,
+                file_name=nome_real,
+                mime=mime_tipo,
+                use_container_width=True,
+                key=f"btn_dl_{idx}"
+            )
 
 # =========================================================================
 # 7. POP-UP DE CONFIRMAÇÃO DO DISPARO DE TERMOS
 # =========================================================================
 @st.dialog(" Confirmação de Disparo de Termos")
-def confirmar_envio_termos_popup_final(email, arquivos_lote, assunto_nome):
+def confirmar_envio_termos_popup_final(email, arquivos_lote):
     st.write("Você tem certeza que deseja disparar o termo gerado por e-mail?")
     st.write(f"• **Destinatário:** `{email}`")
-    st.write(f"• **Arquivos em anexo:** PDF e Word do termo ativo")
+    st.write(f"• **Arquivos em anexo:** PDF e Word do lote ativo")
     st.markdown("---")
     
     col_p1, col_p2 = st.columns(2)
     with col_p1:
         if st.button("Sim, Disparar Termo", use_container_width=True):
-            with st.spinner("Compilando anexos do termo e enviando..."):
-                # CORREÇÃO: Dispara passando apenas os arquivos específicos da sessão ativa
-                ok, r_msg = enviar_email_termos_logica_p04(email, assunto_nome, arquivos_lote)
+            with st.spinner("Compilando lote de anexos e enviando..."):
+                # Captura o primeiro arquivo para servir de assunto
+                arquivo_ref = str(arquivos_lote[0])
+                nome_doc_assunto = os.path.basename(arquivo_ref).replace("_", " ").replace(".pdf", "").replace(".docx", "")
+                
+                ok, r_msg = enviar_email_termos_logica_p04(email, nome_doc_assunto, arquivos_lote)
                 
                 if ok:
                     st.success(f" {r_msg}")
@@ -315,12 +351,8 @@ def confirmar_envio_termos_popup_final(email, arquivos_lote, assunto_nome):
 
 # --- GATILHO DA SIDEBAR QUE CHAMA O POP-UP ---
 if btn_enviar_emails:
-    # CORREÇÃO DEFINITIVA: Resgata estritamente a lista de arquivos gerada nesta sessão ativa
-    arquivos_alvo = st.session_state.get("arquivos_ativos_envio", [])
-    assunto_alvo = st.session_state.get("assunto_ativo_envio", "Termo de Homologação")
-    
-    if not arquivos_alvo:
+    if not arquivos_gerados_base:
         st.sidebar.warning(" Gere o documento na tela primeiro antes de disparar.")
     else:
-        # Abre o pop-up injetando estritamente os dois arquivos do cliente selecionado
-        confirmar_envio_termos_popup_final(email_destinatario, arquivos_alvo, assunto_alvo)
+        # Passa rigorosamente apenas a lista de arquivos criada nesta sessão
+        confirmar_envio_termos_popup_final(email_destinatario, arquivos_gerados_base)
