@@ -189,7 +189,7 @@ try:
         """, 
         unsafe_allow_html=True
     )
-    st.markdown("Selecione o cliente e o módulo para gerar o Termo de Homologação.")
+    st.markdown("Selecione o cliente para gerar os Termos.")
 except:
     # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
     st.title("📄 Gerador de Termos de Encerramento")
