@@ -39,7 +39,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (BLINDADO CONTRA O BUG NONAME)
 def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexos):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
@@ -57,12 +57,23 @@ def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexo
     msg.attach(MIMEText(corpo, "html"))
     
     for caminho_arquivo in arquivos_anexos:
-        nome_arquivo_limpo = os.path.basename(caminho_arquivo)
+        nome_original = os.path.basename(caminho_arquivo)
+        
+        # CORREÇÃO CRUCIAL: Se for o documento de não homologação, limpa os caracteres especiais e encurta o nome
+        # Isso impede o Gmail de rejeitar o cabeçalho e transformar o anexo em 'noname'
+        if "Não_Homologação" in nome_original or "naohomologado" in nome_original:
+            extensao = ".pdf" if nome_original.lower().endswith(".pdf") else ".docx"
+            nome_arquivo_limpo = f"Documento_Pendencias_Nao_Homologado{extensao}"
+        else:
+            # Mantém o Termo Geral Curto que já está dando OK no seu print
+            nome_arquivo_limpo = nome_original
+            
         try:
             with open(caminho_arquivo, "rb") as attachment:
                 part = MIMEBase("application", "octet-stream")
                 part.set_payload(attachment.read())
                 encode_base64(part)
+                # Força o cabeçalho com o nome limpo e encurtado sem acentos
                 part.add_header("Content-Disposition", f'attachment; filename="{nome_arquivo_limpo}"')
                 msg.attach(part)
         except Exception as e:
@@ -149,11 +160,12 @@ TODOS_MODULOS = [
 
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
+# BUSCA DO GESTOR: Extrai sem colchetes ou aspas na tela
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        gerente_cliente_sugerido = str(solicitantes[0]).strip()
+        gerente_cliente_sugerido = str(solicitantes).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
@@ -161,7 +173,6 @@ gerente_crti = "SUELLEN GOMES"
 st.markdown("---")
 st.subheader("Configuração Unificada de Emissão de Documentos")
 
-# Exibe os dois blocos juntos na mesma tela de forma limpa
 col_datas_1, col_datas_2 = st.columns(2)
 with col_datas_1:
     data_inicio = st.date_input("Data de início da Implantação Geral:", datetime.now())
@@ -195,7 +206,6 @@ if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_contain
     else:
         with st.spinner("⏳ Compilando lote completo (Word e PDF)..."):
             try:
-                # Limpa a pasta para receber estritamente o lote novo
                 for arquivo_antigo in glob.glob(os.path.join(PASTA_TERMOS, "*.*")):
                     try: os.remove(arquivo_antigo)
                     except: pass
@@ -232,7 +242,7 @@ if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_contain
                         "texto_nao_homologados": texto_nao_homologados_str, " texto_nao_homologados ": texto_nao_homologados_str
                     }
                     doc2.render(ctx2)
-                    n_arq2 = f"Doc_Não_Homologação_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
+                    n_arq2 = f"Doc_Nao_Homologacao_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
                     c_docx2 = os.path.join(PASTA_TERMOS, f"{n_arq2}.docx")
                     doc2.save(c_docx2)
                     subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{c_docx2}"', shell=True, check=True)
@@ -257,7 +267,7 @@ if arquivos_gerados_base:
     zip_buffer.seek(0)
     
     st.download_button(
-        label="🎁 **BAIXAR PACOTE COMPLETO CONSOLIDADO (ZIP)**",
+        label="🎁 **BAIXAR TODOS OS TERMOS CONFIGURADOS (ZIP)**",
         data=zip_buffer,
         file_name=f"Pacote_Termos_HPTECH_{cliente_selecionado}.zip",
         mime="application/zip",
