@@ -20,6 +20,10 @@ from email.encoders import encode_base64
 # Descobre a pasta raiz do projeto de forma segura para o Linux
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# CORREÇÃO CRUCIAL: Pasta declarada no topo para o botão de limpeza reconhecer sem dar NameError
+PASTA_TERMOS = os.path.join(BASE_DIR, "termos_emitidos")
+os.makedirs(PASTA_TERMOS, exist_ok=True)
+
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Termos HPTECH", page_icon="hptechICO.png", layout="wide")
 
@@ -39,7 +43,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (BLINDADO CONTRA O BUG NONAME)
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04
 def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexos):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
@@ -59,13 +63,10 @@ def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexo
     for caminho_arquivo in arquivos_anexos:
         nome_original = os.path.basename(caminho_arquivo)
         
-        # CORREÇÃO CRUCIAL: Se for o documento de não homologação, limpa os caracteres especiais e encurta o nome
-        # Isso impede o Gmail de rejeitar o cabeçalho e transformar o anexo em 'noname'
-        if "Não_Homologação" in nome_original or "naohomologado" in nome_original:
+        if "Não_Homologação" in nome_original or "Nao_Homologacao" in nome_original or "naohomologado" in nome_original:
             extensao = ".pdf" if nome_original.lower().endswith(".pdf") else ".docx"
             nome_arquivo_limpo = f"Documento_Pendencias_Nao_Homologado{extensao}"
         else:
-            # Mantém o Termo Geral Curto que já está dando OK no seu print
             nome_arquivo_limpo = nome_original
             
         try:
@@ -73,7 +74,6 @@ def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexo
                 part = MIMEBase("application", "octet-stream")
                 part.set_payload(attachment.read())
                 encode_base64(part)
-                # Força o cabeçalho com o nome limpo e encurtado sem acentos
                 part.add_header("Content-Disposition", f'attachment; filename="{nome_arquivo_limpo}"')
                 msg.attach(part)
         except Exception as e:
@@ -117,7 +117,7 @@ with st.sidebar:
     email_destinatario = st.text_input("Enviar para (Destinatário):", value="financeiro@crti.com.br", key="enc_email_dest_key")
     btn_enviar_emails = st.button("🚀 **ENVIAR PACOTE COMPLETO**", type="primary", use_container_width=True, key="enc_email_btn_key")
     
-    # BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR
+    # BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR (NameError Corrigido!)
     st.markdown("---")
     st.header("🗑️ Gerenciamento")
     if st.button("🗑️ Limpar Todos os Termos Emitidos", use_container_width=True):
@@ -160,12 +160,12 @@ TODOS_MODULOS = [
 
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
-# BUSCA DO GESTOR: Extrai sem colchetes ou aspas na tela
+# CORREÇÃO DEFINITIVA DO SOLICITANTE: Extrai o primeiro item (iloc[0]) como texto limpo sem colchetes e aspas
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        gerente_cliente_sugerido = str(solicitantes).strip()
+        gerente_cliente_sugerido = str(df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().iloc[0]).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
@@ -195,9 +195,6 @@ with col_mod_2:
 
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
-
-PASTA_TERMOS = os.path.join(BASE_DIR, "termos_emitidos")
-os.makedirs(PASTA_TERMOS, exist_ok=True)
 
 # --- 6. GERAÇÃO EM LOTE DOS DOIS DOCUMENTOS DE UMA VEZ ---
 if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_container_width=True):
@@ -297,7 +294,7 @@ if arquivos_gerados_base:
 # 7. POP-UP DE CONFIRMAÇÃO DO DISPARO DO LOTE COMPLETO
 # =========================================================================
 @st.dialog(" Confirmação de Disparo de Termos")
-def confirmar_envio_termos_popup_final(email, arquivos_lote):
+def confirmar_envio_termos_popup_final(email, archivos_lote):
     st.write("Você tem certeza que deseja disparar os termos gerados por e-mail?")
     st.write(f"• **Destinatário:** `{email}`")
     st.write(f"• **Arquivos em anexo:** PDF e Word de todos os termos gerados na tela")
@@ -307,7 +304,7 @@ def confirmar_envio_termos_popup_final(email, arquivos_lote):
     with col_p1:
         if st.button("Sim, Disparar Lote", use_container_width=True):
             with st.spinner("Compilando lote completo de anexos e enviando..."):
-                ok, r_msg = enviar_email_termos_logica_p04(email, f"Lote Termos {cliente_selecionado}", arquivos_lote)
+                ok, r_msg = enviar_email_termos_logica_p04(email, f"Lote Termos {cliente_selecionado}", archivos_lote)
                 if ok:
                     st.success(f" {r_msg}")
                     st.balloons()
