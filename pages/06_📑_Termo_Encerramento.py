@@ -1,24 +1,21 @@
 import streamlit as st
 import pandas as pd
-from docxtpl import DocxTemplate
+from docxtpl import DocxTemplate, RichText
 from datetime import datetime
 import io
 import os
 import subprocess
 import base64
+import time
 
-# Descobre o caminho absoluto da pasta raiz do projeto de forma segura para o Linux
+# Importa as funções pesadas de e-mail diretamente da sua página 02 para evitar duplicar código
+from pages.02_📄_Relatorios import enviar_relatorio_email
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# 1. CONFIGURAÇÃO DA PÁGINA
-st.set_page_config(
-    page_title="Termos HPTECH", 
-    page_icon="hptech.png",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+st.set_page_config(page_title="Termos HPTECH", page_icon="hptech.png", layout="wide")
 
-# 2. CSS PARA OCULTAR O MENU E FORÇAR A LOGO NO TOPO
+# CSS original do seu sistema
 st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {display: none;}
@@ -34,14 +31,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. FUNÇÕES DE DADOS
-@st.cache_data(ttl=600)
-def carregar_legendas():
-    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
-    df = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
-    return df
-
-# 4. SIDEBAR COM MENU INTEGRADO
+# Menu Lateral Padrão
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -63,10 +53,23 @@ with st.sidebar:
     if st.button("📄 Termo Homologação", use_container_width=True): st.switch_page("pages/05_📄_Termos.py")
     if st.button("📄 Termo Encerramento", use_container_width=True): st.switch_page("pages/06_📄_Termo_Encerramento.py")
     
+    # --- NOVO: INTERFACE DE CONFIGURAÇÃO E DISPARO DE E-MAIL NA SIDEBAR ---
+    st.sidebar.markdown("---")
+    st.sidebar.header("📬 Disparo de Termos por E-mail")
+    email_destinatario = st.sidebar.text_input("Enviar para (Destinatário):", value="financeiro@crti.com.br")
+    senha_app = st.sidebar.text_input("Senha App Gmail:", value="fzau tvih zlsn xadi", type="password")
+    btn_enviar_emails = st.sidebar.button("🚀 **ENVIAR TERMOS POR E-MAIL**", type="primary", use_container_width=True)
+    
     st.divider()
     st.caption("v1.0 - 11052026")
 
-# 5. CARREGAMENTO DE LISTAS
+# Carregamento de Legendas (Planilha Google)
+@st.cache_data(ttl=600)
+def carregar_legendas():
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
+    df = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
+    return df
+
 try:
     df_leg = carregar_legendas()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
@@ -85,7 +88,6 @@ except:
 
 st.markdown("---")
 
-# SELETOR DO DOCUMENTO
 tipo_documento = st.selectbox(
     "Selecione o Tipo de Documento que deseja emitir:",
     ["Termo de Homologação e Encerramento Geral", "Documento de Não Homologação (Apenas Pendências)"]
@@ -105,21 +107,16 @@ TODOS_MODULOS = [
     "Qualidade/Avaliação/Documentação", "Cadastros Globais", "Configuração do Sistema"
 ]
 
-# Campo comum de Cliente para os dois relatórios
-# --- 1. ENTRADA DE CLIENTE COMUM ---
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
-    if solicitantes:
-        # CORREÇÃO: Pega apenas o primeiro nome da lista e remove espaços extras nas pontas
-        gerente_cliente_sugerido = str(solicitantes[0]).strip()
-
+    if solicitantes: gerente_cliente_sugerido = str(solicitantes[0]).strip()
+        
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
 
-# --- INTERFACE DINÂMICA BASEADA NA SELEÇÃO ---
 if tipo_documento == "Termo de Homologação e Encerramento Geral":
     col_datas_1, col_datas_2 = st.columns(2)
     with col_datas_1:
@@ -129,7 +126,6 @@ if tipo_documento == "Termo de Homologação e Encerramento Geral":
 
     st.markdown("---")
     st.subheader("Configuração dos Módulos")
-
     modulos_homologados = st.multiselect("Selecione os Módulos HOMOLOGADOS:", options=TODOS_MODULOS)
 
     dados_homologados_tabela = []
@@ -143,13 +139,16 @@ if tipo_documento == "Termo de Homologação e Encerramento Geral":
     modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS:", options=opcoes_restantes)
 
 else:
-    # Modo do Documento de Não Homologação (Apenas Pendências)
     data_fim = st.date_input("Data do Documento Auxiliar:", datetime.now())
     st.markdown("---")
     modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS (Pendentes):", options=TODOS_MODULOS)
 
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
+
+# Pasta física temporária para guardar os termos gerados e anexá-los
+PASTA_TERMOS = "termos_emitidos"
+os.makedirs(PASTA_TERMOS, exist_ok=True)
 
 # --- 6. PROCESSAMENTO E GERAÇÃO DOS RELATÓRIOS ---
 if st.button("Gerar Documento Selecionado", type="primary"):
@@ -158,9 +157,8 @@ if st.button("Gerar Documento Selecionado", type="primary"):
     elif tipo_documento == "Documento de Não Homologação (Apenas Pendências)" and not modulos_nao_homologados:
         st.warning("Por favor, selecione ao menos um módulo não homologado.")
     else:
-        with st.spinner("⏳ Gerando arquivos (Word e PDF)..."):
+        with st.spinner("⏳ Gerando termos customizados (Word e PDF)..."):
             try:
-                # CORREÇÃO: Ajustado de 'naohonologado' para 'naohomologado.docx'
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 else:
@@ -168,13 +166,11 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 
                 doc = DocxTemplate(caminho_modelo)
                 
-                # Formata a string de Não Homologados pulando linha (\n)
                 if modulos_nao_homologados:
                     texto_nao_homologados_str = "\n".join([f"• {mod}" for mod in modulos_nao_homologados])
                 else:
                     texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
 
-                # LÓGICA DO TERMO GERAL - MANIFESTADA INTACTA
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
                     nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                     datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
@@ -186,50 +182,44 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         "data_inicio": data_inicio.strftime("%d/%m/%Y"),
                         "data_fim": data_fim.strftime("%d/%m/%Y"),
                         "data_extenso": data_extenso_str,
-                        
                         "nomes_homologados": nomes_homologados_str,
                         "datas_homologados": datas_homologados_str,
                         "texto_nao_homologados": texto_nao_homologados_str,
-                        
                         " nomes_homologados ": nomes_homologados_str,
                         " datas_homologados ": datas_homologados_str,
                         " texto_nao_homologados ": texto_nao_homologados_str
                     }
                 else:
-                    # LÓGICA DO DOCUMENTO AUXILIAR DE NÃO HOMOLOGAÇÃO
                     contexto = {
                         "cliente": cliente_selecionado,
                         "gerente_cliente": gerente_cliente,
                         "data_extenso": data_extenso_str,
-                        
                         "texto_nao_homologados": texto_nao_homologados_str,
                         " texto_nao_homologados ": texto_nao_homologados_str
                     }
                 
                 doc.render(contexto)
                 
-                # Salvamento e criação do PDF
                 buffer_docx = io.BytesIO()
                 doc.save(buffer_docx)
                 buffer_docx.seek(0)
                 
-                arquivo_docx_temporario = "temp_termo_geral.docx"
-                arquivo_pdf_gerado = "temp_termo_geral.pdf"
-                doc.save(arquivo_docx_temporario)
-                
-                cmd = f"libreoffice --headless --convert-to pdf {arquivo_docx_temporario}"
-                subprocess.run(cmd, shell=True, check=True)
-                
-                with open(arquivo_pdf_gerado, "rb") as f:
-                    buffer_pdf = io.BytesIO(f.read())
-                
-                if os.path.exists(arquivo_docx_temporario): os.remove(arquivo_docx_temporario)
-                if os.path.exists(arquivo_pdf_gerado): os.remove(arquivo_pdf_gerado)
-                
-                st.success("✨ Documento gerado com sucesso!")
-                
                 prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento Geral" else "Doc_Não_Homologação"
                 nome_download_bonito = f"{prefixo} - {cliente_selecionado}".replace("/", "-")
+                
+                # Salva uma cópia física na pasta para o motor de e-mail conseguir ler depois
+                caminho_pdf_fisico = os.path.join(PASTA_TERMOS, f"{nome_download_bonito}.pdf")
+                caminho_docx_fisico = os.path.join(PASTA_TERMOS, f"{nome_download_bonito}.docx")
+                
+                doc.save(caminho_docx_fisico)
+                
+                cmd = f"libreoffice --headless --convert-to pdf --outdir {PASTA_TERMOS} {caminho_docx_fisico}"
+                subprocess.run(cmd, shell=True, check=True)
+                
+                with open(caminho_pdf_fisico, "rb") as f:
+                    buffer_pdf = io.BytesIO(f.read())
+                
+                st.success("✨ Documento gerado e salvo na base de envios com sucesso!")
                 
                 col_down1, col_down2 = st.columns(2)
                 with col_down1:
@@ -237,4 +227,47 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 with col_down2:
                     st.download_button(label="📥 Baixar Termo em Word (.docx)", data=buffer_docx, file_name=f"{nome_download_bonito}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
             except Exception as e:
-                st.error(f"Erro ao processar o documento físico: {e}")
+                st.error(f"Erro ao processar o arquivo físico: {e}")
+
+# =========================================================================
+# 7. POP-UP DE CONFIRMAÇÃO DO DISPARO DE TERMOS (MANTIDO SEU MODELO)
+# =========================================================================
+@st.dialog("📧 Confirmação de Disparo de Termos")
+def confirmar_envio_termos_popup(arquivos_validos):
+    st.write("Você tem certeza que deseja disparar o termo gerado por e-mail?")
+    st.write(f"• **Destinatário:** `{email_destinatario}`")
+    st.write(f"• **Arquivos em anexo:** PDF e Word do termo ativo")
+    st.markdown("---")
+    
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+        if st.button("Sim, Disparar Termo", use_container_width=True):
+            with st.spinner("Enviando e-mail..."):
+                # Dispara usando exatamente a função que importamos da sua página 02
+                sucesso, msg = enviar_relatorio_email(
+                    arquivos_validos, "://gmail.com", 587, "hudson.valente@crti.com.br", senha_app, email_destinatario
+                )
+                if sucesso:
+                    st.success("🎉 Termo enviado com sucesso para a análise!")
+                    st.balloons()
+                    time.sleep(4)
+                else:
+                    st.error(msg)
+                    time.sleep(4)
+                st.rerun()
+                
+    with col_p2:
+        if st.button("Não, Cancelar", use_container_width=True):
+            st.rerun()
+
+# --- GATILHO DA SIDEBAR QUE CHAMA O POP-UP ---
+if btn_enviar_emails:
+    import glob
+    arquivos_pasta = glob.glob(os.path.join(PASTA_TERMOS, "*.*"))
+    arquivos_validos = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx") or f.endswith(".docx")]
+    
+    if not arquivos_validos:
+        st.sidebar.warning("⚠️ Gere o documento na tela primeiro antes de disparar.")
+    else:
+        # Abre o pop-up passando os arquivos físicos salvos na pasta
+        confirmar_envio_termos_popup(arquivos_validos)
