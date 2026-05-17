@@ -1,3 +1,5 @@
+#Por Hudson Valente - HPTECH
+#Criado em: 16/05/2026
 import streamlit as st
 import pandas as pd
 from docxtpl import DocxTemplate
@@ -5,9 +7,22 @@ from datetime import datetime
 import io
 import os
 import subprocess
+import zipfile
+import glob
+import smtplib
+import time
 import base64
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email.encoders import encode_base64
 
+# Descobre a pasta raiz do projeto de forma segura para o Linux
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Pasta mestre isolada para os termos de homologação emitidos nesta tela
+PASTA_TERMOS_H = os.path.join(BASE_DIR, "termos_homologacao_emitidos")
+os.makedirs(PASTA_TERMOS_H, exist_ok=True)
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Gerador de Termos HPTECH", page_icon="hptech.png", layout="wide")
@@ -15,76 +30,118 @@ st.set_page_config(page_title="Gerador de Termos HPTECH", page_icon="hptech.png"
 # 2. CSS PARA OCULTAR O MENU PADRÃO E APLICAR SEU DESIGN
 st.markdown("""
     <style>
-        [data-testid="stSidebarNav"] {display: none;}
-        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
-        .user-block {
-            background-color: #f0f2f6;
-            padding: 8px;
-            border-radius: 8px;
-            margin-top: -10px;
-        }
-        h1 { color: #b0231d; }
+    [data-testid="stSidebarNav"] {display: none;}
+    [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
+    h1 { color: #b0231d; }
+    .user-block {
+    background-color: #f0f2f6;
+    padding: 8px;
+    border-radius: 8px;
+    margin-top: -10px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. SIDEBAR COM SEU MENU CUSTOMIZADO
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04
+def enviar_email_homologacao_logica_p04(string_destinatarios, cliente_nome, modulo_nome, arquivos_anexos, gerente_cliente_nome):
+    email_remetente = st.secrets["smtp"]["usuario"]
+    senha_remetente = st.secrets["smtp"]["senha"]
+    smtp_server = st.secrets["smtp"]["servidor"]
+    smtp_porta = int(st.secrets["smtp"]["porta"])
+    
+    lista_destinatarios = [email.strip() for email in string_destinatarios.split(",") if email.strip()]
+    if not lista_destinatarios:
+        return False, "Nenhum e-mail válido foi inserido."
+        
+    msg = MIMEMultipart()
+    msg["From"] = email_remetente
+    msg["To"] = ", ".join(lista_destinatarios)
+    msg["Subject"] = f"Termo de Homologação de Módulo Disponível – {cliente_nome} ({modulo_nome})"
+    
+    corpo_html = f"""
+    <html>
+    <body>
+        <p>Prezados(as), espero que se encontre bem.</p>
+        <p>Segue em anexo o <b>Termo de Homologação</b> referente ao módulo <b>{modulo_nome}</b> do sistema CRTI ERP implantado no cliente <b>{cliente_nome}</b>.</p>
+        <p>O documento já foi validado e está pronto para análise e assinatura institucional do Sr(a). {gerente_cliente_nome}.</p>
+        <br>
+        <p>Me coloco à inteira disposição para possíveis esclarecimentos.</p>
+        <p>Atenciosamente,<br><b>Hudson Valente</b><br>HPtech Informática ME</p>
+    </body>
+    </html>
+    """
+    msg.attach(MIMEText(corpo_html, "html"))
+    
+    for caminho_arquivo in arquivos_anexos:
+        nome_original = os.path.basename(caminho_arquivo)
+        extensao = ".pdf" if nome_original.lower().endswith(".pdf") else ".docx"
+        nome_arquivo_limpo = f"Termo_de_Homologacao_{modulo_nome}".replace(" ", "_").replace("/", "-") + extensao
+            
+        try:
+            with open(caminho_arquivo, "rb") as attachment:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(attachment.read())
+                encode_base64(part)
+                part.add_header("Content-Disposition", "attachment", filename=str(nome_arquivo_limpo))
+                msg.attach(part)
+        except Exception as e:
+            return False, f"Falha ao acoplar anexo: {str(e)}"
+            
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_porta)
+        server.starttls()
+        server.login(email_remetente, senha_remetente)
+        server.sendmail(email_remetente, lista_destinatarios, msg.as_string())
+        server.quit()
+        return True, "E-mail enviado com sucesso para todos os destinatários!"
+    except Exception as e:
+        return False, f"Falha no envio SMTP (Segurança de Rede): {str(e)}"
+
+# 4. SIDEBAR COM SEU MENU CUSTOMIZADO E DISPARO INTEGRADO
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
     u_email = st.user.get("email") or "hudson.valente@crti.com.br"
     st.markdown(f"""
         <div class="user-block">
-            <span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br>
-            <span style='font-size: 11px; color: #555;'>{u_email}</span>
+        <span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br>
+        <span style='font-size: 11px; color: #555;'>{u_email}</span>
         </div>
     """, unsafe_allow_html=True)
     st.markdown("---")
     st.title("Menu Principal")
     
-    # Navegação Atualizada
-    if st.button("🏠 Home", use_container_width=True):
-        st.switch_page("app.py")
-    if st.button("📊 Dashboard", use_container_width=True):
-        st.switch_page("pages/01_📊_Dashboard.py")
-    if st.button("📄 Relatórios", use_container_width=True):
-        st.switch_page("pages/02_📄_Relatorios.py")
-    if st.button("📝 Lançamento", use_container_width=True):
-        st.switch_page("pages/03_📝_Lancamento.py")
-    if st.button("💰 Medição Mensal", use_container_width=True):
-        st.switch_page("pages/04_💰_Medicao_Mensal.py")
-    if st.button("📋 Termo Homologação", use_container_width=True): 
-       st.switch_page("pages/05_📋_Termos.py")
-    if st.button("📑 Termo Encerramento", use_container_width=True): 
-        st.switch_page("pages/06_📑_Termo_Encerramento.py")
-      
+    if st.button("🏠 Home", use_container_width=True): st.switch_page("app.py")
+    if st.button("📊 Dashboard", use_container_width=True): st.switch_page("pages/01_📊_Dashboard.py")
+    if st.button("📄 Relatórios", use_container_width=True): st.switch_page("pages/02_📄_Relatorios.py")
+    if st.button("📝 Lançamento", use_container_width=True): st.switch_page("pages/03_📝_Lancamento.py")
+    if st.button("💰 Medição Mensal", use_container_width=True): st.switch_page("pages/04_💰_Medicao_Mensal.py")
+    if st.button("📋 Termo Homologação", use_container_width=True): st.switch_page("pages/05_📋_Termos.py")
+    if st.button("📑 Termo Encerramento", use_container_width=True): st.switch_page("pages/06_📑_Termo_Encerramento.py")
     
+    # INTERFACE DE DISPARO DA SIDEBAR
+    st.markdown("---")
+    st.header("📬 Disparo de Termos")
+    st.caption("Separe os e-mails usando vírgula (,)")
+    email_destinatario = st.text_input("Enviar para (Destinatários):", value="financeiro@crti.com.br", key="hom_email_dest_key")
+    btn_enviar_emails = st.button("🚀 **ENVIAR TERMO POR E-MAIL**", type="primary", use_container_width=True, key="hom_email_btn_key")
+    
+    # BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR
+    st.markdown("---")
+    st.header("🗑️ Gerenciamento")
+    if st.button("🗑️ Limpar Termos de Homologação", use_container_width=True):
+        arquivos_limpeza = glob.glob(os.path.join(PASTA_TERMOS_H, "*.*"))
+        for arq in arquivos_limpeza:
+            try: os.remove(arq)
+            except: pass
+        st.success("Pasta de histórico esvaziada!")
+        time.sleep(1.5)
+        st.rerun()
+
     st.divider()
     st.caption("v1.0 - 11052026")
-    st.caption("Todos os direitos reservados")
-    st.caption("Copyright ©2026 HPtech Informática ME")
 
-# 4. CONTEÚDO PRINCIPAL (COM LOGO)
-def get_image_base64(path):
-    with open(path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode()
-
-try:
-    img_base64 = get_image_base64("hptechICO.png")
-    st.markdown(
-        f"""
-        <div style="display: flex; align-items: center;">
-            <h1 style="margin: 0; font-size: 2.5rem;">Gerador de Termos de Homologação</h1>
-            <img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;">
-        </div>
-        """, 
-        unsafe_allow_html=True
-    )
-    st.markdown("Selecione o cliente e o módulo para gerar o Termo de Homologação.")
-except:
-    st.title("📄 Gerador de Termos de Homologação")
-
-st.markdown("---")
-
+# 5. CARREGAMENTO DE LISTAS
 @st.cache_data(ttl=600)
 def carregar_legendas():
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
@@ -98,9 +155,21 @@ except Exception as e:
     st.error(f"Erro ao carregar os clientes da planilha: {e}")
     lista_clientes = []
 
-modulo = st.selectbox(
-    "Selecione o Módulo de Treinamento:",
-    [
+# Cabeçalho Principal Visual
+def get_image_base64(path):
+    with open(path, "rb") as img_file: return base64.b64encode(img_file.read()).decode()
+
+try:
+    img_base64 = get_image_base64("hptechICO.png")
+    st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0; font-size: 2.5rem;">Gerador de Termos de Homologação</h1><img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 140px;"></div>', unsafe_allow_html=True)
+    st.markdown("Selecione o cliente e o módulo para gerar o Termo de Homologação.")
+except:
+    st.title("📋 Gerador de Termos de Homologação")
+
+st.markdown("---")
+
+# Lista de Módulos Unificada
+TODOS_MODULOS = [
     "Compras", "Suprimentos e Estoque", "Frota - Equipamentos", 
     "Contratos e Medições de Terceiros", "Custos e Resultados", 
     "Financeiro", "Contábil", "Patrimonial", "Fiscal", "CRTI Buscador", 
@@ -109,31 +178,32 @@ modulo = st.selectbox(
     "Gestão de Vendas (Produção)", "Gestão de Vendas (Agronegócio)", 
     "Engenharia, Contratos e Medições de Obras", "Locação de Equipamentos", 
     "Qualidade/Avaliação/Documentação"
-    ]
-)
+]
 
-# MAPA CORRIGIDO (Removido o parêntese incorreto na linha do suprimentos)
+modulo_selecionado = st.selectbox("Selecione o Módulo de Treinamento:", TODOS_MODULOS)
+
+# MAPA DE MODELOS ATUALIZADO (Sincronizado rigorosamente com a imagem real da sua pasta)
 MAPA_MODELOS = {
-    "Compras": os.path.join(BASE_DIR, "modelos", "compras.docx"),
-    "Suprimentos e Estoque": os.path.join(BASE_DIR, "modelos", "suprimentos.docx"),
-    "Frota - Equipamentos": os.path.join(BASE_DIR, "modelos", "frotas.docx"),
-    "Contratos e Medições de Terceiros": os.path.join(BASE_DIR, "modelos", "terceiros.docx"),
-    "Custos e Resultados": os.path.join(BASE_DIR, "modelos", "custos.docx"),
-    "Financeiro": os.path.join(BASE_DIR, "modelos", "financeiro.docx"),
-    "Contábil": os.path.join(BASE_DIR, "modelos", "contabil.docx"),
-    "Patrimonial": os.path.join(BASE_DIR, "modelos", "patrimonial.docx"),
-    "Fiscal": os.path.join(BASE_DIR, "modelos", "fiscal.docx"),
-    "CRTI Buscador": os.path.join(BASE_DIR, "modelos", "buscador.docx"),
-    "CRTI Emissor Nfe/NFCe": os.path.join(BASE_DIR, "modelos", "nfe.docx"),
-    "CRTI Emissor CTe": os.path.join(BASE_DIR, "modelos", "cte.docx"),
-    "CRTI Emissor MDFe": os.path.join(BASE_DIR, "modelos", "mdfe.docx"),
-    "CRTI Emissor NFSe": os.path.join(BASE_DIR, "modelos", "nfse.docx"),
-    "CRTI Emissor Fatura de Locação": os.path.join(BASE_DIR, "modelos", "fatura.docx"),
-    "Gestão de Vendas (Produção)": os.path.join(BASE_DIR, "modelos", "vendas.docx"),
-    "Gestão de Vendas (Agronegócio)": os.path.join(BASE_DIR, "modelos", "agronegocio.docx"),
-    "Engenharia, Contratos e Medições de Obras": os.path.join(BASE_DIR, "modelos", "engenharia.docx"),
-    "Locação de Equipamentos": os.path.join(BASE_DIR, "modelos", "locacao.docx"),
-    "Qualidade/Avaliação/Documentação": os.path.join(BASE_DIR, "modelos", "qualidade.docx")
+    "Compras": "compras.docx", 
+    "Suprimentos e Estoque": "suprimentos.docx", 
+    "Frota - Equipamentos": "frotas.docx",
+    "Contratos e Medições de Terceiros": "terceiros.docx", 
+    "Custos e Resultados": "custos.docx", 
+    "Financeiro": "financeiro.docx",
+    "Contábil": "contabil.docx", 
+    "Patrimonial": "patrimonial.docx", 
+    "Fiscal": "fiscal.docx", 
+    "CRTI Buscador": "buscador.docx",
+    "CRTI Emissor NFe/NFCe": "nfe.docx", 
+    "CRTI Emissor CTe": "cte.docx", 
+    "CRTI Emissor MDFe": "mdfe.docx",
+    "CRTI Emissor NFSe": "nfse.docx", 
+    "CRTI Emissor Fatura de Locação": "fatura.docx", 
+    "Gestão de Vendas (Produção)": "vendas.docx",
+    "Gestão de Vendas (Agronegócio)": "agronegocio.docx", 
+    "Engenharia, Contratos e Medições de Obras": "engenharia.docx",
+    "Locação de Equipamentos": "locacao.docx", 
+    "Qualidade/Avaliação/Documentação": "qualidade.docx"
 }
 
 if lista_clientes:
@@ -141,72 +211,142 @@ if lista_clientes:
 else:
     cliente_selecionado = st.text_input("Digite o Nome do Cliente manualmente:")
 
+# Busca e higienização automática do gerente solicitante do Sheets (iloc pura)
+gerente_cliente_sugerido = ""
+if not df_leg.empty and cliente_selecionado:
+    solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
+    if solicitantes: 
+        gerente_cliente_sugerido = str(df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().iloc[0]).strip()
+        
+gerente_cliente_name = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
+
 data_selecionada = st.date_input("Data da Homologação:", datetime.now())
 data_formatada = data_selecionada.strftime("%d/%m/%Y")
 
-if st.button("Gerar Documento", type="primary"):
+meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
+data_extenso_str = f"{data_selecionada.day} de {meses_br[data_selecionada.month - 1]} de {data_selecionada.year}"
+
+# --- 6. GERAÇÃO DO TERMO DE HOMOLOGAÇÃO ---
+if st.button("Gerar Documento", type="primary", use_container_width=True):
     if not cliente_selecionado or cliente_selecionado == "Erro ao carregar":
         st.warning("Por favor, selecione um cliente válido.")
     else:
-        with st.spinner("⏳ Gerando arquivos (Word e PDF)..."):
+        with st.spinner("⏳ Localizando modelo e compilando (Word e PDF)..."):
             try:
-                caminho_modelo = MAPA_MODELOS.get(modulo)
-                doc = DocxTemplate(caminho_modelo)
+                # Esvazia os arquivos gerados anteriormente para o e-mail não misturar lotes
+                for arquivo_antigo in glob.glob(os.path.join(PASTA_TERMOS_H, "*.*")):
+                    try: os.remove(arquivo_antigo)
+                    except: pass
+
+                # Tenta o arquivo mestre mapeado pelo dicionário
+                modelo_nome_arquivo = MAPA_MODELOS.get(modulo_selecionado, "compras.docx")
+                caminho_modelo = os.path.join(BASE_DIR, "modelos", modelo_nome_arquivo)
                 
-                contexto = {
-                    "cliente": cliente_selecionado,
-                    "data": data_formatada
-                }
-                
-                doc.render(contexto)
-                
-                buffer_docx = io.BytesIO()
-                doc.save(buffer_docx)
-                buffer_docx.seek(0)
-                
-                nome_base = f"Termo de Homologacao {modulo.replace(' ', ' ')}-{cliente_selecionado.replace(' ', ' ')}"
-                arquivo_docx_temporario = f"{nome_base}.docx"
-                arquivo_pdf_gerado = f"{nome_base}.pdf"
-                
-                doc.save(arquivo_docx_temporario)
-                
-                cmd = f"libreoffice --headless --convert-to pdf {arquivo_docx_temporario}"
-                subprocess.run(cmd, shell=True, check=True)
-                
-                with open(arquivo_pdf_gerado, "rb") as f:
-                    buffer_pdf = io.BytesIO(f.read())
-                
-                if os.path.exists(arquivo_docx_temporario):
-                    os.remove(arquivo_docx_temporario)
-                if os.path.exists(arquivo_pdf_gerado):
-                    os.remove(arquivo_pdf_gerado)
-                
-                st.success("✨ Documentos gerados com sucesso!")
-                
-                # BOTÕES DE DOWNLOAD CORRIGIDOS E FINALIZADOS LADO A LADO
-                col_down1, col_down2 = st.columns(2)
-                
-                with col_down1:
-                    st.download_button(
-                        label="📥 Baixar em PDF (.pdf)",
-                        data=buffer_pdf,
-                        file_name=f"{nome_base}.pdf",
-                        mime="application/pdf",
-                        use_container_width=True
-                    )
+                # BLINDAGEM DE CAMINHO LINUX: Se não achar, força a busca em minúsculas igual ao seu print do GitHub
+                if not os.path.exists(caminho_modelo):
+                    caminho_modelo = os.path.join(BASE_DIR, "modelos", f"{modulo_selecionado.lower()}.docx")
+
+                if not os.path.exists(caminho_modelo):
+                    st.error(f"⚠️ Erro: O arquivo mestre de modelo físico para o módulo '{modulo_selecionado}' não foi localizado na pasta 'modelos'.")
+                else:
+                    doc = DocxTemplate(caminho_modelo)
+                    contexto = {
+                        "cliente": cliente_selecionado,
+                        "data": data_formatada,
+                        "data_homologacao": data_formatada,
+                        "gerente_cliente": gerente_cliente_name,
+                        "gerente_crti": "SUELLEN GOMES",
+                        "data_extenso": data_extenso_str
+                    }
+                    doc.render(contexto)
                     
-                with col_down2:
-                    st.download_button(
-                        label="📥 Baixar em Word (.docx)",
-                        data=buffer_docx,
-                        file_name=f"{nome_base}.docx",
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        use_container_width=True
-                    )
-                
-            except subprocess.CalledProcessError:
-                st.error("Erro ao converter para PDF. Verifique se o arquivo packages.txt com o texto 'libreoffice' foi criado na raiz do GitHub.")
-            except FileNotFoundError:
-                st.error(f"Erro: O arquivo de modelo não foi localizado em: {caminho_modelo}")
+                    nome_base = f"Termo_de_Homologacao_{modulo_selecionado.replace(' ', '_')}_{cliente_selecionado.replace(' ', '_')}".replace("/", "-")
+                    arquivo_docx_temporario = os.path.join(PASTA_TERMOS_H, f"{nome_base}.docx")
+                    
+                    doc.save(arquivo_docx_temporario)
+                    # Converte gerando o PDF direto dentro da pasta estável
+                    cmd = f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS_H}" "{arquivo_docx_temporario}"'
+                    subprocess.run(cmd, shell=True, check=True)
+                    
+                    st.success(" Documento gerado e armazenado com sucesso!")
+                    time.sleep(1)
+                    st.rerun()
             except Exception as e:
-                st.error(f"Ocorreu um erro ao processar o documento: {e}")
+                st.error(f"Erro ao processar e salvar o documento: {e}")
+
+# --- 7. PAINEL VISUAL DE DOWNLOAD E ZIP COMPACTADO ---
+arquivos_gerados_h = glob.glob(os.path.join(PASTA_TERMOS_H, "*.pdf")) + glob.glob(os.path.join(PASTA_TERMOS_H, "*.docx"))
+
+if arquivos_gerados_h:
+    st.markdown("---")
+    st.subheader("📥 Download do Pacote de Homologação Emitido")
+    
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for arq_caminho in arquivos_gerados_h:
+            zip_file.write(arq_caminho, os.path.basename(arq_caminho))
+    zip_buffer.seek(0)
+    
+    st.download_button(
+        label="🎁 **BAIXAR PACOTE DE HOMOLOGAÇÃO CONSOLIDADO (ZIP)**",
+        data=zip_buffer,
+        file_name=f"Pacote_Homologacao_{cliente_selecionado}.zip",
+        mime="application/zip",
+        use_container_width=True
+    )
+    
+    with st.expander("📄 Ver e baixar arquivos individuais...", expanded=True):
+        col_grade = st.columns(2)
+        for idx, arq_caminho in enumerate(sorted(arquivos_gerados_h)):
+            nome_real = os.path.basename(arq_caminho).replace("_", " ")
+            with open(arq_caminho, "rb") as f_leitura: conteudo_bytes = f_leitura.read()
+            
+            col_alvo = col_grade[idx % 2]
+            extensao_label = "PDF" if arq_caminho.endswith(".pdf") else "Word"
+            mime_tipo = "application/pdf" if arq_caminho.endswith(".pdf") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            
+            col_alvo.download_button(
+                label=f"📥 Baixar {extensao_label}: {nome_real}",
+                data=conteudo_bytes,
+                file_name=nome_real,
+                mime=mime_tipo,
+                use_container_width=True,
+                key=f"btn_dl_hom_{idx}"
+            )
+
+# =========================================================================
+# 8. POP-UP DE CONFIRMAÇÃO DO DISPARO POR E-MAIL
+# =========================================================================
+@st.dialog(" Confirmação de Disparo de Termos")
+def confirmar_envio_homologacao_popup(email, arquivos_lote):
+    st.write("Você tem certeza que deseja disparar o termo de homologação gerado?")
+    st.write(f"• **Destinatários:** `{email}`")
+    st.write(f"• **Arquivos em anexo:** PDF e Word do termo ativo selecionado")
+    st.markdown("---")
+    
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+        if st.button("Sim, Disparar Homologação", use_container_width=True):
+            with st.spinner("Conectando ao barramento SMTP seguro e enviando..."):
+                ok, r_msg = enviar_email_homologacao_logica_p04(
+                    email, cliente_selecionado, modulo_selecionado, arquivos_lote, gerente_cliente_name
+                )
+                if ok:
+                    st.success(f" {r_msg}")
+                    st.balloons()
+                    time.sleep(4)
+                else:
+                    st.error(r_msg)
+                    time.sleep(4)
+                st.rerun()
+                
+    with col_p2:
+        if st.button("Não, Cancelar", use_container_width=True):
+            st.rerun()
+
+# --- GATILHO DA SIDEBAR QUE CHAMA O POP-UP ---
+if btn_enviar_emails:
+    if not arquivos_gerados_h:
+        st.sidebar.warning("⚠️ Gere o documento na tela primeiro antes de disparar.")
+    else:
+        confirmar_envio_homologacao_popup(email_destinatario, arquivos_gerados_h)
