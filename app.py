@@ -135,15 +135,15 @@ with col1:
         st.switch_page("pages/01_📊_Dashboard.py")
 
 with col2:
-    st.subheader("📝 Lançamento Horas")
+    st.subheader("📝 Lançamento")
     st.write("Insira novos dados na Base.")
-    if st.button("Novo Lançamento de Horas", key="btn_input"):
+    if st.button("Lançamento de Horas", key="btn_input"):
         st.switch_page("pages/03_📝_Lancamento.py")
 
 with col3:
     st.subheader("📄 Relatórios RA")
     st.write("Gere RA e envie o lote por e-mail.")
-    if st.button("Ir para Relatórios RA", key="btn_rel"):
+    if st.button("Gere o RA", key="btn_rel"):
         st.switch_page("pages/02_📄_Relatorios.py")
         
 with col4:
