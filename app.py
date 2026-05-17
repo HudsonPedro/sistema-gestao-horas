@@ -126,7 +126,7 @@ except:
     st.title("Bem-vindo ao Sistema de Gestão HPTECH")
 st.markdown("---")
 
-col1, col2, col3, col4, col5, col6 = st.columns(4)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
     st.subheader("📈 Dashboard")
