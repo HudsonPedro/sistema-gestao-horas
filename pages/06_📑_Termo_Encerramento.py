@@ -39,7 +39,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (BLINDADO CONTRA ERRO NONAME)
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04
 def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexos):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
@@ -60,18 +60,14 @@ def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexo
     msg.attach(MIMEText(corpo, "html"))
     
     for caminho_arquivo in arquivos_anexos:
+        nome_arquivo_limpo = os.path.basename(caminho_arquivo)
         try:
             with open(caminho_arquivo, "rb") as attachment:
                 part = MIMEBase("application", "octet-stream")
                 part.set_payload(attachment.read())
                 encode_base64(part)
-                
-                # CORREÇÃO DEFINITIVA: Força um nome curto e limpo diretamente na extensão da aba do Gmail
-                extensao = ".pdf" if caminho_arquivo.lower().endswith(".pdf") else ".docx"
-                nome_anexo_institucional = f"Documento_Homologacao{extensao}"
-                
-                # Monta o cabeçalho padrão de forma estrita exigida pelo protocolo RFC do Gmail
-                part.add_header("Content-Disposition", "attachment", filename=nome_anexo_institucional)
+                # Mantém as extensões .pdf e .docx intactas no Gmail
+                part.add_header("Content-Disposition", f'attachment; filename="{nome_arquivo_limpo}"')
                 msg.attach(part)
         except Exception as e:
             return False, f"Falha ao acoplar anexo: {str(e)}"
@@ -157,11 +153,12 @@ TODOS_MODULOS = [
 
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
+# CORREÇÃO DEFINITIVA DO GESTOR: Extrai sem colchetes ou aspas na tela
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        gerente_cliente_sugerido = str(solicitantes).strip()
+        gerente_cliente_sugerido = str(solicitantes[0]).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
@@ -336,9 +333,9 @@ def confirmar_envio_termos_popup_final(email, arquivos_lote):
     with col_p1:
         if st.button("Sim, Disparar Termo", use_container_width=True):
             with st.spinner("Compilando lote de anexos e enviando..."):
-                if arquivos_lote:
-                    # Resolve o bug do noname fixando o assunto de forma estruturada e limpa
-                    primeiro_arq = arquivos_lote
+                # CORREÇÃO DO TYPEERROR: Pega a string do primeiro item da lista de caminhos de forma segura
+                if isinstance(arquivos_lote, list) and len(arquivos_lote) > 0:
+                    primeiro_arq = arquivos_lote[0]
                     nome_doc_assunto = os.path.basename(primeiro_arq).replace("_", " ").replace(".pdf", "").replace(".docx", "")
                 else:
                     nome_doc_assunto = "Termo de Homologação"
