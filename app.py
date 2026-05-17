@@ -135,7 +135,7 @@ with col1:
         st.switch_page("pages/01_📊_Dashboard.py")
 
 with col2:
-    st.subheader("📝 Lançamento de Horas")
+    st.subheader("📝 Lançamento Horas")
     st.write("Insira novos dados na Base.")
     if st.button("Novo Lançamento de Horas", key="btn_input"):
         st.switch_page("pages/03_📝_Lancamento.py")
@@ -153,15 +153,15 @@ with col4:
         st.switch_page("pages/04_💰_Medicao_Mensal.py")
 
 with col5:
-    st.subheader("📋 Termo Homologação")
+    st.subheader("📋 Homologação")
     st.write("Gere os Termos de Homologação e envie o lote por e-mail.")
-    if st.button("Novo Termo Homologação", key="btn_med"):
+    if st.button("Novo Termo", key="btn_med"):
         st.switch_page("pages/05_📋_Termos.py")
 
 with col6:
-    st.subheader("📑 Termo Encerramento")
+    st.subheader("📑 Encerramento")
     st.write("Gere os Termos de Encerramento e envie o lote por e-mail.")
-    if st.button("Novo Termo Encerramento", key="btn_med"):
+    if st.button("Novo Encerramento", key="btn_med"):
         st.switch_page("pages/06_📑_Termo_Encerramento.py")        
 
 st.divider()
