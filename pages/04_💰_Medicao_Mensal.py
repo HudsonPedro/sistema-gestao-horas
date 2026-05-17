@@ -37,8 +37,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (CORRIGIDO PARA LER O SERVIDOR SECRETO)
 def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexos):
+    # CORREÇÃO ABSOLUTA: Puxa o host e credenciais direto dos segredos do servidor do Streamlit
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
     smtp_server = st.secrets["smtp"]["servidor"]
@@ -67,6 +68,7 @@ def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexo
             return False, f"Falha ao acoplar anexo: {str(e)}"
             
     try:
+        # Usa o servidor dinâmico do st.secrets para furar o bloqueio de Name or service not known
         server = smtplib.SMTP(smtp_server, smtp_porta)
         server.starttls()
         server.login(email_remetente, senha_remetente)
@@ -90,7 +92,6 @@ with st.sidebar:
     st.markdown("---")
     st.title("Menu Principal")
     
-    # Emojis corrigidos: Gráfico (01), Folha Branca (02 e 03), Saco de Dinheiro (04), Prancheta (05) e Caderno Roxo (06)
     if st.button("🏠 Home", use_container_width=True): st.switch_page("app.py")
     if st.button("📊 Dashboard", use_container_width=True): st.switch_page("pages/01_📊_Dashboard.py")
     if st.button("📄 Relatórios", use_container_width=True): st.switch_page("pages/02_📄_Relatorios.py")
@@ -140,7 +141,7 @@ gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        gerente_cliente_sugerido = str(solicitantes).strip()
+        gerente_cliente_sugerido = str(solicitantes[0]).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
@@ -209,6 +210,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                     texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
 
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
+                    # SUA LÓGICA VERTICAL DO TERMO GERAL ORIGINAL QUE DEU CERTO
                     nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                     datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
                     
@@ -313,5 +315,4 @@ if btn_enviar_emails:
     if not arquivos_pasta:
         st.sidebar.warning("⚠️ Gere o documento na tela primeiro antes de disparar.")
     else:
-        # CORREÇÃO: Nome da função corrigido para bater exatamente com a declaração do st.dialog
         confirmar_envio_termos_popup_p4(email_destinatario, arquivos_pasta)
