@@ -7,6 +7,7 @@ from datetime import datetime
 import io
 import os
 import subprocess
+import base64
 import zipfile
 import glob
 import smtplib
@@ -86,7 +87,7 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
         <br>
         <p>Caso encontre alguma divergência, favor criticar para as devidas correções.<br>
         Me coloco à inteira disposição para possíveis esclarecimentos.</p>
-        <p>Com Gratidão!!<br><b>Hudson Valente</b></p>
+        <p>Com Gratidão!!<br><br>Hudson Valente</p>
     </body>
     </html>
     """
@@ -165,7 +166,35 @@ with st.sidebar:
         st.rerun()
 
     st.divider()
-    st.caption("v1.0 - 11052026")
+    st.caption("v1.1 - 16052026")
+    st.caption("Todos os direitos reservados")
+    st.caption("Copyright ©2026 HPtech Informática ME")
+    
+# 4. CONTEÚDO PRINCIPAL
+# Função para converter imagem local para Base64 (para funcionar dentro do HTML)
+def get_image_base64(path):
+    with open(path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# Tenta carregar a imagem que está no repositório GitHub
+try:
+    img_base64 = get_image_base64("hptechICO.png")
+    
+    st.markdown(
+        f"""
+        <div style="display: flex; align-items: center;">
+            <h1 style="margin: 0; font-size: 2.5rem;">Gerador de Termos de Encerramento</h1>
+            <img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;">
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+    st.markdown("Selecione o cliente e o módulo para gerar o Termo de Homologação.")
+except:
+    # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
+    st.title("📄 Gerador de Termos de Encerramento")
+
+st.markdown("---")
 
 # 5. CARREGAMENTO DE LISTAS
 @st.cache_data(ttl=600)
@@ -205,7 +234,7 @@ gerente_cliente_name = st.text_input("Gerente de Implantação na EMPRESA CLIENT
 gerente_crti = "SUELLEN GOMES"
 
 st.markdown("---")
-st.subheader("Configuração Unificada de Emissão e Parâmetros de Virada")
+st.subheader("Configuração Unificada dos Termos")
 
 col_datas_1, col_datas_2 = st.columns(2)
 with col_datas_1:
@@ -257,7 +286,7 @@ meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
 # --- 6. GERAÇÃO EM LOTE DOS DOIS DOCUMENTOS DE UMA VEZ ---
-if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_container_width=True):
+if st.button("Gerar Todos os Termos do Cliente", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Por favor, selecione um cliente para prosseguir.")
     else:
