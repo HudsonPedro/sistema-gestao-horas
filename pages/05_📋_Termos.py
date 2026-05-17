@@ -25,7 +25,32 @@ PASTA_TERMOS_H = os.path.join(BASE_DIR, "termos_homologacao_emitidos")
 os.makedirs(PASTA_TERMOS_H, exist_ok=True)
 
 # 1. CONFIGURAÇÃO DA PÁGINA
-st.set_page_config(page_title="Gerador de Termos HPTECH", page_icon="hptech.png", layout="wide")
+#st.set_page_config(page_title="Gerador de Termos HPTECH", page_icon="hptech.png", layout="wide")
+
+# 1. CONFIGURAÇÃO DA PÁGINA
+st.set_page_config(
+    page_title="Gerador de Termos HPTECH",
+    page_icon="hptech.png",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+st.markdown("""
+    <style>
+        [data-testid="stSidebarNav"] {display: none;}
+        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
+        
+        /* O BLOCO QUE VOCÊ PERGUNTOU ENTRA AQUI */
+        .user-block {
+            background-color: #f0f2f6;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # 2. CSS PARA OCULTAR O MENU E FORÇAR A LOGO NO TOPO
 st.markdown("""
@@ -36,8 +61,8 @@ st.markdown("""
         /* Zera o espaçamento do topo para a logo subir */
         [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
         
-        /* Cor do título para o padrão vermelho*/
-        h1 { color: #b0231d; } 
+        /* Cor do título para o padrão azul CRTI */
+        h1 { color: #b0231d; } /*#004a87 = AZUL CRTI*/
     </style>
 """, unsafe_allow_html=True)
 
