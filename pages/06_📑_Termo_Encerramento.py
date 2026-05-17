@@ -1,3 +1,5 @@
+#Por Hudson Valente - HPTECH
+#Criado em: 16/05/2026
 import streamlit as st
 import pandas as pd
 from docxtpl import DocxTemplate, RichText
@@ -7,15 +9,25 @@ import os
 import subprocess
 import base64
 import time
+import importlib.util
 
-# Importa as funções pesadas de e-mail diretamente da sua página 02 para evitar duplicar código
-from pages.02_📄_Relatorios import enviar_relatorio_email
-
+# Descobre a pasta raiz do projeto de forma absoluta no servidor Linux
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-st.set_page_config(page_title="Termos HPTECH", page_icon="hptech.png", layout="wide")
+# --- CARREGAMENTO DINÂMICO DO MOTOR DE E-MAIL (Evita SyntaxError com emojis) ---
+caminho_pg2 = os.path.join(BASE_DIR, "pages", "02_📄_Relatorios.py")
+try:
+    spec = importlib.util.spec_from_file_location("relatorios_modulo", caminho_pg2)
+    relatorios_modulo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(relatorios_modulo)
+    enviar_relatorio_email = relatorios_modulo.enviar_relatorio_email
+except Exception as e:
+    st.error(f"Erro ao carregar o motor de e-mails da página 02: {e}")
 
-# CSS original do seu sistema
+# 1. CONFIGURAÇÃO DA PÁGINA
+st.set_page_config(page_title="Termos HPTECH", page_icon="hptechICO.png", layout="wide")
+
+# 2. CSS PARA OCULTAR O MENU E FORÇAR A LOGO NO TOPO
 st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {display: none;}
@@ -31,7 +43,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Menu Lateral Padrão
+# 3. SIDEBAR COM MENU INTEGRADO (Corrigido com os emojis exatos do seu GitHub)
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -45,15 +57,23 @@ with st.sidebar:
     st.markdown("---")
     st.title("Menu Principal")
     
-    if st.button("🏠 Home", use_container_width=True): st.switch_page("app.py")
-    if st.button("📊 Dashboard", use_container_width=True): st.switch_page("pages/01_📊_Dashboard.py")
-    if st.button("📄 Relatórios", use_container_width=True): st.switch_page("pages/02_📄_Relatorios.py")
-    if st.button("📝 Lançamento", use_container_width=True): st.switch_page("pages/03_📝_Lancamento.py")
-    if st.button("💰 Medição Mensal", use_container_width=True): st.switch_page("pages/04_💰_Medicao_Mensal.py")
-    if st.button("📄 Termo Homologação", use_container_width=True): st.switch_page("pages/05_📄_Termos.py")
-    if st.button("📄 Termo Encerramento", use_container_width=True): st.switch_page("pages/06_📄_Termo_Encerramento.py")
+    # Navegação Ajustada rigorosamente com a sua árvore de arquivos físicos
+    if st.button("🏠 Home", use_container_width=True): 
+        st.switch_page("app.py")
+    if st.button("📊 Dashboard", use_container_width=True): 
+        st.switch_page("pages/01_📊_Dashboard.py")
+    if st.button("📄 Relatórios", use_container_width=True): 
+        st.switch_page("pages/02_📄_Relatorios.py")
+    if st.button("📝 Lançamento", use_container_width=True): 
+        st.switch_page("pages/03_📝_Lancamento.py")
+    if st.button("💰 Medição Mensal", use_container_width=True): 
+        st.switch_page("pages/04_💰_Medicao_Mensal.py")
+    if st.button("📋 Termo Homologação", use_container_width=True): 
+        st.switch_page("pages/05_📋_Termos.py")
+    if st.button("📑 Termo Encerramento", use_container_width=True): 
+        st.switch_page("pages/06_📑_Termo_Encerramento.py")
     
-    # --- NOVO: INTERFACE DE CONFIGURAÇÃO E DISPARO DE E-MAIL NA SIDEBAR ---
+    # INTERFACE DE CONFIGURAÇÃO E DISPARO DE E-MAIL NA SIDEBAR
     st.sidebar.markdown("---")
     st.sidebar.header("📬 Disparo de Termos por E-mail")
     email_destinatario = st.sidebar.text_input("Enviar para (Destinatário):", value="financeiro@crti.com.br")
@@ -62,8 +82,10 @@ with st.sidebar:
     
     st.divider()
     st.caption("v1.0 - 11052026")
+    st.caption("Todos os direitos reservados")
+    st.caption("Copyright ©2026 HPtech Informática ME")
 
-# Carregamento de Legendas (Planilha Google)
+# 4. CARREGAMENTO DE LISTAS
 @st.cache_data(ttl=600)
 def carregar_legendas():
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
@@ -112,7 +134,8 @@ cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
-    if solicitantes: gerente_cliente_sugerido = str(solicitantes[0]).strip()
+    if solicitantes: 
+        gerente_cliente_sugerido = str(solicitantes[0]).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
@@ -146,11 +169,10 @@ else:
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
-# Pasta física temporária para guardar os termos gerados e anexá-los
 PASTA_TERMOS = "termos_emitidos"
 os.makedirs(PASTA_TERMOS, exist_ok=True)
 
-# --- 6. PROCESSAMENTO E GERAÇÃO DOS RELATÓRIOS ---
+# --- 5. PROCESSAMENTO E EMISSÃO DO RELATÓRIO ---
 if st.button("Gerar Documento Selecionado", type="primary"):
     if not cliente_selecionado:
         st.warning("Por favor, selecione um cliente para prosseguir.")
@@ -182,9 +204,11 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         "data_inicio": data_inicio.strftime("%d/%m/%Y"),
                         "data_fim": data_fim.strftime("%d/%m/%Y"),
                         "data_extenso": data_extenso_str,
+                        
                         "nomes_homologados": nomes_homologados_str,
                         "datas_homologados": datas_homologados_str,
                         "texto_nao_homologados": texto_nao_homologados_str,
+                        
                         " nomes_homologados ": nomes_homologados_str,
                         " datas_homologados ": datas_homologados_str,
                         " texto_nao_homologados ": texto_nao_homologados_str
@@ -207,7 +231,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento Geral" else "Doc_Não_Homologação"
                 nome_download_bonito = f"{prefixo} - {cliente_selecionado}".replace("/", "-")
                 
-                # Salva uma cópia física na pasta para o motor de e-mail conseguir ler depois
                 caminho_pdf_fisico = os.path.join(PASTA_TERMOS, f"{nome_download_bonito}.pdf")
                 caminho_docx_fisico = os.path.join(PASTA_TERMOS, f"{nome_download_bonito}.docx")
                 
@@ -227,12 +250,12 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 with col_down2:
                     st.download_button(label="📥 Baixar Termo em Word (.docx)", data=buffer_docx, file_name=f"{nome_download_bonito}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
             except Exception as e:
-                st.error(f"Erro ao processar o arquivo físico: {e}")
+                st.error(f"Erro ao processar o documento físico: {e}")
 
 # =========================================================================
-# 7. POP-UP DE CONFIRMAÇÃO DO DISPARO DE TERMOS (MANTIDO SEU MODELO)
+# 6. POP-UP DE CONFIRMAÇÃO DO DISPARO DE TERMOS
 # =========================================================================
-@st.dialog("📧 Confirmação de Disparo de Termos")
+@st.dialog(" Confirmação de Disparo de Termos")
 def confirmar_envio_termos_popup(arquivos_validos):
     st.write("Você tem certeza que deseja disparar o termo gerado por e-mail?")
     st.write(f"• **Destinatário:** `{email_destinatario}`")
@@ -243,12 +266,11 @@ def confirmar_envio_termos_popup(arquivos_validos):
     with col_p1:
         if st.button("Sim, Disparar Termo", use_container_width=True):
             with st.spinner("Enviando e-mail..."):
-                # Dispara usando exatamente a função que importamos da sua página 02
                 sucesso, msg = enviar_relatorio_email(
                     arquivos_validos, "://gmail.com", 587, "hudson.valente@crti.com.br", senha_app, email_destinatario
                 )
                 if sucesso:
-                    st.success("🎉 Termo enviado com sucesso para a análise!")
+                    st.success(" Termo enviado com sucesso para a análise!")
                     st.balloons()
                     time.sleep(4)
                 else:
@@ -267,7 +289,6 @@ if btn_enviar_emails:
     arquivos_validos = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx") or f.endswith(".docx")]
     
     if not arquivos_validos:
-        st.sidebar.warning("⚠️ Gere o documento na tela primeiro antes de disparar.")
+        st.sidebar.warning(" Gere o documento na tela primeiro antes de disparar.")
     else:
-        # Abre o pop-up passando os arquivos físicos salvos na pasta
         confirmar_envio_termos_popup(arquivos_validos)
