@@ -10,6 +10,7 @@ import subprocess
 import zipfile
 import glob
 import smtplib
+import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -41,7 +42,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (ADAPTADO COM TEXTO E HIGIENIZAÇÃO DO MANUAL)
 def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_virada_str, campos_fiscal, arquivos_anexos, gerente_cliente_nome):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
@@ -55,8 +56,10 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
     msg = MIMEMultipart()
     msg["From"] = email_remetente
     msg["To"] = ", ".join(lista_destinatarios)
+    # Assunto conforme manual operacional (Page 1)
     msg["Subject"] = f"Solicitação da disponibilidade do suporte para a VIRADADA EM PRODUÇÃO – {cliente_nome}"
     
+    # Estrutura HTML oficial com as marcações em vermelho exigidas no manual (Page 1)
     corpo_html = f"""
     <html>
     <body>
@@ -93,12 +96,23 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
     
     for caminho_arquivo in arquivos_anexos:
         nome_original = os.path.basename(caminho_arquivo)
+        
+        # Blindagem contra o bug do noname: força os nomes estruturados corretos nos anexos do Gmail
+        if "NÃO_Homologação" in nome_original or "Nao_Homologacao" in nome_original or "naohomologado" in nome_original:
+            extensao = ".pdf" if nome_original.lower().endswith(".pdf") else ".docx"
+            nome_arquivo_limpo = f"Termo_de_NÃO_Homologação_de_Módulos_do_CRTI_ERP{extensao}"
+        elif "Homologação" in nome_original or "Geral" in nome_original:
+            extensao = ".pdf" if nome_original.lower().endswith(".pdf") else ".docx"
+            nome_arquivo_limpo = f"Termo_de_Homologação_e_Encerramento_de_Implantação_do_CRTI_ERP{extensao}"
+        else:
+            nome_arquivo_limpo = nome_original
+            
         try:
             with open(caminho_arquivo, "rb") as attachment:
                 part = MIMEBase("application", "octet-stream")
                 part.set_payload(attachment.read())
                 encode_base64(part)
-                part.add_header("Content-Disposition", f'attachment; filename="{nome_original}"')
+                part.add_header("Content-Disposition", f'attachment; filename="{nome_arquivo_limpo}"')
                 msg.attach(part)
         except Exception as e:
             return False, f"Falha ao acoplar anexo: {str(e)}"
@@ -109,7 +123,7 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
         server.login(email_remetente, senha_remetente)
         server.sendmail(email_remetente, lista_destinatarios, msg.as_string())
         server.quit()
-        return True, "Lote de suporte e documentação disparado com sucesso!"
+        return True, "E-mail com o pacote de virada enviado com sucesso para todos!"
     except Exception as e:
         return False, f"Falha no envio SMTP (Segurança de Rede): {str(e)}"
 
@@ -142,7 +156,7 @@ with st.sidebar:
     email_destinatario = st.text_input("Enviar para (Destinatários):", value="financeiro@crti.com.br", key="enc_email_dest_key")
     btn_enviar_emails = st.button("🚀 **ENVIAR PACOTE COMPLETO**", type="primary", use_container_width=True, key="enc_email_btn_key")
     
-    # BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR RESTAURADO
+    # BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR
     st.markdown("---")
     st.header("🗑️ Gerenciamento")
     if st.button("🗑️ Limpar Todos os Termos Emitidos", use_container_width=True):
@@ -185,12 +199,12 @@ TODOS_MODULOS = [
 
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
-# Ajuste do solicitante para não trazer lixo estrutural de listas
+# Extração limpa do nome do gestor pela indexação direta do pandas
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        gerente_cliente_sugerido = str(solicitantes).strip()
+        gerente_cliente_sugerido = str(df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().iloc[0]).strip()
         
 gerente_cliente_name = st.text_input("Gerente de Implantação na EMPRESA CLIENTE (Solicitante):", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
@@ -204,6 +218,7 @@ with col_datas_1:
 with col_datas_2:
     data_fim = st.date_input("Data da homologação / emissão do documento:", datetime.now())
 
+# --- NOVOS CAMPOS EXIGIDOS PELA PAGE 1 DO MANUAL ---
 st.markdown("##### Parâmetros do Lote de Mudança")
 col_v1, col_v2, col_v3 = st.columns(3)
 with col_v1:
@@ -247,12 +262,12 @@ with col_mod_2:
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_fim.day} de {meses_br[data_fim.month - 1]} de {data_fim.year}"
 
-# --- 6. GERAÇÃO EM LOTE ---
+# --- 6. GERAÇÃO EM LOTE DOS DOIS DOCUMENTOS DE UMA VEZ ---
 if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Por favor, selecione um cliente para prosseguir.")
     else:
-        with st.spinner("⏳ Compilando lote unificado (Word e PDF)..."):
+        with st.spinner("⏳ Compilando lote completo (Word e PDF)..."):
             try:
                 for arquivo_antigo in glob.glob(os.path.join(PASTA_TERMOS, "*.*")):
                     try: os.remove(arquivo_antigo)
@@ -262,6 +277,7 @@ if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_contain
                 nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                 datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
 
+                # --- DOCUMENTO 1: TERMO GERAL ---
                 if modulos_homologados:
                     caminho_m1 = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_Campanha_encerramento.docx")
                     if not os.path.exists(caminho_m1): caminho_m1 = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
@@ -280,6 +296,7 @@ if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_contain
                     doc1.save(c_docx1)
                     subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{c_docx1}"', shell=True, check=True)
 
+                # --- DOCUMENTO 2: NÃO HOMOLOGAÇÃO ---
                 if modulos_nao_homologados:
                     caminho_m2 = os.path.join(BASE_DIR, "modelos", "naohomologado.docx")
                     doc2 = DocxTemplate(caminho_m2)
@@ -344,16 +361,15 @@ if arquivos_gerados_base:
 # =========================================================================
 @st.dialog(" Confirmação de Disparo de Termos")
 def confirmar_envio_termos_popup_final(email, arquivos_lote):
-    st.write("Você tem certeza que deseja disparar a solicitação de virada por e-mail?")
+    st.write("Você tem certeza que deseja disparar os termos gerados por e-mail?")
     st.write(f"• **Destinatários:** `{email}`")
-    st.write(f"• **Injeção de Cabeçalhos:** Conforme regras da Page 1")
+    st.write(f"• **Arquivos em anexo:** PDF e Word de todos os termos gerados na tela")
     st.markdown("---")
     
     col_p1, col_p2 = st.columns(2)
     with col_p1:
-        if st.button("Sim, Disparar Mudança para Produção", use_container_width=True):
-            with st.spinner("Conectando ao barramento SMTP seguro e enviando..."):
-                # CORREÇÃO: Chamando o nome exato do motor declarado no bloco 3
+        if st.button("Sim, Disparar Lote", use_container_width=True):
+            with st.spinner("Compilando lote completo de anexos e enviando..."):
                 ok, r_msg = enviar_email_termos_logica_p04(
                     email, cliente_selecionado, data_virada_formatada, campos_fiscais_payload, arquivos_lote, gerente_cliente_name
                 )
