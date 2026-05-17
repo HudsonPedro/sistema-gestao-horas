@@ -85,7 +85,7 @@ except:
 
 st.markdown("---")
 
-# SELETOR DO DOCUMENTO (Controla o que aparece na tela)
+# SELETOR DO DOCUMENTO
 tipo_documento = st.selectbox(
     "Selecione o Tipo de Documento que deseja emitir:",
     ["Termo de Homologação e Encerramento Geral", "Documento de Não Homologação (Apenas Pendências)"]
@@ -116,7 +116,7 @@ if not df_leg.empty and cliente_selecionado:
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 gerente_crti = "SUELLEN GOMES"
 
-# --- INTERFACE DINÂMICA (Exibe campos baseado na seleção do topo) ---
+# --- INTERFACE DINÂMICA BASEADA NA SELEÇÃO ---
 if tipo_documento == "Termo de Homologação e Encerramento Geral":
     col_datas_1, col_datas_2 = st.columns(2)
     with col_datas_1:
@@ -140,7 +140,7 @@ if tipo_documento == "Termo de Homologação e Encerramento Geral":
     modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS:", options=opcoes_restantes)
 
 else:
-    # Modo do Documento de Não Homologação (Esconde os dados de cima e foca só na data e pendências)
+    # Modo do Documento de Não Homologação (Apenas Pendências)
     data_fim = st.date_input("Data do Documento Auxiliar:", datetime.now())
     st.markdown("---")
     modulos_nao_homologados = st.multiselect("Selecione os Módulos NÃO HOMOLOGADOS (Pendentes):", options=TODOS_MODULOS)
@@ -155,13 +155,13 @@ if st.button("Gerar Documento Selecionado", type="primary"):
     elif tipo_documento == "Documento de Não Homologação (Apenas Pendências)" and not modulos_nao_homologados:
         st.warning("Por favor, selecione ao menos um módulo não homologado.")
     else:
-        with st.spinner("⏳ Gerando termos customizados (Word e PDF)..."):
+        with st.spinner("⏳ Gerando arquivos (Word e PDF)..."):
             try:
-                # Escolhe o modelo certo com base no seletor do topo
+                # CORREÇÃO: Ajustado de 'naohonologado' para 'naohomologado.docx'
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 else:
-                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "naohonologado.docx")
+                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "naohomologado.docx")
                 
                 doc = DocxTemplate(caminho_modelo)
                 
@@ -171,9 +171,8 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 else:
                     texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
 
-                # LÓGICA ISOLADA POR TIPO DE DOCUMENTO
+                # LÓGICA DO TERMO GERAL - MANIFESTADA INTACTA
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
-                    # SUA LÓGICA ORIGINAL DO TERMO GERAL - 100% INTACTA
                     nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                     datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
                     
