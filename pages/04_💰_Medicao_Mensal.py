@@ -97,7 +97,7 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
     st.markdown("---")    
-     st.divider()
+    st.divider()
     st.caption("v1.0 - 11052026")
     st.caption("Todos os direitos reservados")
     st.caption("Copyright ©2026 HPtech Informática ME")
