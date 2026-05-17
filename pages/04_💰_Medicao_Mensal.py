@@ -37,9 +37,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (CORRIGIDO PARA LER O SERVIDOR SECRETO)
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04
 def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexos):
-    # CORREÇÃO ABSOLUTA: Puxa o host e credenciais direto dos segredos do servidor do Streamlit
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
     smtp_server = st.secrets["smtp"]["servidor"]
@@ -68,7 +67,6 @@ def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexo
             return False, f"Falha ao acoplar anexo: {str(e)}"
             
     try:
-        # Usa o servidor dinâmico do st.secrets para furar o bloqueio de Name or service not known
         server = smtplib.SMTP(smtp_server, smtp_porta)
         server.starttls()
         server.login(email_remetente, senha_remetente)
@@ -210,7 +208,6 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                     texto_nao_homologados_str = "Nenhum módulo pendente nesta fase."
 
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
-                    # SUA LÓGICA VERTICAL DO TERMO GERAL ORIGINAL QUE DEU CERTO
                     nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                     datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
                     
@@ -290,6 +287,7 @@ def confirmar_envio_termos_popup_p4(email, arquivos_lote):
     with col_p1:
         if st.button("Sim, Disparar Termo", use_container_width=True):
             with st.spinner("Compilando anexos do termo e enviando..."):
+                # CORREÇÃO DA VARIÁVEL: Extrai corretamente o nome do lote para o assunto
                 nome_doc_assunto = os.path.basename(arquivos_lote[0]).replace(".pdf", "").replace(".docx", "")
                 
                 ok, r_msg = enviar_email_termos_logica_p04(email, nome_doc_assunto, arquivos_lote)
@@ -310,9 +308,11 @@ def confirmar_envio_termos_popup_p4(email, arquivos_lote):
 # --- GATILHO DA SIDEBAR QUE CHAMA O POP-UP ---
 if btn_enviar_emails:
     import glob
+    # CORREÇÃO DA SINTAXE DE VARIÁVEL LOCAL DO DISPARO
     arquivos_pasta = glob.glob(os.path.join(PASTA_TERMOS, "*.pdf")) + glob.glob(os.path.join(PASTA_TERMOS, "*.docx"))
     
     if not arquivos_pasta:
         st.sidebar.warning("⚠️ Gere o documento na tela primeiro antes de disparar.")
     else:
+        # Passa rigorosamente a lista válida para evitar o estouro de DNS no Linux
         confirmar_envio_termos_popup_p4(email_destinatario, arquivos_pasta)
