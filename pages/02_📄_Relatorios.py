@@ -82,25 +82,24 @@ with st.sidebar:
     st.markdown("---")
     st.title("Menu Principal")
     
-    # Navegação Atualizada
+     # Navegação Atualizada
     if st.button("🏠 Home", use_container_width=True):
         st.switch_page("app.py")
     if st.button("📊 Dashboard", use_container_width=True):
         st.switch_page("pages/01_📊_Dashboard.py")
-    if st.button("📄 Relatórios RA", use_container_width=True):
-        st.switch_page("pages/02_📄_Relatorios.py")
-    if st.button("📝 Lançamento", use_container_width=True):
+    if st.button("📝 Lançamento de Horas", use_container_width=True):
         st.switch_page("pages/03_📝_Lancamento.py")
+    if st.button("📄 Relatórios RA", use_container_width=True):
+        st.switch_page("pages/02_📄_Relatorios.py")    
     if st.button("💰 Medição Mensal", use_container_width=True):
         st.switch_page("pages/04_💰_Medicao_Mensal.py")
     if st.button("📋 Termo Homologação", use_container_width=True): 
-        st.switch_page("pages/05_📋_Termos.py")
+       st.switch_page("pages/05_📋_Termos.py")
     if st.button("📑 Termo Encerramento", use_container_width=True): 
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
-  
-#   versionamento 
+             
     st.divider()
-    st.caption("v1.0 - 14052026") #16:43 sem alterações
+    st.caption("v1.0 - 11052026")
     st.caption("Todos os direitos reservados")
     st.caption("Copyright ©2026 HPtech Informática ME")
     
