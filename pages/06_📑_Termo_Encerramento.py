@@ -39,7 +39,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (CORRIGIDO PARA ANEXOS LIMPADOS)
 def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexos):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
@@ -63,6 +63,7 @@ def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexo
                 part = MIMEBase("application", "octet-stream")
                 part.set_payload(attachment.read())
                 encode_base64(part)
+                # CORREÇÃO CRUCIAL: Força as aspas normais para o Linux não quebrar a extensão do arquivo no MIME
                 part.add_header("Content-Disposition", f'attachment; filename="{nome_arquivo_limpo}"')
                 msg.attach(part)
         except Exception as e:
@@ -149,12 +150,11 @@ TODOS_MODULOS = [
 
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
-# CORREÇÃO DEFINITIVA DO GERENTE DE IMPLANTAÇÃO DA EMPRESA CLIENTE
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        # Extrai rigorosamente a primeira string de texto pura da lista, eliminando colchetes e aspas
+        # Pega o primeiro nome da lista limpo
         gerente_cliente_sugerido = str(solicitantes[0]).strip()
         
 gerente_cliente = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
@@ -214,7 +214,9 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                     except: pass
 
                 if tipo_documento == "Termo de Homologação e Encerramento Geral":
-                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
+                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_Campanha_encerramento.docx")
+                    if not os.path.exists(caminho_modelo):
+                        caminho_modelo = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
                     if not os.path.exists(caminho_modelo):
                         caminho_modelo = os.path.join(BASE_DIR, "modelos", "encerramento.docx")
                 else:
@@ -238,9 +240,11 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                         "data_inicio": data_inicio.strftime("%d/%m/%Y"),
                         "data_fim": data_fim.strftime("%d/%m/%Y"),
                         "data_extenso": data_extenso_str,
+                        
                         "nomes_homologados": nomes_homologados_str,
                         "datas_homologados": datas_homologados_str,
                         "texto_nao_homologados": texto_nao_homologados_str,
+                        
                         " nomes_homologados ": nomes_homologados_str,
                         " datas_homologados ": datas_homologados_str,
                         " texto_nao_homologados ": texto_nao_homologados_str
@@ -257,6 +261,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 doc.render(contexto)
                 
                 prefixo = "Termo_Geral" if tipo_documento == "Termo de Homologação e Encerramento Geral" else "Doc_Não_Homologação"
+                # Remove espaços extras para o Linux processar sem falhas de escape no LibreOffice
                 nome_limpo_arquivo = f"{prefixo}_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
                 
                 caminho_docx_ativo = os.path.join(PASTA_TERMOS, f"{nome_limpo_arquivo}.docx")
@@ -272,7 +277,7 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 st.error(f"Erro ao processar o arquivo físico: {e}")
 
 # --- PAINEL VISUAL DE DOWNLOAD E ZIP COMPACTADO ---
-arquivos_gerados_base = glob.glob(os.path.join(PASTA_TERMOS, "*.*"))
+arquivos_gerados_base = glob.glob(os.path.join(PASTA_TERMOS, "*.pdf")) + glob.glob(os.path.join(PASTA_TERMOS, "*.docx"))
 
 if arquivos_gerados_base:
     st.markdown("---")
@@ -326,8 +331,11 @@ def confirmar_envio_termos_popup_final(email, arquivos_lote):
     with col_p1:
         if st.button("Sim, Disparar Termo", use_container_width=True):
             with st.spinner("Compilando lote de anexos e enviando..."):
-                arquivo_ref = str(arquivos_lote[0])
-                nome_doc_assunto = os.path.basename(arquivo_ref).replace("_", " ").replace(".pdf", "").replace(".docx", "")
+                # CORREÇÃO ABSOLUTA: Extrai o nome limpo do primeiro arquivo da lista real
+                if arquivos_lote:
+                    nome_doc_assunto = os.path.basename(arquivos_lote[0]).replace("_", " ").replace(".pdf", "").replace(".docx", "")
+                else:
+                    nome_doc_assunto = "Termo de Homologação"
                 
                 ok, r_msg = enviar_email_termos_logica_p04(email, nome_doc_assunto, arquivos_lote)
                 
