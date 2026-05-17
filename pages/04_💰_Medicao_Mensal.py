@@ -37,7 +37,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (LÓGICA ST.SECRETS COMPLETA)
 def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexos):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
@@ -76,7 +76,7 @@ def enviar_email_termos_logica_p04(email_destino, nome_documento, arquivos_anexo
     except Exception as e:
         return False, f"Falha no envio SMTP (Segurança de Rede): {str(e)}"
 
-# 4. SIDEBAR COM OS EMOJIS EXATOS DA SUA ÁRVORE DE ARQUIVOS DO GITHUB
+# 4. SIDEBAR COM MENU INTEGRADO PURIFICADO (Sem botões duplicados ou travas de rede)
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -97,12 +97,6 @@ with st.sidebar:
     if st.button("💰 Medição Mensal", use_container_width=True): st.switch_page("pages/04_💰_Medicao_Mensal.py")
     if st.button("📋 Termo Homologação", use_container_width=True): st.switch_page("pages/05_📋_Termos.py")
     if st.button("📑 Termo Encerramento", use_container_width=True): st.switch_page("pages/06_📑_Termo_Encerramento.py")
-    
-    # INTERFACE DE DISPARO DA SIDEBAR
-    st.markdown("---")
-    st.header("📬 Disparo de Termos")
-    email_destinatario = st.text_input("Destinatário do Termo:", value="financeiro@crti.com.br", key="t_email_dest_p4")
-    btn_enviar_emails = st.button("🚀 **ENVIAR TERMOS POR E-MAIL**", type="primary", use_container_width=True, key="t_email_btn_p4")
     
     st.divider()
     st.caption("v1.0 - 11052026")
@@ -263,13 +257,17 @@ if st.button("Gerar Documento Selecionado", type="primary"):
                 with open(caminho_docx_final, "rb") as f:
                     buffer_docx = io.BytesIO(f.read())
                 
-                st.success("✨ Documento gerado e pronto para envio!")
+                st.success("✨ Documento gerado com sucesso!")
                 
+                # Exibe os botões de download tradicionais que já funcionam
                 col_down1, col_down2 = st.columns(2)
                 with col_down1:
                     st.download_button(label="📥 Baixar Termo em PDF (.pdf)", data=buffer_pdf, file_name=f"{nome_download_bonito}.pdf", mime="application/pdf", use_container_width=True)
                 with col_down2:
                     st.download_button(label="📥 Baixar Termo em Word (.docx)", data=buffer_docx, file_name=f"{nome_download_bonito}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
+                
+                # Marca na sessão que o arquivo está pronto para ser enviado
+                st.session_state["termo_pronto_envio"] = True
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo físico: {e}")
 
@@ -287,7 +285,6 @@ def confirmar_envio_termos_popup_p4(email, arquivos_lote):
     with col_p1:
         if st.button("Sim, Disparar Termo", use_container_width=True):
             with st.spinner("Compilando anexos do termo e enviando..."):
-                # CORREÇÃO DA VARIÁVEL: Extrai corretamente o nome do lote para o assunto
                 nome_doc_assunto = os.path.basename(arquivos_lote[0]).replace(".pdf", "").replace(".docx", "")
                 
                 ok, r_msg = enviar_email_termos_logica_p04(email, nome_doc_assunto, arquivos_lote)
@@ -305,14 +302,22 @@ def confirmar_envio_termos_popup_p4(email, arquivos_lote):
         if st.button("Não, Cancelar", use_container_width=True):
             st.rerun()
 
-# --- GATILHO DA SIDEBAR QUE CHAMA O POP-UP ---
-if btn_enviar_emails:
-    import glob
-    # CORREÇÃO DA SINTAXE DE VARIÁVEL LOCAL DO DISPARO
-    arquivos_pasta = glob.glob(os.path.join(PASTA_TERMOS, "*.pdf")) + glob.glob(os.path.join(PASTA_TERMOS, "*.docx"))
+# --- NOVO: SEÇÃO DE DISPARO REALOCADA NA TELA PRINCIPAL (IGUAL À PÁGINA 04) ---
+# Se o documento já foi gerado na tela, o Streamlit libera os controles de e-mail no rodapé
+if st.session_state.get("termo_pronto_envio", False):
+    st.markdown("---")
+    st.markdown("### 📬 Disparar Documentos Gerados por E-mail")
     
-    if not arquivos_pasta:
-        st.sidebar.warning("⚠️ Gere o documento na tela primeiro antes de disparar.")
-    else:
-        # Passa rigorosamente a lista válida para evitar o estouro de DNS no Linux
-        confirmar_envio_termos_popup_p4(email_destinatario, arquivos_pasta)
+    col_email_1, col_email_2 = st.columns([2, 1])
+    with col_email_1:
+        email_target = st.text_input("Preencha o E-mail do Destinatário:", value="suellen@crti.com.br", key="target_email_p06")
+    with col_email_2:
+        st.write("<br>", unsafe_allow_html=True) # Alinha o botão verticalmente
+        if st.button("🚀 Enviar Termo por E-mail", use_container_width=True, type="secondary"):
+            import glob
+            arquivos_pasta = glob.glob(os.path.join(PASTA_TERMOS, "*.pdf")) + glob.glob(os.path.join(PASTA_TERMOS, "*.docx"))
+            if not arquivos_pasta:
+                st.error("Gere os documentos na tela novamente antes de disparar.")
+            else:
+                # Dispara o pop-up sem herdar travas da sidebar
+                confirmar_envio_termos_popup_p4(email_target, arquivos_pasta)
