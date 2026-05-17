@@ -202,7 +202,7 @@ with st.sidebar:
     # BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR
     st.markdown("---")
     st.header("🗑️ Gerenciamento")
-    if st.button("🗑️ Limpar Todos os Termos Emitidos", use_container_width=True):
+    if st.button("🗑️ Limpar Termos Emitidos", use_container_width=True):
         arquivos_limpeza = glob.glob(os.path.join(PASTA_TERMOS, "*.*"))
         for arq in arquivos_limpeza:
             try: os.remove(arq)
