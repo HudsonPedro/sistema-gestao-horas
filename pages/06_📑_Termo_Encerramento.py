@@ -42,7 +42,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (NOMES DOS ANEXOS CORRIGIDOS E CORPO HTML)
+# 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (BLINDADO CONTRA ERRO DE ACENTUAÇÃO E NONAME)
 def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_virada_str, campos_fiscal, arquivos_anexos, gerente_cliente_nome):
     email_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
@@ -84,7 +84,7 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
         <p style="color: #b0231d; font-weight: bold;">Para virar o sistema em produção é obrigatória a assinatura de ambas as partes. O cliente Sr(a). {gerente_cliente_nome} está ao par e no aguardo dos documentos para assinaturas.</p>
         
         <br>
-        <p>Caso encontre alguma divergência, favor criticar para as devidas corrections.<br>
+        <p>Caso encontre alguma divergência, favor criticar para as devidas correções.<br>
         Me coloco à inteira disposição para possíveis esclarecimentos.</p>
         <p>Com Gratidão!!<br><b>Hudson Valente</b></p>
     </body>
@@ -94,23 +94,21 @@ def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_vira
     
     for caminho_arquivo in arquivos_anexos:
         nome_original = os.path.basename(caminho_arquivo)
+        extensao = ".pdf" if nome_original.lower().endswith(".pdf") else ".docx"
         
-        # CORREÇÃO CRUCIAL: Mapeia e força o nome exato solicitado sem variáveis mutáveis no cabeçalho do e-mail
-        if "NÃO_Homologação" in nome_original or "Nao_Homologacao" in nome_original or "naohomologado" in nome_original:
-            extensao = ".pdf" if nome_original.lower().endswith(".pdf") else ".docx"
-            nome_arquivo_limpo = f"Termo de NÃO Homologação de Módulos do CRTI ERP{extensao}"
-        elif "Homologação" in nome_original or "Geral" in nome_original:
-            extensao = ".pdf" if nome_original.lower().endswith(".pdf") else ".docx"
-            nome_arquivo_limpo = f"Termo de Homologação e Encerramento de Implantação do CRTI ERP{extensao}"
+        # BLINDAGEM DO GMAIL: Força nomes 100% livres de acentos e sem a palavra 'NÃO' no protocolo MIME
+        if "NÃO" in nome_original or "Nao" in nome_original or "naohomologado" in nome_original:
+            nome_arquivo_limpo = f"Termo de NAO Homologacao de Modulos do CRTI ERP{extensao}"
         else:
-            nome_arquivo_limpo = nome_original
+            nome_arquivo_limpo = f"Termo de Homologacao e Encerramento de Implantacao do CRTI ERP{extensao}"
             
         try:
             with open(caminho_arquivo, "rb") as attachment:
                 part = MIMEBase("application", "octet-stream")
                 part.set_payload(attachment.read())
                 encode_base64(part)
-                part.add_header("Content-Disposition", f'attachment; filename="{nome_arquivo_limpo}"')
+                # Adiciona o cabeçalho forçando string limpa e sem acentuação para o Gmail ler
+                part.add_header("Content-Disposition", "attachment", filename=str(nome_arquivo_limpo))
                 msg.attach(part)
         except Exception as e:
             return False, f"Falha ao acoplar anexo: {str(e)}"
@@ -197,7 +195,6 @@ TODOS_MODULOS = [
 
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
-# Extração limpa do nome do gestor pela indexação direta do pandas
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
@@ -216,7 +213,6 @@ with col_datas_1:
 with col_datas_2:
     data_fim = st.date_input("Data da homologação / emissão do documento:", datetime.now())
 
-# Parâmetros do Lote de Mudança do manual
 st.markdown("##### Parâmetros do Lote de Mudança")
 col_v1, col_v2, col_v3 = st.columns(3)
 with col_v1:
@@ -275,7 +271,7 @@ if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_contain
                 nomes_homologados_str = "\n".join([str(item['nome']) for item in dados_homologados_tabela])
                 datas_homologados_str = "\n".join([str(item['data']) for item in dados_homologados_tabela])
 
-                # --- DOCUMENTO 1: TERMO GERAL (CORRIGIDO NOME FÍSICO ESTREITO) ---
+                # --- DOCUMENTO 1: TERMO GERAL ---
                 if modulos_homologados:
                     caminho_m1 = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_Campanha_encerramento.docx")
                     if not os.path.exists(caminho_m1): caminho_m1 = os.path.join(BASE_DIR, "modelos", "Lincoln_Pedro_Termos_encerramento.docx")
@@ -289,12 +285,12 @@ if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_contain
                         " nomes_homologados ": nomes_homologados_str, " datas_homologados ": datas_homologados_str, " texto_nao_homologados ": texto_nao_homologados_str
                     }
                     doc1.render(ctx1)
-                    n_arq1 = f"Termo_de_Homologação_e_Encerramento_de_Implantação_do_CRTI_ERP"
+                    n_arq1 = f"Termo_de_Homologacao_e_Encerramento_de_Implantacao_do_CRTI_ERP"
                     c_docx1 = os.path.join(PASTA_TERMOS, f"{n_arq1}.docx")
                     doc1.save(c_docx1)
                     subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{c_docx1}"', shell=True, check=True)
 
-                # --- DOCUMENTO 2: NÃO HOMOLOGAÇÃO (CORRIGIDO NOME FÍSICO ESTREITO) ---
+                # --- DOCUMENTO 2: NÃO HOMOLOGAÇÃO ---
                 if modulos_nao_homologados:
                     caminho_m2 = os.path.join(BASE_DIR, "modelos", "naohomologado.docx")
                     doc2 = DocxTemplate(caminho_m2)
@@ -303,7 +299,7 @@ if st.button("Gerar Todos os Documentos do Cliente", type="primary", use_contain
                         "texto_nao_homologados": texto_nao_homologados_str, " texto_nao_homologados ": texto_nao_homologados_str
                     }
                     doc2.render(ctx2)
-                    n_arq2 = f"Termo_de_NÃO_Homologação_de_Módulos_do_CRTI_ERP"
+                    n_arq2 = f"Termo_de_Nao_Homologacao_de_Modulos_do_CRTI_ERP"
                     c_docx2 = os.path.join(PASTA_TERMOS, f"{n_arq2}.docx")
                     doc2.save(c_docx2)
                     subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TERMOS}" "{c_docx2}"', shell=True, check=True)
@@ -361,7 +357,7 @@ if arquivos_gerados_base:
 def confirmar_envio_termos_popup_final(email, arquivos_lote):
     st.write("Você tem certeza que deseja disparar os termos gerados por e-mail?")
     st.write(f"• **Destinatários:** `{email}`")
-    st.write(f"• **Arquivos em anexo:** Lote de suporte oficial contendo os arquivos estruturados")
+    st.write(f"• **Arquivos em anexo:** PDF e Word de todos os termos gerados na tela")
     st.markdown("---")
     
     col_p1, col_p2 = st.columns(2)
