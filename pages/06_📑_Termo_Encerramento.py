@@ -25,23 +25,69 @@ PASTA_TERMOS = os.path.join(BASE_DIR, "termos_emitidos")
 os.makedirs(PASTA_TERMOS, exist_ok=True)
 
 # 1. CONFIGURAÇÃO DA PÁGINA
-st.set_page_config(page_title="Termos HPTECH", page_icon="hptechICO.png", layout="wide")
+st.set_page_config(
+    page_title="HPTECH Sistema de Gestão",
+    page_icon="hptech.png",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
-# 2. CSS PARA OCULTAR O MENU E FORÇAR A LOGO NO TOPO
 st.markdown("""
     <style>
         [data-testid="stSidebarNav"] {display: none;}
         [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
-        [data-testid="stSidebarHeader"] {padding-top: 0rem !important;}
-        h1 { color: #b0231d; }
+        
+        /* O BLOCO QUE VOCÊ PERGUNTOU ENTRA AQUI */
+        .user-block {
+            background-color: #f0f2f6;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# 2. CSS PARA OCULTAR O MENU E FORÇAR A LOGO NO TOPO
+st.markdown("""
+    <style>
+        /* Esconde o menu de páginas padrão do Streamlit */
+        [data-testid="stSidebarNav"] {display: none;}
+        
+        /* Zera o espaçamento do topo para a logo subir */
+        [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
+        
+        /* Cor do título para o padrão azul CRTI */
+        h1 { color: #b0231d; } /*#004a87 = AZUL CRTI*/
+    </style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+    <style>
+        /* Esconde o menu nativo */
+        [data-testid="stSidebarNav"] {display: none;}
+        
+        /* FORÇA A LOGO PARA O TOPO ABSOLUTO */
+        [data-testid="stSidebarContent"] {
+            padding-top: 0rem !important;
+        }
+
+        /* Ajuste da logo para não encostar nas laterais */
+        [data-testid="stSidebarHeader"] {
+            padding-top: 0rem !important;
+        }
+
+        /* Estilo da caixinha de usuário */
         .user-block {
             background-color: #f0f2f6;
             padding: 8px;
             border-radius: 8px;
-            margin-top: -10px;
+            margin-top: -10px; /* Puxa a caixinha um pouco para cima */
         }
     </style>
 """, unsafe_allow_html=True)
+
 
 # 3. MOTOR DE DISPARO SMTP DA SUA PÁGINA 04 (BLINDADO CONTRA ERRO DE ACENTUAÇÃO E NONAME)
 def enviar_email_termos_logica_p04(string_destinatarios, cliente_nome, data_virada_str, campos_fiscal, arquivos_anexos, gerente_cliente_nome):
