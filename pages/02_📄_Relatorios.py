@@ -336,23 +336,25 @@ if btn_gerar:
 
         grupos = df.groupby(["CLIENTE", "RA"], as_index=False)
         arquivos_saida = []
-
-        for (cliente, ra), grupo in grupos:
+        
+#==substituição do código 22/05/2026 19:15==#
+                for (cliente, ra), grupo in grupos:
+            # CORREÇÃO CRÍTICA: Adicionado .iloc[0] para extrair o texto puro corretamente
             solicitante = str(grupo["SOLICITANTE"].iloc[0]).strip()
             consultor = str(grupo["CONSULTOR"].iloc[0]).strip()
             participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
             local = str(grupo["LOCAL"].iloc[0]).strip()
-
-            # 1. ADICIONE ESTA LINHA ANTES PARA FORÇAR A CONVERSÃO DE TEXTO PARA DATA
-            grupo["DATA"] = pd.to_datetime(grupo["DATA"], errors='coerce') #1.
-            data_inicio_rel = grupo["DATA"].min().strftime("%d/%m/%Y")
-            data_fim_rel = grupo["DATA"].max().strftime("%d/%m/%Y")
-            dt_obj = grupo["DATA"].max().to_pydatetime()
+            
+            datas_grupo = pd.to_datetime(grupo["DATA"], errors='coerce', dayfirst=True)
+            
+            data_inicio_rel = datas_grupo.min().strftime("%d/%m/%Y") if pd.notna(datas_grupo.min()) else "01/01/2026"
+            data_fim_rel = datas_grupo.max().strftime("%d/%m/%Y") if pd.notna(datas_grupo.max()) else "31/12/2026"
+            
+            dt_obj = datas_grupo.max().to_pydatetime() if pd.notna(datas_grupo.max()) else datetime.now()
             data_rodape = data_por_extenso_pt(dt_obj)
-                        
+ 
             # ------ CÁLCULO DE HORAS ------
             total_seg, total_seg_d = 0, 0
-            
             for val in grupo["TOTAL_HR"]:
                 val_str = str(val).strip() 
                 if ":" in val_str:
@@ -361,7 +363,7 @@ if btn_gerar:
                         total_seg += int(p[0]) * 3600 + (int(p[1]) * 60 if len(p) > 1 else 0)
                     except: pass
             total_hr_str = f"{int(total_seg // 3600):02d}:{int((total_seg % 3600) // 60):02d}"
-
+            
             for val in grupo["TOTAL_HR_D"]:
                 val_str = str(val).strip()
                 if ":" in val_str:
@@ -370,8 +372,7 @@ if btn_gerar:
                         total_seg_d += int(p[0]) * 3600 + (int(p[1]) * 60 if len(p) > 1 else 0)
                     except: pass
             total_hr_str_d = f"{int(total_seg_d // 3600):02d}:{int((total_seg_d % 3600) // 60):02d}"
-            # -----------------------------------------------
-
+            
             total_km = 0
             tem_desl = False
             for val in grupo["KM_D"]:
@@ -380,14 +381,20 @@ if btn_gerar:
                     try: 
                         kv=float(v); total_km += kv; tem_desl = True if kv > 0 else False
                     except: pass
-
+                    
             texto_ra = str(ra).strip()
             ra_str = str(int(float(texto_ra))) if texto_ra != "" and texto_ra.replace('.', '', 1).isdigit() else "S/N"
             
-            nome_base = f"RA Nº {ra_str} {cliente[:25].upper().replace(' ', ' ')}"
+            cliente_limpo = cliente[:25].upper()
+            for char in ["/", "\\", ":", "*", "?", '"', "<", ">", "|"]:
+                cliente_limpo = cliente_limpo.replace(char, "")
+                
+            nome_base = f"RA Nº {ra_str} {cliente_limpo.strip()}"
+            
+            os.makedirs(PASTA_SAIDA, exist_ok=True)
             file_pdf = os.path.join(PASTA_SAIDA, nome_base + ".pdf")
             file_xlsx = os.path.join(PASTA_SAIDA, nome_base + ".xlsx")
-
+            
             # --- 1. GERAÇÃO PDF ---
             pdf = PDF()
             pdf.ra_numero = ra_str
@@ -402,7 +409,7 @@ if btn_gerar:
             pdf.set_x(10); pdf.set_font('Arial', 'B', 10); pdf.cell(45, 5, "Unidade de Atendimento: ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(60, 5, local, ln=False)
             pdf.set_x(115); pdf.set_font('Arial', 'B', 10); pdf.cell(39, 5, "Distância (KM): ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(0, 5, f"{total_km} km", ln=True)
             pdf.ln(5); pdf.set_font("Arial", "B", 10); pdf.set_fill_color(0, 112, 192); pdf.set_text_color(255, 255, 255); pdf.cell(190, 10, "DESCRIÇÃO DAS ATIVIDADES", border=1, ln=True, fill=True, align="C")
-
+            
             for _, linha in grupo.iterrows():
                 if pdf.get_y() > 245: pdf.add_page()
                 y_i = pdf.get_y(); x_i = 10
@@ -411,7 +418,6 @@ if btn_gerar:
                 hf = str(linha["HR_FIM"])[0:5] if pd.notnull(linha["HR_FIM"]) else "00:00"
                 tt = str(linha["TOTAL_HR"])[0:5] if pd.notnull(linha["TOTAL_HR"]) else "00:00"
                 ob = str(linha["OBSERVAÇÕES"]).strip()
-
                 pdf.set_xy(x_i + 2, y_i + 2)
                 pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Data: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(30, 5, da, ln=False)
                 pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Hora Início: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(15, 5, hi, ln=False)
@@ -421,9 +427,8 @@ if btn_gerar:
                 pdf.set_font('Arial', 'B', 10); pdf.cell(42, 5, "Forma de Atendimento: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, str(linha.get("FORMA", "Remoto")).strip(), ln=True)
                 pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Atividade: ", ln=False); pdf.set_font('Arial', '', 10); pdf.multi_cell(0, 5, ob if ob else "-")
                 pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Participante: ", ln=False); pdf.set_font('Arial', '', 10); pdf.multi_cell(0, 5, str(linha["PARTICIPANTE"]).strip() or participante_padrao)
-                
                 pdf.set_y(pdf.get_y() + 2); pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
-
+                
             if tem_desl:
                 if pdf.get_y() > 220: pdf.add_page()
                 pdf.ln(2)
@@ -441,7 +446,6 @@ if btn_gerar:
                     tt_d = str(linha["TOTAL_HR_D"])[0:5] if pd.notnull(linha["TOTAL_HR_D"]) else "00:00"
                     ds_d = str(linha.get("DESCRICAO_D", "")).strip()
                     fm_d = str(linha.get("FORMA_D", "Carro Próprio")).strip()
-
                     pdf.set_xy(x_i + 2, y_i + 2)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Data: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(30, 5, dd, ln=False)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Hora Início: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(15, 5, hi_d, ln=False)
@@ -452,17 +456,39 @@ if btn_gerar:
                     pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Consultor: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, consultor, ln=True)
                     pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Descrição: ", ln=False); pdf.set_font('Arial', '', 10); pdf.multi_cell(0, 5, ds_d if ds_d else "-")
                     pdf.set_y(pdf.get_y() + 2); pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
-
+                    
             if pdf.get_y() > 220: pdf.add_page()
-            pdf.ln(5); pdf.cell(0, 8, f"Curitiba, {data_rodape}.", ln=True); pdf.ln(4)
-            pdf.set_text_color(255, 0, 0); pdf.multi_cell(0, 5, "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram realizados conforme solicitado e estão em conformidade.")
-            pdf.ln(10)
-            pdf.cell(90, 8, "__________________________________", align="C"); pdf.cell(10); pdf.cell(90, 8, "__________________________________", align="C", ln=True)
-            pdf.cell(90, 2, consultor, align="C"); pdf.cell(7); pdf.cell(90, 2, solicitante, align="C", ln=True)
-            pdf.set_font("Arial", "", 8); pdf.cell(90, 7, "CRTI", align="C"); pdf.cell(7); pdf.cell(90, 7, cliente, align="C", ln=True)
-            pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", align="C"); pdf.cell(7); pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", ln=True, align="C")
-            pdf.output(file_pdf)
-            arquivos_saida.append(file_pdf)
+                pdf.ln(5); pdf.set_font("Arial", "", 10); pdf.set_text_color(0, 0, 0); pdf.cell(0, 8, f"Curitiba, {data_rodape}.", ln=True); pdf.ln(4)
+            
+            # MELHORIA: Texto de aviso centralizado (align="C")
+
+                pdf.set_font("Arial", "", 10)
+                pdf.set_text_color(255, 0, 0)
+                pdf.multi_cell(0, 5, "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram realizados conforme solicitado e estão em conformidade.", align="C")
+                pdf.ln(10)
+            
+                # MELHORIA: Assinaturas mudadas para a fonte preta (set_text_color(0, 0, 0))
+                pdf.set_text_color(0, 0, 0)
+                pdf.cell(90, 8, "__________________________________", align="C")
+                pdf.cell(10)
+                pdf.cell(90, 8, "__________________________________", align="C", ln=True)
+            
+                pdf.cell(90, 2, consultor, align="C")
+                pdf.cell(7)
+                pdf.cell(90, 2, solicitante, align="C", ln=True)
+            
+                pdf.set_font("Arial", "", 8)
+                pdf.cell(90, 7, "CRTI", align="C")
+                pdf.cell(7)
+                pdf.cell(90, 7, cliente, align="C", ln=True)
+            
+                pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", align="C")
+                pdf.cell(7)
+                pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", ln=True, align="C")
+            
+                pdf.output(file_pdf)
+                arquivos_saida.append(file_pdf)
+
 
             # ========================================================
             # 2. GERAÇÃO EXCEL
