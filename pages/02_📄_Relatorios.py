@@ -352,7 +352,7 @@ if btn_gerar:
             df["DATA"] = pd.to_datetime(df["DATA"], errors="coerce")
             for nome_grupo, grupo in df.groupby("IdRel"):
                 if grupo["DATA"].dropna().empty:
-                continue
+                    continue
                 data_inicio = grupo["DATA"].min()
                 data_fim = grupo["DATA"].max()
                 data_inicio_rel = data_inicio.strftime("%d/%m/%Y") if pd.notna(data_inicio) else ""
