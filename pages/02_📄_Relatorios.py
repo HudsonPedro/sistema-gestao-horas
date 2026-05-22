@@ -333,10 +333,10 @@ if btn_gerar:
          for col in cols_obr:
              if col not in df.columns: 
                  df[col] = ""
-         else: 
-         # Impede que a coluna DATA seja convertida para string textualmente
-             if col != "DATA":
-                 df[col] = df[col].fillna("").astype(str)
+             else: 
+             # Impede que a coluna DATA seja convertida para string textualmente
+                 if col != "DATA":
+                     df[col] = df[col].fillna("").astype(str)
 
         df = df[df["RA"].str.strip() != ""]
         df = df[df["CLIENTE"].str.strip() != ""]
