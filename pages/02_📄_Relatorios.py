@@ -344,10 +344,19 @@ if btn_gerar:
             participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
             local = str(grupo["LOCAL"].iloc[0]).strip()
 
-            data_inicio_rel = grupo["DATA"].min().strftime("%d/%m/%Y")
-            data_fim_rel = grupo["DATA"].max().strftime("%d/%m/%Y")
-            dt_obj = grupo["DATA"].max().to_pydatetime()
-            data_rodape = data_por_extenso_pt(dt_obj)
+            #data_inicio_rel = grupo["DATA"].min().strftime("%d/%m/%Y")
+            #data_fim_rel = grupo["DATA"].max().strftime("%d/%m/%Y")
+            #dt_obj = grupo["DATA"].max().to_pydatetime()
+            #data_rodape = data_por_extenso_pt(dt_obj)
+# CORRIGIR O ERRO DATA
+            df["DATA"] = pd.to_datetime(df["DATA"], errors="coerce")
+            for nome_grupo, grupo in df.groupby("IdRel"):
+                if grupo["DATA"].dropna().empty:
+                continue
+                data_inicio = grupo["DATA"].min()
+                data_fim = grupo["DATA"].max()
+                data_inicio_rel = data_inicio.strftime("%d/%m/%Y") if pd.notna(data_inicio) else ""
+                data_fim_rel = data_fim.strftime("%d/%m/%Y") if pd.notna(data_fim) else ""
 
             # ------ CÁLCULO DE HORAS ------
             total_seg, total_seg_d = 0, 0
