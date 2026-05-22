@@ -344,6 +344,8 @@ if btn_gerar:
             participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
             local = str(grupo["LOCAL"].iloc[0]).strip()
 
+            # 1. ADICIONE ESTA LINHA ANTES PARA FORÇAR A CONVERSÃO DE TEXTO PARA DATA
+            grupo["DATA"] = pd.to_datetime(grupo["DATA"], errors='coerce') #1.
             data_inicio_rel = grupo["DATA"].min().strftime("%d/%m/%Y")
             data_fim_rel = grupo["DATA"].max().strftime("%d/%m/%Y")
             dt_obj = grupo["DATA"].max().to_pydatetime()
