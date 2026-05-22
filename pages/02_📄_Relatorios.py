@@ -94,10 +94,10 @@ with st.sidebar:
     if st.button("💰 Medição Mensal", use_container_width=True):
         st.switch_page("pages/04_💰_Medicao_Mensal.py")
     if st.button("📋 Termo Homologação", use_container_width=True): 
-        st.switch_page("pages/05_📋_Termos.py")
+       st.switch_page("pages/05_📋_Termos.py")
     if st.button("📑 Termo Encerramento", use_container_width=True): 
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
-  
+        
 #   versionamento 
     st.divider()
     st.caption("v1.0 - 14052026") #16:43 sem alterações
@@ -326,7 +326,7 @@ if btn_gerar:
             st.error("⚠️ Nenhum registro encontrado para estas datas nesta aba.")
             st.stop()
 
-        cols_obr = ["CLIENTE", "OBSERVAÇÕES", "CONSULTOR", "SOLICITANTE", "PARTICIPANTE", "FORMA", "RA", "LOCAL", "SITUACAO_RA", "HR_INICIO_D", "HR_FIM_D", "TOTAL_HR_D", "KM_D", "FORMA_D", 'DESCRICAO_D', 'HR_INICIO', 'HR_FIM', 'TOTAL_HR', 'DATA']
+        cols_obr = ["CLIENTE", "OBSERVAÇÕES", "CONSULTOR", "SOLICITANTE", "PARTICIPANTE", "FORMA", "RA", "LOCAL", "SITUACAO_RA", "HR_INICIO_D", "HR_FIM_D", "TOTAL_HR_D", "KM_D", "FORMA_D", 'DESCRICAO']
         for col in cols_obr:
             if col not in df.columns: df[col] = ""
             else: df[col] = df[col].fillna("").astype(str)
@@ -344,13 +344,11 @@ if btn_gerar:
             participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
             local = str(grupo["LOCAL"].iloc[0]).strip()
 
-            # 1. ADICIONE ESTA LINHA ANTES PARA FORÇAR A CONVERSÃO DE TEXTO PARA DATA
-            grupo["DATA"] = pd.to_datetime(grupo["DATA"], errors='coerce') #1.
             data_inicio_rel = grupo["DATA"].min().strftime("%d/%m/%Y")
             data_fim_rel = grupo["DATA"].max().strftime("%d/%m/%Y")
             dt_obj = grupo["DATA"].max().to_pydatetime()
             data_rodape = data_por_extenso_pt(dt_obj)
-                        
+
             # ------ CÁLCULO DE HORAS ------
             total_seg, total_seg_d = 0, 0
             
@@ -402,7 +400,7 @@ if btn_gerar:
             pdf.set_x(114.5); pdf.set_font('Arial', 'B', 10); pdf.cell(39.5, 5, "Total Deslocamento: ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(0, 5, total_hr_str_d, ln=True)
             pdf.set_x(10); pdf.set_font('Arial', 'B', 10); pdf.cell(45, 5, "Unidade de Atendimento: ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(60, 5, local, ln=False)
             pdf.set_x(115); pdf.set_font('Arial', 'B', 10); pdf.cell(39, 5, "Distância (KM): ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(0, 5, f"{total_km} km", ln=True)
-            pdf.ln(5); pdf.set_font("Arial", "B", 10); pdf.set_fill_color(0, 112, 192); pdf.set_text_color(255, 255, 255); pdf.cell(190, 10, "DESCRIÇÃO DAS ATIVIDADES", border=1, ln=True, fill=True, align="C")
+            pdf.ln(5); pdf.set_font("Arial", "B", 10); pdf.set_fill_color(0, 112, 192); pdf.set_text_color(255, 255, 255); pdf.cell(190, 10, "DESCRIÇÃO DAS ATIVIDADES", border=1, ln=True, fill=True, align="C"); pdf.set_text_color(0, 0, 0)
 
             for _, linha in grupo.iterrows():
                 if pdf.get_y() > 245: pdf.add_page()
@@ -456,7 +454,7 @@ if btn_gerar:
 
             if pdf.get_y() > 220: pdf.add_page()
             pdf.ln(5); pdf.cell(0, 8, f"Curitiba, {data_rodape}.", ln=True); pdf.ln(4)
-            pdf.set_text_color(255, 0, 0); pdf.multi_cell(0, 5, "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram realizados conforme solicitado e estão em conformidade.")
+            pdf.set_text_color(255, 0, 0); pdf.multi_cell(0, 5, "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram prestados e confirmado como aceitos.", align="C"); pdf.set_text_color(0, 0, 0)
             pdf.ln(10)
             pdf.cell(90, 8, "__________________________________", align="C"); pdf.cell(10); pdf.cell(90, 8, "__________________________________", align="C", ln=True)
             pdf.cell(90, 2, consultor, align="C"); pdf.cell(7); pdf.cell(90, 2, solicitante, align="C", ln=True)
@@ -569,7 +567,7 @@ if btn_gerar:
             
             ws.merge_range(f'A{row}:D{row}', f"Curitiba, {data_rodape}.", f_norm); row += 2
             
-            ws.merge_range(f'A{row}:H{row}', "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram realizados conforme solicitado.")
+            ws.merge_range(f'A{row}:H{row}', "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram prestados e confirmado como aceitos.", f_red)
             ws.set_row(row - 1, 30); row += 5
             
             ws.merge_range(f'A{row}:C{row}', consultor, f_sign); ws.merge_range(f'F{row}:H{row}', solicitante, f_sign); row+=1
@@ -702,3 +700,5 @@ if btn_enviar_emails:
         
     # Abre o pop-up de validação passando a lista de arquivos prontos
     confirmar_envio_atendimentos_popup(arquivos_validos)
+
+
