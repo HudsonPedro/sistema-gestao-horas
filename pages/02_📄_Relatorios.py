@@ -82,7 +82,7 @@ with st.sidebar:
     st.markdown("---")
     st.title("Menu Principal")
     
-     # Navegação Atualizada
+    # Navegação Atualizada
     if st.button("🏠 Home", use_container_width=True):
         st.switch_page("app.py")
     if st.button("📊 Dashboard", use_container_width=True):
@@ -94,7 +94,7 @@ with st.sidebar:
     if st.button("💰 Medição Mensal", use_container_width=True):
         st.switch_page("pages/04_💰_Medicao_Mensal.py")
     if st.button("📋 Termo Homologação", use_container_width=True): 
-       st.switch_page("pages/05_📋_Termos.py")
+        st.switch_page("pages/05_📋_Termos.py")
     if st.button("📑 Termo Encerramento", use_container_width=True): 
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
              
@@ -325,18 +325,15 @@ if btn_gerar:
             st.error("⚠️ Nenhum registro encontrado para estas datas nesta aba.")
             st.stop()
 
-        cols_obr = ["CLIENTE", "OBSERVAÇÕES", "CONSULTOR", "SOLICITANTE", "PARTICIPANTE", "FORMA", "RA", "LOCAL", "SITUACAO_RA", "HR_INICIO_D", "HR_FIM_D", "TOTAL_HR_D", "KM_D", "FORMA_D", 'DESCRICAO_D', 'HR_INICIO', 'HR_FIM', 'TOTAL_HR', 'DATA']
-        #for col in cols_obr:
-            #if col not in df.columns: df[col] = ""
-            #else: df[col] = df[col].fillna("").astype(str)
-
-         for col in cols_obr:
-             if col not in df.columns: 
-                 df[col] = ""
-             else: 
-             # Impede que a coluna DATA seja convertida para string textualmente
-                 if col != "DATA":
-                     df[col] = df[col].fillna("").astype(str)
+        cols_obr = ["CLIENTE", "OBSERVAÇÕES", "CONSULTOR", "SOLICITANTE", "PARTICIPANTE", "FORMA", "RA", "LOCAL", "SITUACAO_RA", "HR_INICIO_D", "HR_FIM_D", "TOTAL_HR_D", "KM_D", "FORMA_D", "DATA", "HR_INICIO", "HR_FIM", "TOTAL_HR", "DESCRICAO_D"]
+        
+        for col in cols_obr:
+            if col not in df.columns: 
+                df[col] = ""
+            else: 
+                # Impede que a coluna DATA seja convertida para string textualmente
+                if col != "DATA":
+                    df[col] = df[col].fillna("").astype(str)
 
         df = df[df["RA"].str.strip() != ""]
         df = df[df["CLIENTE"].str.strip() != ""]
@@ -345,35 +342,21 @@ if btn_gerar:
         grupos = df.groupby(["CLIENTE", "RA"], as_index=False)
         arquivos_saida = []
 
-        #for (cliente, ra), grupo in grupos:
-            #solicitante = str(grupo["SOLICITANTE"].iloc[0]).strip()
-            #consultor = str(grupo["CONSULTOR"].iloc[0]).strip()
-            #participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
-            #local = str(grupo["LOCAL"].iloc[0]).strip()
+        for (cliente, ra), grupo in grupos:
+            solicitante = str(grupo["SOLICITANTE"].iloc[0]).strip()
+            consultor = str(grupo["CONSULTOR"].iloc[0]).strip()
+            participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
+            local = str(grupo["LOCAL"].iloc[0]).strip()
+    
+            # Tratamento seguro da conversão de datas para o grupo atual
+            datas_grupo = pd.to_datetime(grupo["DATA"], errors='coerce', dayfirst=True)
+    
+            data_inicio_rel = datas_grupo.min().strftime("%d/%m/%Y") if pd.notna(datas_grupo.min()) else "01/01/2026"
+            data_fim_rel = datas_grupo.max().strftime("%d/%m/%Y") if pd.notna(datas_grupo.max()) else "31/12/2026"
+    
+            dt_obj = datas_grupo.max().to_pydatetime() if pd.notna(datas_grupo.max()) else datetime.now()
+            data_rodape = data_por_extenso_pt(dt_obj)
 
-            # 1. ADICIONE ESTA LINHA ANTES PARA FORÇAR A CONVERSÃO DE TEXTO PARA DATA
-            #grupo["DATA"] = pd.to_datetime(grupo["DATA"], errors='coerce') #1.
-            #data_inicio_rel = grupo["DATA"].min().strftime("%d/%m/%Y")
-            #data_fim_rel = grupo["DATA"].max().strftime("%d/%m/%Y")
-            #dt_obj = grupo["DATA"].max().to_pydatetime()
-            #data_rodape = data_por_extenso_pt(dt_obj)
-
-         for (cliente, ra), grupo in grupos:
-             solicitante = str(grupo["SOLICITANTE"].iloc[0]).strip()
-             consultor = str(grupo["CONSULTOR"].iloc[0]).strip()
-             participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
-             local = str(grupo["LOCAL"].iloc[0]).strip()
-     
-         # Tratamento seguro da conversão de datas para o grupo atual
-             datas_grupo = pd.to_datetime(grupo["DATA"], errors='coerce', dayfirst=True)
-     
-             data_inicio_rel = datas_grupo.min().strftime("%d/%m/%Y") if pd.notna(datas_grupo.min()) else "01/01/2026"
-             data_fim_rel = datas_grupo.max().strftime("%d/%m/%Y") if pd.notna(datas_grupo.max()) else "31/12/2026"
-     
-             dt_obj = datas_grupo.max().to_pydatetime() if pd.notna(datas_grupo.max()) else datetime.now()
-             data_rodape = data_por_extenso_pt(dt_obj)
-
-        
             # ------ CÁLCULO DE HORAS ------
             total_seg, total_seg_d = 0, 0
             
@@ -408,23 +391,18 @@ if btn_gerar:
             texto_ra = str(ra).strip()
             ra_str = str(int(float(texto_ra))) if texto_ra != "" and texto_ra.replace('.', '', 1).isdigit() else "S/N"
             
-            #nome_base = f"RA Nº {ra_str} {cliente[:25].upper().replace(' ', ' ')}"
-            #file_pdf = os.path.join(PASTA_SAIDA, nome_base + ".pdf")
-            #file_xlsx = os.path.join(PASTA_SAIDA, nome_base + ".xlsx")
-
             # Limpa caracteres especiais do nome do cliente para evitar quebras no Linux
-             cliente_limpo = cliente[:25].upper()
-             for caractere in ["/", "\\", ":", "*", "?", '"', "<", ">", "|"]:
-                 cliente_limpo = cliente_limpo.replace(caractere, "")
-         
-             nome_base = f"RA Nº {ra_str} {cliente_limpo.strip()}"
-     
-             # Força o Linux do Streamlit Cloud a verificar/criar a pasta segundos antes do save
-             os.makedirs(PASTA_SAIDA, exist_ok=True)
-     
-             file_pdf = os.path.join(PASTA_SAIDA, nome_base + ".pdf")
-             file_xlsx = os.path.join(PASTA_SAIDA, nome_base + ".xlsx")
-
+            cliente_limpo = cliente[:25].upper()
+            for caractere in ["/", "\\", ":", "*", "?", '"', "<", ">", "|"]:
+                cliente_limpo = cliente_limpo.replace(caractere, "")
+        
+            nome_base = f"RA Nº {ra_str} {cliente_limpo.strip()}"
+    
+            # Força o Linux do Streamlit Cloud a verificar/criar a pasta segundos antes do save
+            os.makedirs(PASTA_SAIDA, exist_ok=True)
+    
+            file_pdf = os.path.join(PASTA_SAIDA, nome_base + ".pdf")
+            file_xlsx = os.path.join(PASTA_SAIDA, nome_base + ".xlsx")
 
             # --- 1. GERAÇÃO PDF ---
             pdf = PDF()
@@ -493,7 +471,7 @@ if btn_gerar:
 
             if pdf.get_y() > 220: pdf.add_page()
             pdf.ln(5); pdf.cell(0, 8, f"Curitiba, {data_rodape}.", ln=True); pdf.ln(4)
-            pdf.set_text_color(255, 0, 0); pdf.multi_cell(0, 5, "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram realizados conforme solicitado e estão em conformidade.")
+            pdf.set_text_color(255, 0, 0); pdf.multi_cell(0, 5, "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram executados conforme solicitado.")
             pdf.ln(10)
             pdf.cell(90, 8, "__________________________________", align="C"); pdf.cell(10); pdf.cell(90, 8, "__________________________________", align="C", ln=True)
             pdf.cell(90, 2, consultor, align="C"); pdf.cell(7); pdf.cell(90, 2, solicitante, align="C", ln=True)
@@ -606,7 +584,7 @@ if btn_gerar:
             
             ws.merge_range(f'A{row}:D{row}', f"Curitiba, {data_rodape}.", f_norm); row += 2
             
-            ws.merge_range(f'A{row}:H{row}', "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram realizados conforme solicitado.")
+            ws.merge_range(f'A{row}:H{row}', "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram executados conforme solicitado.", f_norm)
             ws.set_row(row - 1, 30); row += 5
             
             ws.merge_range(f'A{row}:C{row}', consultor, f_sign); ws.merge_range(f'F{row}:H{row}', solicitante, f_sign); row+=1
@@ -633,14 +611,14 @@ if btn_gerar:
         
         # Botão GIgante para baixar o ZIP
         with open(caminho_zip, "rb") as f_zip:
-             st.download_button(
-                 label="📦 BAIXAR TODOS OS RELATÓRIOS (ZIP)",
-                 data=f_zip,
-                 file_name=caminho_zip,
-                 mime="application/zip",
-                 type="primary",
-                 use_container_width=True
-             )
+            st.download_button(
+                label="📦 BAIXAR TODOS OS RELATÓRIOS (ZIP)",
+                data=f_zip,
+                file_name=caminho_zip,
+                mime="application/zip",
+                type="primary",
+                use_container_width=True
+            )
              
         # Coloquei os arquivos soltos dentro de um botão que abre e fecha pra não poluir a tela
         with st.expander("Ver arquivos individualmente..."):
@@ -650,6 +628,7 @@ if btn_gerar:
                 with open(path, "rb") as file:
                     ext = "📄 PDF" if ".pdf" in nome_arq.lower() else "📊 Excel"
                     cols_dw[i % 3].download_button(label=f"Baixar {ext}: {nome_arq[:15]}...", data=file, file_name=nome_arq, key=path)
+
 # Verifica se os relatórios já foram gerados nesta sessão NOVOOOOOOOOOOOOOOOO
 if st.session_state.relatorios_gerados:
     # Busca os arquivos na pasta para garantir que eles ainda existem
@@ -669,6 +648,7 @@ if st.session_state.relatorios_gerados:
                     file_name=nome_arq, 
                     key=f"btn_{path}" # Chave única para não dar conflito
                 )
+
 # =========================================================================
 # 1. FUNÇÃO DO POP-UP COM O SEU MOTOR DE ENVIO ORIGINAL (CORRIGIDO)
 # =========================================================================
