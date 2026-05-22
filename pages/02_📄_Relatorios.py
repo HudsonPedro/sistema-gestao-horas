@@ -133,7 +133,11 @@ def data_por_extenso_pt(dt):
     ano = dt.year
     return f"{dia:02d} de {mes} de {ano}"
 
-PASTA_SAIDA = "relatorios"
+#PASTA_SAIDA = "relatorios"
+#LOGO = "crti.jpg"
+#os.makedirs(PASTA_SAIDA, exist_ok=True)
+# No Streamlit Cloud, precisamos usar a pasta /tmp para ter permissão de escrita
+PASTA_SAIDA = os.path.join("/tmp", "relatorios")
 LOGO = "crti.jpg"
 os.makedirs(PASTA_SAIDA, exist_ok=True)
 
