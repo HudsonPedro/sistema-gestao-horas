@@ -344,11 +344,8 @@ if btn_gerar:
             participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
             local = str(grupo["LOCAL"].iloc[0]).strip()
 
-            #data_inicio_rel = grupo["DATA"].min().strftime("%d/%m/%Y")
-            #data_fim_rel = grupo["DATA"].max().strftime("%d/%m/%Y")
-            # Correção: Garante que o menor valor seja tratado como data antes do strftime
-            data_minima = pd.to_datetime(grupo["DATA"].min(), errors='coerce', dayfirst=True)
-            data_inicio_rel = data_minima.strftime("%d/%m/%Y") if pd.notna(data_minima) else "01/01/2026"
+            data_inicio_rel = grupo["DATA"].min().strftime("%d/%m/%Y")
+            data_fim_rel = grupo["DATA"].max().strftime("%d/%m/%Y")
             dt_obj = grupo["DATA"].max().to_pydatetime()
             data_rodape = data_por_extenso_pt(dt_obj)
 
