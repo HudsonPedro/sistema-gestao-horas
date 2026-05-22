@@ -326,9 +326,18 @@ if btn_gerar:
             st.stop()
 
         cols_obr = ["CLIENTE", "OBSERVAÇÕES", "CONSULTOR", "SOLICITANTE", "PARTICIPANTE", "FORMA", "RA", "LOCAL", "SITUACAO_RA", "HR_INICIO_D", "HR_FIM_D", "TOTAL_HR_D", "KM_D", "FORMA_D", 'DESCRICAO_D', 'HR_INICIO', 'HR_FIM', 'TOTAL_HR', 'DATA']
-        for col in cols_obr:
-            if col not in df.columns: df[col] = ""
-            else: df[col] = df[col].fillna("").astype(str)
+        #for col in cols_obr:
+            #if col not in df.columns: df[col] = ""
+            #else: df[col] = df[col].fillna("").astype(str)
+
+         for col in cols_obr:
+             if col not in df.columns: 
+             df[col] = ""
+         else: 
+         # Impede que a coluna DATA seja convertida para string textualmente
+         if col != "DATA":
+             df[col] = df[col].fillna("").astype(str)
+
 
         df = df[df["RA"].str.strip() != ""]
         df = df[df["CLIENTE"].str.strip() != ""]
@@ -337,19 +346,35 @@ if btn_gerar:
         grupos = df.groupby(["CLIENTE", "RA"], as_index=False)
         arquivos_saida = []
 
-        for (cliente, ra), grupo in grupos:
-            solicitante = str(grupo["SOLICITANTE"].iloc[0]).strip()
-            consultor = str(grupo["CONSULTOR"].iloc[0]).strip()
-            participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
-            local = str(grupo["LOCAL"].iloc[0]).strip()
+        #for (cliente, ra), grupo in grupos:
+            #solicitante = str(grupo["SOLICITANTE"].iloc[0]).strip()
+            #consultor = str(grupo["CONSULTOR"].iloc[0]).strip()
+            #participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
+            #local = str(grupo["LOCAL"].iloc[0]).strip()
 
             # 1. ADICIONE ESTA LINHA ANTES PARA FORÇAR A CONVERSÃO DE TEXTO PARA DATA
-            grupo["DATA"] = pd.to_datetime(grupo["DATA"], errors='coerce') #1.
-            data_inicio_rel = grupo["DATA"].min().strftime("%d/%m/%Y")
-            data_fim_rel = grupo["DATA"].max().strftime("%d/%m/%Y")
-            dt_obj = grupo["DATA"].max().to_pydatetime()
-            data_rodape = data_por_extenso_pt(dt_obj)
-                        
+            #grupo["DATA"] = pd.to_datetime(grupo["DATA"], errors='coerce') #1.
+            #data_inicio_rel = grupo["DATA"].min().strftime("%d/%m/%Y")
+            #data_fim_rel = grupo["DATA"].max().strftime("%d/%m/%Y")
+            #dt_obj = grupo["DATA"].max().to_pydatetime()
+            #data_rodape = data_por_extenso_pt(dt_obj)
+
+         for (cliente, ra), grupo in grupos:
+             solicitante = str(grupo["SOLICITANTE"].iloc[0]).strip()
+             consultor = str(grupo["CONSULTOR"].iloc[0]).strip()
+             participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
+             local = str(grupo["LOCAL"].iloc[0]).strip()
+     
+         # Tratamento seguro da conversão de datas para o grupo atual
+             datas_grupo = pd.to_datetime(grupo["DATA"], errors='coerce', dayfirst=True)
+     
+             data_inicio_rel = datas_grupo.min().strftime("%d/%m/%Y") if pd.notna(datas_grupo.min()) else "01/01/2026"
+             data_fim_rel = datas_grupo.max().strftime("%d/%m/%Y") if pd.notna(datas_grupo.max()) else "31/12/2026"
+     
+             dt_obj = datas_grupo.max().to_pydatetime() if pd.notna(datas_grupo.max()) else datetime.now()
+             data_rodape = data_por_extenso_pt(dt_obj)
+
+        
             # ------ CÁLCULO DE HORAS ------
             total_seg, total_seg_d = 0, 0
             
@@ -384,9 +409,23 @@ if btn_gerar:
             texto_ra = str(ra).strip()
             ra_str = str(int(float(texto_ra))) if texto_ra != "" and texto_ra.replace('.', '', 1).isdigit() else "S/N"
             
-            nome_base = f"RA Nº {ra_str} {cliente[:25].upper().replace(' ', ' ')}"
-            file_pdf = os.path.join(PASTA_SAIDA, nome_base + ".pdf")
-            file_xlsx = os.path.join(PASTA_SAIDA, nome_base + ".xlsx")
+            #nome_base = f"RA Nº {ra_str} {cliente[:25].upper().replace(' ', ' ')}"
+            #file_pdf = os.path.join(PASTA_SAIDA, nome_base + ".pdf")
+            #file_xlsx = os.path.join(PASTA_SAIDA, nome_base + ".xlsx")
+
+            # Limpa caracteres especiais do nome do cliente para evitar quebras no Linux
+             cliente_limpo = cliente[:25].upper()
+             for caractere in ["/", "\\", ":", "*", "?", '"', "<", ">", "|"]:
+                 cliente_limpo = cliente_limpo.replace(caractere, "")
+         
+             nome_base = f"RA Nº {ra_str} {cliente_limpo.strip()}"
+     
+             # Força o Linux do Streamlit Cloud a verificar/criar a pasta segundos antes do save
+             os.makedirs(PASTA_SAIDA, exist_ok=True)
+     
+             file_pdf = os.path.join(PASTA_SAIDA, nome_base + ".pdf")
+             file_xlsx = os.path.join(PASTA_SAIDA, nome_base + ".xlsx")
+
 
             # --- 1. GERAÇÃO PDF ---
             pdf = PDF()
