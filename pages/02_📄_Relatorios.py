@@ -124,7 +124,7 @@ with st.sidebar:
     if st.button("📑 Termo Encerramento", use_container_width=True):
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
 
-#   versionamento
+    # versionamento
     st.divider()
     st.caption("v1.0 - 14052026")  # 16:43 sem alterações
     st.caption("Todos os direitos reservados")
@@ -731,7 +731,7 @@ if btn_gerar:
             pdf.multi_cell(
                 0,
                 5,
-                "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram realizados conforme solicitado [...]",
+                "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram realizados conforme[...]",
                 align="C",
             )
             pdf.ln(10)
@@ -971,7 +971,7 @@ if btn_gerar:
             row += 2
             ws.merge_range(
                 f"A{row}:H{row}",
-                "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram realizados conforme solicitado.[...]",
+                "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram realizados conforme[...]",
             )
             ws.set_row(row - 1, 30)
             row += 5
