@@ -211,7 +211,7 @@ try:
     df_leg = carregar_legendas()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
 except Exception as e:
-    st.error(f"Erro ao carregar os clientes da planilha: {e}")
+    st.error(f"Erro ao carregar os clientes da base de dados: {e}")
     lista_clientes = []
 
 # Cabeçalho Principal Visual
