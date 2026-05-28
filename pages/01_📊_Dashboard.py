@@ -172,7 +172,7 @@ with st.spinner("⏳ Analisando Dados..."):
         dict_abas = carregar_dados()
         abas_disponiveis = list(dict_abas.keys())
     except Exception as e:
-        st.error(f"❌ Erro ao baixar planilha: Verifique se possui a biblioteca openpyxl instalada. Erro: {e}")
+        st.error(f"❌ Erro ao baixar base de dados: Verifique se possui a biblioteca openpyxl instalada. Erro: {e}")
         st.stop()
 # Selector de mês
 col1, col2 = st.columns(2)
