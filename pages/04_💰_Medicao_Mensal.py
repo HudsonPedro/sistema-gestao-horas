@@ -98,7 +98,7 @@ def formatar_br(valor):
 # --- CARREGAR BASE DE DADOS DO GOOGLE SHEETS ---
 @st.cache_data(ttl=600)
 #def carregar_planilha_todas_abas():
- def carregar_base_de_dados():
+ def carregar_planilha_todas_abas():
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
     response = requests.get(url)
     return pd.read_excel(io.BytesIO(response.content), sheet_name=None, engine='openpyxl')
@@ -174,7 +174,7 @@ st.markdown("---")
 # Conectando à planilha
 with st.spinner("Analisando dados..."):
     try:
-        dict_abas = carregar_base_de_dados()
+        dict_abas = carregar_planilha_todas_abas()
         abas_disponiveis = list(dict_abas.keys())
     except Exception as e:
         st.error(f"Erro ao baixar base de dados: {e}")
