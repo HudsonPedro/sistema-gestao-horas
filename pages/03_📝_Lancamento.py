@@ -206,11 +206,11 @@ with st.form("form_lancamento", clear_on_submit=True):
     participante = st.text_input("PARTICIPANTES")
     descricao_d = st.text_area("DESCRICAO(Desloc)")
 
-    btn_enviar = st.form_submit_button("🚀 Gravar na Planilha")
+    btn_enviar = st.form_submit_button("🚀 Gravar na Base de Dados")
 
 # 8. LÓGICA DE GRAVAÇÃO (AJUSTADA)
 if btn_enviar:
-    with st.spinner("⏳ Localizando data na planilha..."):
+    with st.spinner("⏳ Localizando data na base de dados..."):
         try:
             client = conectar_google_sheets()
             planilha_id = "1m__s5DERX8Lca7r9hi5oZR3HRtmA6yZjVeqqGXyisp4"
