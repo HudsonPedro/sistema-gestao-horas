@@ -135,7 +135,7 @@ with st.sidebar:
     
     st.divider()
     st.markdown("### Configurações GERAIS")
-    if st.button("🔄 Atualizar Planilha", use_container_width=True):
+    if st.button("🔄 Atualizar Base de Dados", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
   
@@ -171,12 +171,12 @@ except:
 st.markdown("---")
 
 # Conectando à planilha
-with st.spinner("Analisando dados das planilhas..."):
+with st.spinner("Analisando dados..."):
     try:
         dict_abas = carregar_planilha_todas_abas()
         abas_disponiveis = list(dict_abas.keys())
     except Exception as e:
-        st.error(f"Erro ao baixar planilha base: {e}")
+        st.error(f"Erro ao baixar base de dados: {e}")
         st.stop()
 
 # --- CONTROLES DE FILTRO DIRETOS NA TELA ---
@@ -290,7 +290,7 @@ dados_faturamento["qtd_horas"] = total_horas_faturar
 dados_faturamento["preco_total"] = preco_total_calculado
 
 # --- PRÉVIA DOS RESULTADOS ---
-st.markdown("### Resumo do Faturamento Calculado da Planilha")
+st.markdown("### Resumo do Faturamento Calculado da Base de Dados")
 col_m1, col_m2, col_m3 = st.columns(3)
 col_m1.metric("Total de Horas Encontradas", total_horas_faturar)
 col_m2.metric("Preço Unitário da Hora", f"R$ {formatar_br(valor_hora)}")
