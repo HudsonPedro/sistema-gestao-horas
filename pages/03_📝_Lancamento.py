@@ -184,21 +184,21 @@ with st.form("form_lancamento", clear_on_submit=True):
     
     with col1:
         ra = st.text_input("RA (Número)")
-        situacao_ra = st.selectbox("SITUACAO", options=lista_situacao)
+        situacao_ra = st.selectbox("SITUACAO", options=lista_situacao, value="Em Elaboração")
         consultor = st.text_input("CONSULTOR", value="Hudson Valente")
         local = st.selectbox("LOCAL", options=lista_local)
        
     with col2:
-        hr_inicio = st.time_input("HORA INICIO")
-        hr_fim = st.time_input("HORA FIM")
+        hr_inicio = st.time_input("HORA INICIO", value=" ")
+        hr_fim = st.time_input("HORA FIM", value=" ")
         solicitante = st.selectbox("SOLICITANTE", options=lista_solicitantes)
         forma = st.selectbox("FORMA", ["Remoto", "Presencial"])
         
     with col3:
-        hr_inicio_d = st.time_input("HORA INICIO(Desloc)")
-        hr_fim_d = st.time_input("HORA FIM(Desloc)")
+        hr_inicio_d = st.time_input("HORA INICIO(Desloc)", value=" ")
+        hr_fim_d = st.time_input("HORA FIM(Desloc)", value=" ")
         km_d = st.number_input("KM(Desloc)", min_value=0.0, step=0.1)
-        forma_d = st.text_input("FORMA(Desloc)")
+        forma_d = st.selectbox("FORMA(Desloc)", [" ", "Carro Próprio", "Ônibus", "Taxi/Uber", "Avião"])
 
     with col4:
         descricao_p = st.text_input("DESCRICAO(Pendência)")
