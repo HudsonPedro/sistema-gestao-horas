@@ -380,7 +380,7 @@ if btn_gerar:
                         kv=float(v); total_km += kv; tem_desl = True if kv > 0 else False
                     except: pass
             #==== pendencias ====#
-            status_p = None
+            status_p = 0
             tem_pend = False
             for val1 in grupo["STATUS_P"]:
                 v1 = str(val1).strip().replace(',', '.')
@@ -480,9 +480,9 @@ if btn_gerar:
 
                     pdf.set_xy(x_i + 2, y_i + 2)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Data: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(30, 5, dd, ln=False)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Item: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(15, 5, hi_d, ln=False)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Responsável: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(38, 5, hf_d, ln=False)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(30, 5, "Status: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, tt_d, ln=True)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Item: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(15, 5, ds_p, ln=False)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Responsável: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(38, 5, rs_p, ln=False)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(30, 5, "Status: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, st_p, ln=True)
                     
         #===== FIM PEDENCIAS =====#
 
