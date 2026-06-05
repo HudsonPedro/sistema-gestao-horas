@@ -202,8 +202,8 @@ with st.form("form_lancamento", clear_on_submit=True):
 
     with col4:
         descricao_p = st.text_input("DESCRICAO(Pendência)")
-        responsavel_p = st.selectbox("RESPONSÁVEL(Pendência)", ["Cliente", "CRTI"], value="")
-        status_p = st.selectbox("STATUS(Pendência)", ["Pendente", "Realizado"],  value="")
+        responsavel_p = st.selectbox("RESPONSÁVEL(Pendência)", [" ","Cliente", "CRTI"])
+        status_p = st.selectbox("STATUS(Pendência)", [" ", "Pendente", "Realizado"])
            
     st.markdown("---")
     observacoes = st.text_area("OBSERVAÇÕES")
