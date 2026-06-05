@@ -184,7 +184,7 @@ with st.form("form_lancamento", clear_on_submit=True):
     
     with col1:
         ra = st.text_input("RA (Número)")
-        situacao_ra = st.selectbox("SITUACAO", options=lista_situacao, value="Em Elaboração")
+        situacao_ra = st.selectbox("SITUACAO", options=lista_situacao[2])
         consultor = st.text_input("CONSULTOR", value="Hudson Valente")
         local = st.selectbox("LOCAL", options=lista_local)
        
