@@ -124,7 +124,7 @@ with st.sidebar:
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
              
     st.divider()
-    st.caption("v1.0 - 11052026")
+    st.caption("v1.0001-05062026") ###==> INCLUSÃO PENDENCIAS <== v1.0-11052026
     st.caption("Todos os direitos reservados")
     st.caption("Copyright ©2026 HPtech Informática ME")
 
@@ -137,7 +137,6 @@ try:
 except:
     lista_clientes = ["Erro ao carregar"]
     lista_situacao = ["Concluído", "Pendente"]
-    
 
 #st.title("📝 Lançamento de Atividades")
 # Função para converter imagem local para Base64 (para funcionar dentro do HTML)
@@ -181,7 +180,7 @@ except:
 
 # 7. FORMULÁRIO
 with st.form("form_lancamento", clear_on_submit=True):
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         ra = st.text_input("RA (Número)")
@@ -201,10 +200,16 @@ with st.form("form_lancamento", clear_on_submit=True):
         km_d = st.number_input("KM(Desloc)", min_value=0.0, step=0.1)
         forma_d = st.text_input("FORMA(Desloc)")
 
+    with col4:
+        descricao_p = st.text_input("DESCRICAO(Pendência)")
+        responsavel_p = st.selectbox("RESPONSÁVEL(Pendência)", ["Cliente", "CRTI"], value="")
+        status_p = st.selectbox("STATUS(Pendência)", ["Pendente", "Realizado"],  value="")
+           
     st.markdown("---")
     observacoes = st.text_area("OBSERVAÇÕES")
     participante = st.text_input("PARTICIPANTES")
     descricao_d = st.text_area("DESCRICAO(Desloc)")
+    
 
     btn_enviar = st.form_submit_button("🚀 Gravar na Base de Dados")
 
@@ -223,7 +228,7 @@ if btn_enviar:
             
             aba = sheet.worksheet(nome_aba)
             
-                        # --- LÓGICA DE BUSCA DE LINHA (EVITA SOBREPOSIÇÃO) ---
+            # --- LÓGICA DE BUSCA DE LINHA (EVITA SOBREPOSIÇÃO) ---
             data_procurada = data_atendimento.strftime('%d/%m/%Y')
             coluna_datas = aba.col_values(1)   # Coluna A (Datas)
             coluna_clientes = aba.col_values(9) # Coluna I (Clientes) - Ajuste se necessário
@@ -232,7 +237,7 @@ if btn_enviar:
                 # 1. Acha a primeira ocorrência da data
                 linha_destino = coluna_datas.index(data_procurada) + 1
                 
-                # 2. Enquanto a linha atual tiver a mesma data E o cliente não estiver vazio, desce
+                # 2. Enquanto a linha atual tiver a mesma data E o cliente não estiver vazio, desce para próxima linha
                 # Isso permite lançar várias atividades no mesmo dia
                 while (linha_destino <= len(coluna_datas) and 
                        coluna_datas[linha_destino-1] == data_procurada and 
@@ -274,7 +279,10 @@ if btn_enviar:
                 {'range': f'T{linha_destino}', 'values': [[hr_fim_d.strftime('%H:%M')]]},
                 {'range': f'V{linha_destino}', 'values': [[km_d]]},
                 {'range': f'W{linha_destino}', 'values': [[forma_d]]},
-                {'range': f'X{linha_destino}', 'values': [[descricao_d]]}
+                {'range': f'X{linha_destino}', 'values': [[descricao_d]]},
+                {'range': f'Y{linha_destino}', 'values': [[descricao_p]]},
+                {'range': f'Z{linha_destino}', 'values': [[responsavel_p]]},
+                {'range': f'AA{linha_destino}', 'values': [[status_p]]}
             ]
 
             aba.batch_update(valores_atualizacao, value_input_option='USER_ENTERED')
