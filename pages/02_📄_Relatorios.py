@@ -326,7 +326,7 @@ if btn_gerar:
             st.error("⚠️ Nenhum registro encontrado para estas datas nesta aba.")
             st.stop()
 
-        cols_obr = ["CLIENTE", "OBSERVAÇÕES", "CONSULTOR", "SOLICITANTE", "PARTICIPANTE", "FORMA", "RA", "LOCAL", "SITUACAO_RA", "HR_INICIO_D", "HR_FIM_D", "TOTAL_HR_D", "KM_D", "FORMA_D", 'DESCRICAO']
+        cols_obr = ["CLIENTE", "OBSERVAÇÕES", "CONSULTOR", "SOLICITANTE", "PARTICIPANTE", "FORMA", "RA", "LOCAL", "SITUACAO_RA", "HR_INICIO_D", "HR_FIM_D", "TOTAL_HR_D", "KM_D", "FORMA_D", 'DESCRICAO', "DESCRICAO_P", "RESPONSAVEL_P", "STATUS_P"]
         for col in cols_obr:
             if col not in df.columns: df[col] = ""
             else: df[col] = df[col].fillna("").astype(str)
@@ -379,7 +379,16 @@ if btn_gerar:
                     try: 
                         kv=float(v); total_km += kv; tem_desl = True if kv > 0 else False
                     except: pass
-
+            #==== pendencias ====#
+            status_p = None
+            tem_pend = False
+            for val1 in grupo["STATUS_P"]:
+                v1 = str(val1).strip().replace(',', '.')
+                if v1 not in ["", "nan", "None", "0", "0.0"]:
+                    try: 
+                        kv1=float(v); status_p += kv1; tem_pend = True if kv1 > 0 else False
+                    except: pass
+            #==== fim pendencias ====#
             texto_ra = str(ra).strip()
             ra_str = str(int(float(texto_ra))) if texto_ra != "" and texto_ra.replace('.', '', 1).isdigit() else "S/N"
             
@@ -452,6 +461,32 @@ if btn_gerar:
                     pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Descrição: ", ln=False); pdf.set_font('Arial', '', 10); pdf.multi_cell(0, 5, ds_d if ds_d else "-")
                     pdf.set_y(pdf.get_y() + 2); pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
 
+        #===== PENDENCIAS =====#
+            if tem_pend:
+                if pdf.get_y() > 220: pdf.add_page()
+                pdf.ln(2)
+                pdf.set_font("Arial", "B", 10); pdf.set_fill_color(255, 247, 5); pdf.set_text_color(255, 255, 255)
+                pdf.cell(190, 10, "PENDÊNCIAS(Obrigatório)", border=1, ln=True, fill=True, align="C")
+                pdf.set_text_color(0, 0, 0)
+                for _, linha in grupo.iterrows():
+                    pe_s = str(linha.get("STATUS_P", "")).strip().replace(' ', ',', '.')
+                    if pe_s in ["", "nan", "None", "0", "0.0"]: continue 
+                    if pdf.get_y() > 245: pdf.add_page()
+                    y_i = pdf.get_y(); x_i = 10
+                    dd = pd.to_datetime(linha["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha["DATA"]) else ""
+                    ds_p = str(linha.get("DESCRICAO_P", "")).strip()
+                    rs_p = str(linha.get("RESPONSAVEL_P", "")).strip()
+                    st_p = str(linha.get("STATUS_P", "Pendente")).strip()
+
+                    pdf.set_xy(x_i + 2, y_i + 2)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Data: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(30, 5, dd, ln=False)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Item: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(15, 5, hi_d, ln=False)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Responsável: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(38, 5, hf_d, ln=False)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(30, 5, "Status: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, tt_d, ln=True)
+                    
+        #===== FIM PEDENCIAS =====#
+
+            
             if pdf.get_y() > 220: pdf.add_page()
             pdf.ln(5); pdf.cell(0, 8, f"Curitiba, {data_rodape}.", ln=True); pdf.ln(4)
             pdf.set_text_color(255, 0, 0); pdf.multi_cell(0, 5, "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram prestados e confirmado como aceitos.", align="C"); pdf.set_text_color(0, 0, 0)
