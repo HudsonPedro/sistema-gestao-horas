@@ -189,8 +189,8 @@ with st.form("form_lancamento", clear_on_submit=True):
         local = st.selectbox("LOCAL", options=lista_local)
        
     with col2:
-        hr_inicio = st.time_input("HORA INICIO")
-        hr_fim = st.time_input("HORA FIM")
+        hr_inicio = st.time_input("HORA INICIO", value=None)
+        hr_fim = st.time_input("HORA FIM", value=None)
         solicitante = st.selectbox("SOLICITANTE", options=lista_solicitantes)
         forma = st.selectbox("FORMA", ["Remoto", "Presencial"])
         
