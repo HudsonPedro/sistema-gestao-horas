@@ -346,27 +346,20 @@ if btn_gerar:
                 if col != "DATA":
                     df[col] = df[col].fillna("").astype(str)
                     
-              df = df[df["RA"].astype(str).str.strip() != ""]
+        df = df[df["RA"].astype(str).str.strip() != ""]
         df = df[df["CLIENTE"].astype(str).str.strip() != ""]
         df = df[df["SITUACAO_RA"].astype(str).str.strip() == "Em Elaboração"]
         
-        # JUNTAR TODAS AS ABAS: Varre a planilha inteira atrás de pendências de outros meses
-        lista_frames = []
-        for nome_aba, df_aba in dict_abas.items():
-            df_temp = df_aba.copy()
-            for col_p in ['DESCRICAO_P', 'RESPONSAVEL_P', 'STATUS_P', 'CLIENTE', 'DATA']:
-                if col_p not in df_temp.columns:
-                    df_temp[col_p] = ""
-                else:
-                    if col_p != "DATA":
-                        df_temp[col_p] = df_temp[col_p].fillna("").astype(str)
-            lista_frames.append(df_temp[['CLIENTE', 'DATA', 'DESCRICAO_P', 'RESPONSAVEL_P', 'STATUS_P']])
-            
-        df_todas_pendencias = pd.concat(lista_frames, ignore_index=True)
-        
+        # Filtro global mapeado por cliente para buscar todas as pendências da planilha completa (histórico)
+        df_todas_pendencias = df_completo.copy()
+        for col_p in ['DESCRICAO_P', 'RESPONSAVEL_P', 'STATUS_P']:
+            if col_p not in df_todas_pendencias.columns:
+                df_todas_pendencias[col_p] = ""
+            else:
+                df_todas_pendencias[col_p] = df_todas_pendencias[col_p].fillna("").astype(str)
+                
         grupos = df.groupby(["CLIENTE", "RA"], as_index=False)
         arquivos_saida = []
-
         for (cliente, ra), grupo in grupos:
             solicitante = str(grupo["SOLICITANTE"].iloc[0]).strip()
             consultor = str(grupo["CONSULTOR"].iloc[0]).strip()
@@ -800,4 +793,3 @@ if btn_enviar_emails:
         st.stop()
  
     confirmar_envio_atendimentos_popup(arquivos_validos)
-
