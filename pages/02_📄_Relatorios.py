@@ -468,6 +468,7 @@ if btn_gerar:
                     if pdf.get_y() > 210: pdf.add_page()
                     pdf.ln(3); pdf.set_font("Arial", "B", 10); pdf.set_fill_color(255, 242, 204); pdf.set_text_color
             # --- CONTINUAÇÃO DO BLOCO DO EXCEL (FECHAMENTO) ---
+                        # --- CORREÇÃO DO FECHAMENTO DO EXCEL (DENTRO DO LOOP) ---
             ws.hide_gridlines(2)
             wb.close()
             arquivos_saida.append(file_xlsx)
@@ -570,3 +571,4 @@ if btn_enviar_emails:
         st.stop()
  
     confirmar_envio_atendimentos_popup(arquivos_validos)
+
