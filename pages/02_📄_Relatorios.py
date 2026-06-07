@@ -410,15 +410,21 @@ if btn_gerar:
             # --- FILTRAGEM DINÂMICA DE PENDÊNCIAS HISTÓRICAS DO CLIENTE ---
                         # --- FILTRAGEM DINÂMICA DE PENDÊNCIAS HISTÓRICAS DO CLIENTE ---
                        # --- FILTRAGEM DINÂMICA DE PENDÊNCIAS HISTÓRICAS DO CLIENTE ---
+                       # --- FILTRAGEM DINÂMICA E ORDENAÇÃO DECRESCENTE DE PENDÊNCIAS ---
             grupo_pendencias = df_todas_pendencias[
                 (df_todas_pendencias["CLIENTE"].astype(str).str.strip() == str(cliente).strip()) &
                 (df_todas_pendencias["STATUS_P"].astype(str).str.strip() == "Pendente") &
                 (df_todas_pendencias["DESCRICAO_P"].astype(str).str.strip() != "")
-            ]
+            ].copy()
+            
+            # Converte para data e ordena de forma decrescente (mais recente primeiro)
+            grupo_pendencias["DATA"] = pd.to_datetime(grupo_pendencias["DATA"], errors="coerce", dayfirst=True)
+            grupo_pendencias = grupo_pendencias.sort_values(by="DATA", ascending=False)
             
             # DUPLA SEGURANÇA: Registra os dois nomes na memória para eliminar os NameErrors de vez
             tem_pendencias = not grupo_pendencias.empty
             tem_pend = tem_pendencias
+
 
 
             
