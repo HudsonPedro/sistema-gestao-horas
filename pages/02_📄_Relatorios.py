@@ -400,12 +400,15 @@ if btn_gerar:
             file_xlsx = os.path.join(PASTA_SAIDA, nome_base + ".xlsx")
             
             # --- FILTRAGEM DINÂMICA DE PENDÊNCIAS HISTÓRICAS DO CLIENTE ---
+                        # --- FILTRAGEM DINÂMICA DE PENDÊNCIAS HISTÓRICAS DO CLIENTE ---
             grupo_pendencias = df_todas_pendencias[
                 (df_todas_pendencias["CLIENTE"].astype(str).str.strip() == str(cliente).strip()) &
                 (df_todas_pendencias["STATUS_P"].astype(str).str.strip() == "Pendente") &
                 (df_todas_pendencias["DESCRICAO_P"].astype(str).str.strip() != "")
             ]
-            tem_pend = not grupo_pendencias.empty
+            # ALTERAÇÃO CIRÚRGICA: Mudado o nome para bater com a verificação de baixo
+            tem_pendencias = not grupo_pendencias.empty
+
             
             # --- 1. GERAÇÃO PDF ---
             pdf = PDF()
