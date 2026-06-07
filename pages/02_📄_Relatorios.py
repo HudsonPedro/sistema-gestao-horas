@@ -501,12 +501,15 @@ if btn_gerar:
                     status_p = str(linha_p["STATUS_P"]).strip()
                     
                     pdf.set_xy(x_i + 2, y_i + 2)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(14, 5, "Data: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(30, 5, dp_data, ln=False)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(25, 5, "Responsável: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(50, 5, resp_p, ln=False)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(15, 5, "Status: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, status_p, ln=True)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(12, 5, "Data: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(22, 5, dp_data, ln=False)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(25, 5, "Responsável: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(22, 5, resp_p, ln=False)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(14, 5, "Status: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(20, 5, status_p, ln=False)
                     
-                    pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Descrição: ", ln=False); pdf.set_font('Arial', '', 10); pdf.multi_cell(164, 5, desc_p)
-                    pdf.set_y(pdf.get_y() + 2); pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
+                    # Continua na mesma linha horizontal sem quebrar
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Descrição: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, desc_p, ln=True)
+                    pdf.set_y(pdf.get_y() + 2)
+                    pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
+
                     
             if pdf.get_y() > 220: pdf.add_page()
             pdf.ln(5); pdf.set_font("Arial", "", 10); pdf.set_text_color(0, 0, 0); pdf.cell(0, 8, f"Curitiba, {data_rodape}.", ln=True); pdf.ln(4)
