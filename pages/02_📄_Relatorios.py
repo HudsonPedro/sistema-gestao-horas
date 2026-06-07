@@ -569,38 +569,55 @@ if btn_gerar:
                     pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
 
             # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO PDF (ORDEM CORRIGIDA E FUNDO AMARELO) ---
+            # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO PDF (TABELA UNIFICADA IGUAL ATIVIDADES) AJUSTE DAS LINHAS DO QUADRO---
             if tem_pendencias:
                 if pdf.get_y() > 220:
                     pdf.add_page()
                 pdf.ln(2)
+                y_inicio_bloco = pdf.get_y() # Guarda onde o quadro começa
+                x_i = 10
+                
                 pdf.set_font("Arial", "B", 10)
                 pdf.set_fill_color(255, 192, 0)
                 pdf.set_text_color(0, 0, 0)
                 pdf.cell(190, 10, "PENDÊNCIAS", border=1, ln=True, fill=True, align="C")
-                for _, linha_p in grupo_pendencias.iterrows():
+                
+                total_linhas = len(grupo_pendencias)
+                for index, linha_p in enumerate(grupo_pendencias.iterrows()):
+                    # Desempacota a linha corretamente
+                    _, dados_p = linha_p
                     if pdf.get_y() > 245:
+                        # Se quebrar página, fecha o retângulo anterior e abre novo na próxima folha
+                        pdf.rect(x_i, y_inicio_bloco, 190, pdf.get_y() - y_inicio_bloco)
                         pdf.add_page()
-                    y_i = pdf.get_y()
-                    x_i = 10
+                        y_inicio_bloco = pdf.get_y()
+                        
+                    y_linha = pdf.get_y()
                     
                     try:
-                        dp_data = pd.to_datetime(linha_p["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_p["DATA"]) else data_inicio_rel
+                        dp_data = pd.to_datetime(dados_p["DATA"]).strftime("%d/%m/%Y") if pd.notnull(dados_p["DATA"]) else data_inicio_rel
                     except:
-                        dp_data = str(linha_p["DATA"])[0:10] if str(linha_p["DATA"]).strip() != "" else data_inicio_rel
+                        dp_data = str(dados_p["DATA"])[0:10] if str(dados_p["DATA"]).strip() != "" else data_inicio_rel
                         
-                    desc_p = str(linha_p["DESCRICAO_P"]).strip()
-                    resp_p = str(linha_p["RESPONSAVEL_P"]).strip()
-                    status_p = str(linha_p["STATUS_P"]).strip()
+                    desc_p = str(dados_p["DESCRICAO_P"]).strip()
+                    resp_p = str(dados_p["RESPONSAVEL_P"]).strip()
+                    status_p = str(dados_p["STATUS_P"]).strip()
                     
-                    pdf.set_xy(x_i + 2, y_i + 2)
-                    # Alinhamento 100% horizontal na mesma linha: Data -> Descrição -> Responsável -> Status
+                    pdf.set_xy(x_i + 2, y_linha + 2)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(12, 5, "Data: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(22, 5, dp_data, ln=False)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Descrição: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(50, 5, desc_p, ln=False)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(24, 5, "Responsável: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(28, 5, resp_p, ln=False)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(14, 5, "Status: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, status_p, ln=True)
                     
-                    pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
                     pdf.set_y(pdf.get_y() + 2)
+                    # Se não for a última pendência, desenha a linha separadora horizontal idêntica às atividades
+                    if index < total_linhas - 1:
+                        pdf.line(x_i, pdf.get_y(), x_i + 190, pdf.get_y())
+                
+                # Desenha o retângulo externo unificado fechando todo o bloco de pendências
+                pdf.rect(x_i, y_inicio_bloco, 190, pdf.get_y() - y_inicio_bloco)
+                pdf.set_y(pdf.get_y() + 2)
+
 
             if pdf.get_y() > 220:
                 pdf.add_page()
