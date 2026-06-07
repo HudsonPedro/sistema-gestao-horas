@@ -283,12 +283,12 @@ else:
     if "data_fim_val" not in st.session_state:
         st.session_state.data_fim_val = pd.to_datetime(max_data_aba).date()
 
-st.sidebar.markdown("### Filtro de Datas")
-data_inicio_selecionada = st.sidebar.date_input("**Data Início**", value=st.session_state.data_inicio_val, key="dt_ini_input")
-data_fim_selecionada = st.sidebar.date_input("**Data Fim**", value=st.session_state.data_fim_val, key="dt_fim_input")
+#st.sidebar.markdown("### Filtro de Datas")
+#data_inicio_selecionada = st.sidebar.date_input("**Data Início**", value=st.session_state.data_inicio_val, key="dt_ini_input")
+#data_fim_selecionada = st.sidebar.date_input("**Data Fim**", value=st.session_state.data_fim_val, key="dt_fim_input")
 
-st.session_state.data_inicio_val = data_inicio_selecionada
-st.session_state.data_fim_val = data_fim_selecionada
+#st.session_state.data_inicio_val = data_inicio_selecionada
+#st.session_state.data_fim_val = data_fim_selecionada
 
 btn_gerar = st.sidebar.button("🚀 **GERAR RELATÓRIOS**", type="primary", use_container_width=True)
 
