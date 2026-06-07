@@ -245,21 +245,29 @@ with st.spinner("⏳ Analisando Dados..."):
         st.stop()
  
 st.sidebar.markdown("### Seleção da Base")
+# ====== NOVO CARIMBAR RELATORIO JA GERADOS E LIMPAR ===========
 def limpar_estado():
     st.session_state.relatorios_gerados = False
 
 aba_selecionada = st.sidebar.selectbox("**Selecione o Mês:**", abas_disponiveis, on_change=limpar_estado)
 
+# --- DADOS DA ABA SELECIONADA ---
 df_completo = dict_abas[aba_selecionada].copy()
 df_completo["DATA"] = pd.to_datetime(df_completo["DATA"], errors="coerce", dayfirst=True)
 
+# Descobre a menor e maior data presentes SOMENTE na aba selecionada (Lógica Original Inteligente)
 min_data_aba = df_completo["DATA"].min()
 max_data_aba = df_completo["DATA"].max()
 
-if pd.isnull(min_data_aba): 
-    min_data_aba = datetime(2026, 6, 1)
-if pd.isnull(max_data_aba): 
-    max_data_aba = datetime(2026, 6, 30)
+# Se a aba estiver vazia, define um padrão de segurança
+if pd.isnull(min_data_aba): min_data_aba = datetime(2026, 1, 1)
+if pd.isnull(max_data_aba): max_data_aba = datetime(2026, 1, 31)
+
+st.sidebar.markdown("### Filtro de Datas")
+# Renderiza os calendários puxando os limites nativos calculados da aba selecionada de forma instantânea
+data_inicio_selecionada = st.sidebar.date_input("**Data Início**", value=pd.to_datetime(min_data_aba).date())
+data_fim_selecionada = st.sidebar.date_input("**Data Fim**", value=pd.to_datetime(max_data_aba).date())
+
 
 # CONTROLE DE ESTADO AUTOMÁTICO: Sincroniza os seletores de data com o mês escolhido
 if "aba_anterior" not in st.session_state:
