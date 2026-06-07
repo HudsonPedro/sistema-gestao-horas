@@ -661,6 +661,7 @@ if btn_gerar:
             ws.merge_range(f'A{row}:C{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
             ws.merge_range(f'F{row}:H{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
             
+                       # --- CORREÇÃO DA LINHA DO EXCEL (MANTENDO O ALINHAMENTO DO SEU ARQUIVO) ---
             ws.hide_gridlines(2)
             wb.close()
             arquivos_saida.append(file_xlsx)
@@ -691,9 +692,10 @@ if btn_gerar:
 
 if st.session_state.relatorios_gerados:
     arquivos_pasta = glob.glob(os.path.join(PASTA_SAIDA, "*.*"))
+    # CORREÇÃO DA VARIÁVEL: Mudado de archivos_exibicao para arquivos_exibicao
     arquivos_exibicao = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx")]
  
-    if archivos_exibicao:
+    if arquivos_exibicao:
         st.subheader("📥 Baixar Relatórios Gerados")
         cols_dw = st.columns(3)
         for i, path in enumerate(arquivos_exibicao):
@@ -707,7 +709,7 @@ if st.session_state.relatorios_gerados:
                     key=f"btn_{path}" 
                 )
 
-@st.dialog(" Confirmação de Disparo em Lote")
+@st.dialog("📩 Confirmação de Disparo em Lote")
 def confirmar_envio_atendimentos_popup(arquivos_validos):
     agrupados_por_ra = {}
     for arq in arquivos_validos:
@@ -724,7 +726,7 @@ def confirmar_envio_atendimentos_popup(arquivos_validos):
  
     col_p1, col_p2 = st.columns(2)
     with col_p1:
-        if st.button(" Sim, Disparar Todos", use_container_width=True):
+        if st.button("✅ Sim, Disparar Todos", use_container_width=True):
             import time
             st.subheader("🚀 Iniciando disparo...")
             sucessos = 0
@@ -763,3 +765,4 @@ if btn_enviar_emails:
         st.stop()
  
     confirmar_envio_atendimentos_popup(arquivos_validos)
+
