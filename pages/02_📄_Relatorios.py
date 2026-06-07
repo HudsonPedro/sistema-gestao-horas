@@ -352,11 +352,11 @@ if btn_gerar:
                 
         grupos = df.groupby(["CLIENTE", "RA"], as_index=False)
         arquivos_saida = []
-        for (cliente, ra), grupo in grupos:
-            solicitante = str(grupo["SOLICITANTE"].iloc[0]).strip()
-            consultor = str(grupo["CONSULTOR"].iloc[0]).strip()
-            participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
-            local = str(grupo["LOCAL"].iloc[0]).strip()
+               for (cliente, ra), grupo in grupos:
+            solicitante = str(grupo["SOLICITANTE"].iloc).strip()
+            consultor = str(grupo["CONSULTOR"].iloc).strip()
+            participante_padrao = str(grupo["PARTICIPANTE"].iloc).strip()
+            local = str(grupo["LOCAL"].iloc).strip()
             
             datas_grupo = pd.to_datetime(grupo["DATA"], errors='coerce', dayfirst=True)
             data_inicio_rel = datas_grupo.min().strftime("%d/%m/%Y") if pd.notna(datas_grupo.min()) else "01/01/2026"
@@ -371,7 +371,7 @@ if btn_gerar:
                 if ":" in val_str:
                     try: 
                         p = val_str.split(":")
-                        total_seg += int(p[0]) * 3600 + (int(p[1]) * 60 if len(p) > 1 else 0)
+                        total_seg += int(p) * 3600 + (int(p) * 60 if len(p) > 1 else 0)
                     except: pass
             total_hr_str = f"{int(total_seg // 3600):02d}:{int((total_seg % 3600) // 60):02d}"
             
@@ -380,7 +380,7 @@ if btn_gerar:
                 if ":" in val_str:
                     try: 
                         p = val_str.split(":")
-                        total_seg_d += int(p[0]) * 3600 + (int(p[1]) * 60 if len(p) > 1 else 0)
+                        total_seg_d += int(p) * 3600 + (int(p) * 60 if len(p) > 1 else 0)
                     except: pass
             total_hr_str_d = f"{int(total_seg_d // 3600):02d}:{int((total_seg_d % 3600) // 60):02d}"
             
@@ -429,6 +429,7 @@ if btn_gerar:
             pdf.set_x(115); pdf.set_font('Arial', 'B', 10); pdf.cell(39, 5, "Distância (KM): ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(0, 5, f"{total_km} km", ln=True)
             pdf.ln(5); pdf.set_font("Arial", "B", 10); pdf.set_fill_color(0, 112, 192); pdf.set_text_color(255, 255, 255); pdf.cell(190, 10, "DESCRIÇÃO DAS ATIVIDADES", border=1, ln=True, fill=True, align="C")
             
+            # CORREÇÃO CRÍTICA: Ajustado laço interno para ler 'linha' corretamente no PDF
             for _, linha in grupo.iterrows():
                 if pdf.get_y() > 245: pdf.add_page()
                 y_i = pdf.get_y(); x_i = 10
@@ -447,6 +448,7 @@ if btn_gerar:
                 pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Atividade: ", ln=False); pdf.set_font('Arial', '', 10); pdf.multi_cell(0, 5, ob if ob else "-")
                 pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Participante: ", ln=False); pdf.set_font('Arial', '', 10); pdf.multi_cell(0, 5, str(linha["PARTICIPANTE"]).strip() or participante_padrao)
                 pdf.set_y(pdf.get_y() + 2); pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
+
             if tem_desl:
                 if pdf.get_y() > 220: pdf.add_page()
                 pdf.ln(2)
