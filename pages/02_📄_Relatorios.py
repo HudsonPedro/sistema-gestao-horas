@@ -1,7 +1,7 @@
-#Por Hudson Valente - HPTECH
-#Criado em: 27/04/2026 - 19:55h
+# Por Hudson Valente - HPTECH
+# Criado em: 27/04/2026 - 19:55h
 import streamlit as st
-import base64 #==novo imagem ao lado no título ===#
+import base64  # ==novo imagem ao lado no título ===#
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha de código!)
 st.set_page_config(
@@ -80,12 +80,12 @@ with st.sidebar:
     st.markdown("---")
     st.title("Menu Principal")
     
-    # Navegação Atualizada
+    # Navegação Original Restaurada
     if st.button("🏠 Home", use_container_width=True):
         st.switch_page("app.py")
     if st.button("📊 Dashboard", use_container_width=True):
         st.switch_page("pages/01_📊_Dashboard.py")
-    if st.button("📄 Relatórios RA", use_container_width=True):
+    if st.button("📄 Relatórios", use_container_width=True):
         st.switch_page("pages/02_📄_Relatorios.py")
     if st.button("📝 Lançamento", use_container_width=True):
         st.switch_page("pages/03_📝_Lancamento.py")
@@ -153,7 +153,7 @@ def enviar_relatorio_email(arquivos_anexos, servidor_smtp, porta, email_remetent
         return False, "Nenhum arquivo para anexar."
     
     if isinstance(arquivos_anexos, list):
-        primeiro_arquivo = arquivos_anexos[0]
+        primeiro_arquivo = arquivos_anexos
     else:
         primeiro_arquivo = arquivos_anexos
     
@@ -245,50 +245,25 @@ with st.spinner("⏳ Analisando Dados..."):
         st.stop()
  
 st.sidebar.markdown("### Seleção da Base")
-# ====== NOVO CARIMBAR RELATORIO JA GERADOS E LIMPAR ===========
 def limpar_estado():
     st.session_state.relatorios_gerados = False
 
 aba_selecionada = st.sidebar.selectbox("**Selecione o Mês:**", abas_disponiveis, on_change=limpar_estado)
 
-# --- DADOS DA ABA SELECIONADA ---
 df_completo = dict_abas[aba_selecionada].copy()
 df_completo["DATA"] = pd.to_datetime(df_completo["DATA"], errors="coerce", dayfirst=True)
 
-# Descobre a menor e maior data presentes SOMENTE na aba selecionada (Lógica Original Inteligente)
 min_data_aba = df_completo["DATA"].min()
 max_data_aba = df_completo["DATA"].max()
 
-# Se a aba estiver vazia, define um padrão de segurança
-if pd.isnull(min_data_aba): min_data_aba = datetime(2026, 1, 1)
-if pd.isnull(max_data_aba): max_data_aba = datetime(2026, 1, 31)
+if pd.isnull(min_data_aba): 
+    min_data_aba = datetime(2026, 1, 1)
+if pd.isnull(max_data_aba): 
+    max_data_aba = datetime(2026, 1, 31)
 
 st.sidebar.markdown("### Filtro de Datas")
-# Renderiza os calendários puxando os limites nativos calculados da aba selecionada de forma instantânea
 data_inicio_selecionada = st.sidebar.date_input("**Data Início**", value=pd.to_datetime(min_data_aba).date())
 data_fim_selecionada = st.sidebar.date_input("**Data Fim**", value=pd.to_datetime(max_data_aba).date())
-
-
-# CONTROLE DE ESTADO AUTOMÁTICO: Sincroniza os seletores de data com o mês escolhido
-if "aba_anterior" not in st.session_state:
-    st.session_state.aba_anterior = aba_selecionada
-
-if st.session_state.aba_anterior != aba_selecionada:
-    st.session_state.aba_anterior = aba_selecionada
-    st.session_state.data_inicio_val = pd.to_datetime(min_data_aba).date()
-    st.session_state.data_fim_val = pd.to_datetime(max_data_aba).date()
-else:
-    if "data_inicio_val" not in st.session_state:
-        st.session_state.data_inicio_val = pd.to_datetime(min_data_aba).date()
-    if "data_fim_val" not in st.session_state:
-        st.session_state.data_fim_val = pd.to_datetime(max_data_aba).date()
-
-#st.sidebar.markdown("### Filtro de Datas")
-#data_inicio_selecionada = st.sidebar.date_input("**Data Início**", value=st.session_state.data_inicio_val, key="dt_ini_input")
-#data_fim_selecionada = st.sidebar.date_input("**Data Fim**", value=st.session_state.data_fim_val, key="dt_fim_input")
-
-#st.session_state.data_inicio_val = data_inicio_selecionada
-#st.session_state.data_fim_val = data_fim_selecionada
 
 btn_gerar = st.sidebar.button("🚀 **GERAR RELATÓRIOS**", type="primary", use_container_width=True)
 
@@ -338,7 +313,6 @@ if btn_gerar:
             st.stop()
             
         cols_obr = ["CLIENTE", "OBSERVAÇÕES", "CONSULTOR", "SOLICITANTE", "PARTICIPANTE", "FORMA", "RA", "LOCAL", "SITUACAO_RA", "HR_INICIO_D", "HR_FIM_D", "TOTAL_HR_D", "KM_D", "FORMA_D", 'DESCRICAO', 'HR_INICIO', 'HR_FIM', 'TOTAL_HR', 'DATA', 'DESCRICAO_P', 'RESPONSAVEL_P', 'STATUS_P']
-        
         for col in cols_obr:
             if col not in df.columns: 
                 df[col] = ""
@@ -350,16 +324,22 @@ if btn_gerar:
         df = df[df["CLIENTE"].astype(str).str.strip() != ""]
         df = df[df["SITUACAO_RA"].astype(str).str.strip() == "Em Elaboração"]
         
-        # Filtro global mapeado por cliente para buscar todas as pendências da planilha completa (histórico)
-        df_todas_pendencias = df_completo.copy()
-        for col_p in ['DESCRICAO_P', 'RESPONSAVEL_P', 'STATUS_P']:
-            if col_p not in df_todas_pendencias.columns:
-                df_todas_pendencias[col_p] = ""
-            else:
-                df_todas_pendencias[col_p] = df_todas_pendencias[col_p].fillna("").astype(str)
-                
+        # VARREDURA DE TODAS AS ABAS DA PLANILHA (Mês atual e meses anteriores)
+        lista_frames = []
+        for nome_aba, df_aba in dict_abas.items():
+            df_temp = df_aba.copy()
+            for col_p in ["DESCRICAO_P", "RESPONSAVEL_P", "STATUS_P", "CLIENTE", "DATA"]:
+                if col_p not in df_temp.columns:
+                    df_temp[col_p] = ""
+                else:
+                    if col_p != "DATA":
+                        df_temp[col_p] = df_temp[col_p].fillna("").astype(str)
+            lista_frames.append(df_temp[["CLIENTE", "DATA", "DESCRICAO_P", "RESPONSAVEL_P", "STATUS_P"]])
+
+        df_todas_pendencias = pd.concat(lista_frames, ignore_index=True)
         grupos = df.groupby(["CLIENTE", "RA"], as_index=False)
         arquivos_saida = []
+
         for (cliente, ra), grupo in grupos:
             solicitante = str(grupo["SOLICITANTE"].iloc[0]).strip()
             consultor = str(grupo["CONSULTOR"].iloc[0]).strip()
@@ -397,156 +377,281 @@ if btn_gerar:
                 v = str(val).strip().replace(',', '.')
                 if v not in ["", "nan", "None", "0", "0.0"]:
                     try: 
-                        kv=float(v); total_km += kv; tem_desl = True if kv > 0 else False
+                        kv = float(v)
+                        total_km += kv
+                        if kv > 0: tem_desl = True
                     except: pass
                     
             texto_ra = str(ra).strip()
             ra_str = str(int(float(texto_ra))) if texto_ra != "" and texto_ra.replace('.', '', 1).isdigit() else "S/N"
             
-            nome_base = f"RA Nº {ra_str} {cliente[:25].upper().replace(' ', ' ')}"
+            nome_base = f"RA Nº {ra_str} {cliente[:25].upper().strip()}"
             file_pdf = os.path.join(PASTA_SAIDA, nome_base + ".pdf")
             file_xlsx = os.path.join(PASTA_SAIDA, nome_base + ".xlsx")
             
-            # --- FILTRAGEM DINÂMICA DE PENDÊNCIAS HISTÓRICAS DO CLIENTE ---
-                        # --- FILTRAGEM DINÂMICA DE PENDÊNCIAS HISTÓRICAS DO CLIENTE ---
-                       # --- FILTRAGEM DINÂMICA DE PENDÊNCIAS HISTÓRICAS DO CLIENTE ---
-                       # --- FILTRAGEM DINÂMICA E ORDENAÇÃO DECRESCENTE DE PENDÊNCIAS ---
+            # --- FILTRAGEM DINÂMICA E ORDENAÇÃO DECRESCENTE DE TODAS AS ABAS ---
             grupo_pendencias = df_todas_pendencias[
-                (df_todas_pendencias["CLIENTE"].astype(str).str.strip() == str(cliente).strip()) &
-                (df_todas_pendencias["STATUS_P"].astype(str).str.strip() == "Pendente") &
+                (df_todas_pendencias["CLIENTE"].astype(str).str.strip() == str(cliente).strip()) & 
+                (df_todas_pendencias["STATUS_P"].astype(str).str.strip() == "Pendente") & 
                 (df_todas_pendencias["DESCRICAO_P"].astype(str).str.strip() != "")
             ].copy()
-            
-            # Converte para data e ordena de forma decrescente (mais recente primeiro)
-            grupo_pendencias["DATA"] = pd.to_datetime(grupo_pendencias["DATA"], errors="coerce", dayfirst=True)
-            grupo_pendencias = grupo_pendencias.sort_values(by="DATA", ascending=False)
-            
-            # DUPLA SEGURANÇA: Registra os dois nomes na memória para eliminar os NameErrors de vez
+            grupo_pendencias["DATA_CONV"] = pd.to_datetime(grupo_pendencias["DATA"], errors="coerce")
+            grupo_pendencias = grupo_pendencias.sort_values(by="DATA_CONV", ascending=False)
             tem_pendencias = not grupo_pendencias.empty
             tem_pend = tem_pendencias
 
-
-
-            
             # --- 1. GERAÇÃO PDF ---
             pdf = PDF()
             pdf.ra_numero = ra_str
             pdf.add_page()
-            pdf.set_font("Arial", "BU", 10); pdf.cell(105, 5, "DADOS GERAIS:", ln=False); pdf.cell(0, 5, "RESUMO DO RELATÓRIO:", ln=True)
-            pdf.set_font('Arial', 'B', 10); pdf.cell(14, 5, "Cliente: ", ln=False); pdf.set_font("Arial", "", 8); pdf.cell(0, 5, cliente, ln=False)
-            pdf.set_x(115); pdf.set_font('Arial', 'B', 10); pdf.cell(39, 5, "Período: ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(0, 5, f"{data_inicio_rel} até {data_fim_rel}", ln=True)
-            pdf.set_x(10); pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Solicitante: ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(0, 5, solicitante, ln=False)
-            pdf.set_x(114.5); pdf.set_font('Arial', 'B', 10); pdf.cell(39.5, 5, "Total de Horas: ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(0, 5, total_hr_str, ln=True)
-            pdf.set_x(10); pdf.set_font('Arial', 'B', 10); pdf.cell(38, 5, "Tipo de Atendimento: ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(66.5, 5, "Implantação do Sistema CRTI ERP", ln=False)
-            pdf.set_x(114.5); pdf.set_font('Arial', 'B', 10); pdf.cell(39.5, 5, "Total Deslocamento: ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(0, 5, total_hr_str_d, ln=True)
-            pdf.set_x(10); pdf.set_font('Arial', 'B', 10); pdf.cell(45, 5, "Unidade de Atendimento: ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(60, 5, local, ln=False)
-            pdf.set_x(115); pdf.set_font('Arial', 'B', 10); pdf.cell(39, 5, "Distância (KM): ", ln=False); pdf.set_font("Arial", "", 10); pdf.cell(0, 5, f"{total_km} km", ln=True)
-            pdf.ln(5); pdf.set_font("Arial", "B", 10); pdf.set_fill_color(0, 112, 192); pdf.set_text_color(255, 255, 255); pdf.cell(190, 10, "DESCRIÇÃO DAS ATIVIDADES", border=1, ln=True, fill=True, align="C"); pdf.set_text_color(0, 0, 0)
-            
+            pdf.set_font("Arial", "BU", 10)
+            pdf.cell(105, 5, "DADOS GERAIS:", ln=False)
+            pdf.cell(0, 5, "RESUMO DO RELATÓRIO:", ln=True)
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(14, 5, "Cliente: ", ln=False)
+            pdf.set_font("Arial", "", 8)
+            pdf.cell(0, 5, cliente, ln=False)
+            pdf.set_x(115)
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(39, 5, "Período: ", ln=False)
+            pdf.set_font("Arial", "", 10)
+            pdf.cell(0, 5, f"{data_inicio_rel} até {data_fim_rel}", ln=True)
+            pdf.set_x(10)
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(20, 5, "Solicitante: ", ln=False)
+            pdf.set_font("Arial", "", 10)
+            pdf.cell(0, 5, solicitante, ln=False)
+            pdf.set_x(114.5)
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(39.5, 5, "Total de Horas: ", ln=False)
+            pdf.set_font("Arial", "", 10)
+            pdf.cell(0, 5, total_hr_str, ln=True)
+            pdf.set_x(10)
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(38, 5, "Tipo de Atendimento: ", ln=False)
+            pdf.set_font("Arial", "", 10)
+            pdf.cell(66.5, 5, "Implantação do Sistema CRTI ERP", ln=False)
+            pdf.set_x(114.5)
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(39.5, 5, "Total Deslocamento: ", ln=False)
+            pdf.set_font("Arial", "", 10)
+            pdf.cell(0, 5, total_hr_str_d, ln=True)
+            pdf.set_x(10)
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(45, 5, "Unidade de Atendimento: ", ln=False)
+            pdf.set_font("Arial", "", 10)
+            pdf.cell(60, 5, local, ln=False)
+            pdf.set_x(115)
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(39, 5, "Distância (KM): ", ln=False)
+            pdf.set_font("Arial", "", 10)
+            pdf.cell(0, 5, f"{total_km} km", ln=True)
+            pdf.ln(5)
+            pdf.set_font("Arial", "B", 10)
+            pdf.set_fill_color(0, 112, 192)
+            pdf.set_text_color(255, 255, 255)
+            pdf.cell(190, 10, "DESCRIÇÃO DAS ATIVIDADES", border=1, ln=True, fill=True, align="C")
+            pdf.set_text_color(0, 0, 0)
             for _, linha in grupo.iterrows():
-                if pdf.get_y() > 245: pdf.add_page()
-                y_i = pdf.get_y(); x_i = 10
-                da = pd.to_datetime(linha["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha["DATA"]) else ""
-                hi = str(linha["HR_INICIO"])[0:5] if pd.notnull(linha["HR_INICIO"]) else "00:00"
-                hf = str(linha["HR_FIM"])[0:5] if pd.notnull(linha["HR_FIM"]) else "00:00"
-                tt = str(linha["TOTAL_HR"])[0:5] if pd.notnull(linha["TOTAL_HR"]) else "00:00"
+                if pdf.get_y() > 245:
+                    pdf.add_page()
+                y_i = pdf.get_y()
+                x_i = 10
+                da = (pd.to_datetime(linha["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha["DATA"]) else "")
+                hi = (str(linha["HR_INICIO"])[0:5] if pd.notnull(linha["HR_INICIO"]) else "00:00")
+                hf = (str(linha["HR_FIM"])[0:5] if pd.notnull(linha["HR_FIM"]) else "00:00")
+                tt = (str(linha["TOTAL_HR"])[0:5] if pd.notnull(linha["TOTAL_HR"]) else "00:00")
                 ob = str(linha["OBSERVAÇÕES"]).strip()
+                
                 pdf.set_xy(x_i + 2, y_i + 2)
-                pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Data: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(30, 5, da, ln=False)
-                pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Hora Início: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(15, 5, hi, ln=False)
-                pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Hora Final: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(38, 5, hf, ln=False)
-                pdf.set_font('Arial', 'B', 10); pdf.cell(30, 5, "Total: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, tt, ln=True)
-                pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Consultor: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(67, 5, consultor, ln=False)
-                pdf.set_font('Arial', 'B', 10); pdf.cell(42, 5, "Forma de Atendimento: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, str(linha.get("FORMA", "Remoto")).strip(), ln=True)
-                pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Atividade: ", ln=False); pdf.set_font('Arial', '', 10); pdf.multi_cell(0, 5, ob if ob else "-")
-                pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Participante: ", ln=False); pdf.set_font('Arial', '', 10); pdf.multi_cell(0, 5, str(linha["PARTICIPANTE"]).strip() or participante_padrao)
-                pdf.set_y(pdf.get_y() + 2); pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
+                pdf.set_font("Arial", "B", 10)
+                pdf.cell(22, 5, "Data: ", ln=False)
+                pdf.set_font("Arial", "", 10)
+                pdf.cell(30, 5, da, ln=False)
+                pdf.set_font("Arial", "B", 10)
+                pdf.cell(22, 5, "Hora Início: ", ln=False)
+                pdf.set_font("Arial", "", 10)
+                pdf.cell(15, 5, hi, ln=False)
+                pdf.set_font("Arial", "B", 10)
+                pdf.cell(20, 5, "Hora Final: ", ln=False)
+                pdf.set_font("Arial", "", 10)
+                pdf.cell(38, 5, hf, ln=False)
+                pdf.set_font("Arial", "B", 10)
+                pdf.cell(30, 5, "Total: ", ln=False)
+                pdf.set_font("Arial", "", 10)
+                pdf.cell(0, 5, tt, ln=True)
+                
+                pdf.set_x(x_i + 2)
+                pdf.set_font("Arial", "B", 10)
+                pdf.cell(22, 5, "Consultor: ", ln=False)
+                pdf.set_font("Arial", "", 10)
+                pdf.cell(67, 5, consultor, ln=False)
+                pdf.set_font("Arial", "B", 10)
+                pdf.cell(42, 5, "Forma de Atendimento: ", ln=False)
+                pdf.set_font("Arial", "", 10)
+                pdf.cell(0, 5, str(linha.get("FORMA", "Remoto")).strip(), ln=True)
+                
+                pdf.set_x(x_i + 2)
+                pdf.set_font("Arial", "B", 10)
+                pdf.cell(22, 5, "Atividade: ", ln=False)
+                pdf.set_font("Arial", "", 10)
+                pdf.multi_cell(0, 5, ob if ob else "-")
+                
+                pdf.set_x(x_i + 2)
+                pdf.set_font("Arial", "B", 10)
+                pdf.cell(22, 5, "Participante: ", ln=False)
+                pdf.set_font("Arial", "", 10)
+                pdf.multi_cell(0, 5, str(linha["PARTICIPANTE"]).strip() or participante_padrao)
+                
+                pdf.set_y(pdf.get_y() + 2)
+                pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
+
             if tem_desl:
-                if pdf.get_y() > 220: pdf.add_page()
+                if pdf.get_y() > 220:
+                    pdf.add_page()
                 pdf.ln(2)
-                pdf.set_font("Arial", "B", 10); pdf.set_fill_color(0, 112, 192); pdf.set_text_color(255, 255, 255)
+                pdf.set_font("Arial", "B", 10)
+                pdf.set_fill_color(0, 112, 192)
+                pdf.set_text_color(255, 255, 255)
                 pdf.cell(190, 10, "DESLOCAMENTOS", border=1, ln=True, fill=True, align="C")
                 pdf.set_text_color(0, 0, 0)
-                for _, linha in grupo.iterrows():
-                    km_s = str(linha.get("KM_D", "")).strip().replace(',', '.')
-                    if km_s in ["", "nan", "None", "0", "0.0"]: continue 
-                    if pdf.get_y() > 245: pdf.add_page()
-                    y_i = pdf.get_y(); x_i = 10
-                    dd = pd.to_datetime(linha["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha["DATA"]) else ""
-                    hi_d = str(linha["HR_INICIO_D"])[0:5] if pd.notnull(linha["HR_INICIO_D"]) else "00:00"
-                    hf_d = str(linha["HR_FIM_D"])[0:5] if pd.notnull(linha["HR_FIM_D"]) else "00:00"
-                    tt_d = str(linha["TOTAL_HR_D"])[0:5] if pd.notnull(linha["TOTAL_HR_D"]) else "00:00"
-                    ds_d = str(linha.get("DESCRICAO_D", "")).strip()
-                    fm_d = str(linha.get("FORMA_D", "Carro Próprio")).strip()
+                for _, linha_d in grupo.iterrows():
+                    km_s = str(linha_d.get("KM_D", "")).strip().replace(',', '.')
+                    if km_s in ["", "nan", "None", "0", "0.0"]:
+                        continue
+                    if pdf.get_y() > 245:
+                        pdf.add_page()
+                    y_i = pdf.get_y()
+                    x_i = 10
+                    sub_dd = pd.to_datetime(linha_d["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_d["DATA"]) else ""
+                    sub_hi_d = str(linha_d["HR_INICIO_D"])[0:5] if pd.notnull(linha_d["HR_INICIO_D"]) else "00:00"
+                    sub_hf_d = str(linha_d["HR_FIM_D"])[0:5] if pd.notnull(linha_d["HR_FIM_D"]) else "00:00"
+                    sub_tt_d = str(linha_d["TOTAL_HR_D"])[0:5] if pd.notnull(linha_d["TOTAL_HR_D"]) else "00:00"
+                    sub_ds_d = str(linha_d.get("DESCRICAO_D", "")).strip()
+                    sub_fm_d = str(linha_d.get("FORMA_D", "Carro Próprio")).strip()
+                    
                     pdf.set_xy(x_i + 2, y_i + 2)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Data: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(30, 5, dd, ln=False)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Hora Início: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(15, 5, hi_d, ln=False)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Hora Final: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(38, 5, hf_d, ln=False)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(30, 5, "Total: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, tt_d, ln=True)
-                    pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Distância: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(30, 5, f"{km_s} km", ln=False)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(45, 5, "Forma de Deslocamento: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(30, 5, fm_d, ln=False)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Consultor: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, consultor, ln=True)
-                                        # Ajuste fino: Alinha a Descrição na mesma linha dos campos de cima
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Descrição: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, desc_p, ln=True)
-                    pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i + 2)
-
+                    pdf.set_font('Arial', 'B', 10)
+                    pdf.cell(22, 5, "Data: ", ln=False)
+                    pdf.set_font('Arial', '', 10)
+                    pdf.cell(30, 5, sub_dd, ln=False)
+                    pdf.set_font('Arial', 'B', 10)
+                    pdf.cell(22, 5, "Hora Início: ", ln=False)
+                    pdf.set_font('Arial', '', 10)
+                    pdf.cell(15, 5, sub_hi_d, ln=False)
+                    pdf.set_font('Arial', 'B', 10)
+                    pdf.cell(20, 5, "Hora Final: ", ln=False)
+                    pdf.set_font('Arial', '', 10)
+                    pdf.cell(38, 5, sub_hf_d, ln=False)
+                    pdf.set_font('Arial', 'B', 10)
+                    pdf.cell(30, 5, "Total: ", ln=False)
+                    pdf.set_font('Arial', '', 10)
+                    pdf.cell(0, 5, sub_tt_d, ln=True)
+                    pdf.set_x(x_i + 2)
+                    pdf.set_font('Arial', 'B', 10)
+                    pdf.cell(22, 5, "Distância: ", ln=False)
+                    pdf.set_font('Arial', '', 10)
+                    pdf.cell(30, 5, f"{km_s} km", ln=False)
+                    pdf.set_font('Arial', 'B', 10)
+                    pdf.cell(45, 5, "Forma de Deslocamento: ", ln=False)
+                    pdf.set_font('Arial', '', 10)
+                    pdf.cell(30, 5, sub_fm_d, ln=False)
+                    pdf.set_font('Arial', 'B', 10)
+                    pdf.cell(20, 5, "Consultor: ", ln=False)
+                    pdf.set_font('Arial', '', 10)
+                    pdf.cell(0, 5, consultor, ln=True)
+                    pdf.set_x(x_i + 2)
+                    pdf.set_font('Arial', 'B', 10)
+                    pdf.cell(22, 5, "Descrição: ", ln=False)
+                    pdf.set_font('Arial', '', 10)
+                    pdf.multi_cell(0, 5, sub_ds_d if sub_ds_d else "-")
+                    pdf.set_y(pdf.get_y() + 2)
+                    pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
 
             # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO PDF (ORDEM CORRIGIDA E FUNDO AMARELO) ---
-            if tem_pend:
-                if pdf.get_y() > 220: pdf.add_page()
+            if tem_pendencias:
+                if pdf.get_y() > 220:
+                    pdf.add_page()
                 pdf.ln(2)
-                # Amarelo Puro (255, 192, 0) com Letras Pretas (0, 0, 0)
-                pdf.set_font("Arial", "B", 10); pdf.set_fill_color(255, 192, 0); pdf.set_text_color(0, 0, 0)
+                pdf.set_font("Arial", "B", 10)
+                pdf.set_fill_color(255, 192, 0)
+                pdf.set_text_color(0, 0, 0)
                 pdf.cell(190, 10, "PENDÊNCIAS", border=1, ln=True, fill=True, align="C")
                 for _, linha_p in grupo_pendencias.iterrows():
-                    if pdf.get_y() > 245: pdf.add_page()
-                    y_i = pdf.get_y(); x_i = 10
-                    dp_data = pd.to_datetime(linha_p["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_p["DATA"]) else data_inicio_rel
+                    if pdf.get_y() > 245:
+                        pdf.add_page()
+                    y_i = pdf.get_y()
+                    x_i = 10
+                    
+                    try:
+                        dp_data = pd.to_datetime(linha_p["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_p["DATA"]) else data_inicio_rel
+                    except:
+                        dp_data = str(linha_p["DATA"])[0:10] if str(linha_p["DATA"]).strip() != "" else data_inicio_rel
+                        
                     desc_p = str(linha_p["DESCRICAO_P"]).strip()
                     resp_p = str(linha_p["RESPONSAVEL_P"]).strip()
                     status_p = str(linha_p["STATUS_P"]).strip()
                     
                     pdf.set_xy(x_i + 2, y_i + 2)
+                    # Alinhamento 100% horizontal na mesma linha: Data -> Descrição -> Responsável -> Status
                     pdf.set_font('Arial', 'B', 10); pdf.cell(12, 5, "Data: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(22, 5, dp_data, ln=False)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(25, 5, "Responsável: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(22, 5, resp_p, ln=False)
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(14, 5, "Status: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(20, 5, status_p, ln=False)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Descrição: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(50, 5, desc_p, ln=False)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(24, 5, "Responsável: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(28, 5, resp_p, ln=False)
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(14, 5, "Status: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, status_p, ln=True)
                     
-                    # Continua na mesma linha horizontal sem quebrar
-                    pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Descrição: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, desc_p, ln=True)
-                    pdf.set_y(pdf.get_y() + 2)
                     pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
+                    pdf.set_y(pdf.get_y() + 2)
 
-
-
-                    
-            if pdf.get_y() > 220: pdf.add_page()
-            pdf.ln(5); pdf.set_font("Arial", "", 10); pdf.set_text_color(0, 0, 0); pdf.cell(0, 8, f"Curitiba, {data_rodape}.", ln=True); pdf.ln(4)
-            pdf.set_font("Arial", "", 10); pdf.set_text_color(255, 0, 0); pdf.multi_cell(0, 5, "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram prestados e confirmado como aceitos.", align="C"); pdf.set_text_color(0, 0, 0)
+            if pdf.get_y() > 220:
+                pdf.add_page()
+            pdf.ln(5)
+            pdf.set_font("Arial", "", 10)
+            pdf.set_text_color(0, 0, 0)
+            pdf.cell(0, 8, f"Curitiba, {data_rodape}.", ln=True)
+            pdf.ln(4)
+            pdf.set_font("Arial", "", 10)
+            pdf.set_text_color(255, 0, 0)
+            pdf.multi_cell(0, 5, "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram prestados e confirmado como aceitos.", align="C")
             pdf.ln(10)
-            pdf.cell(90, 8, "__________________________________", align="C"); pdf.cell(10); pdf.cell(90, 8, "__________________________________", align="C", ln=True)
-            pdf.cell(90, 2, consultor, align="C"); pdf.cell(7); pdf.cell(90, 2, solicitante, align="C", ln=True)
-            pdf.set_font("Arial", "", 8); pdf.cell(90, 7, "CRTI", align="C"); pdf.cell(7); pdf.cell(90, 7, cliente, align="C", ln=True)
-            pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", align="C"); pdf.cell(7); pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", ln=True, align="C")
+            pdf.set_text_color(0, 0, 0)
+            pdf.cell(90, 8, "__________________________________", align="C")
+            pdf.cell(10)
+            pdf.cell(90, 8, "__________________________________", align="C", ln=True)
+            pdf.cell(90, 2, consultor, align="C")
+            pdf.cell(7)
+            pdf.cell(90, 2, solicitante, align="C", ln=True)
+            pdf.set_font("Arial", "", 8)
+            pdf.cell(90, 7, "CRTI", align="C")
+            pdf.cell(7)
+            pdf.cell(90, 7, cliente, align="C", ln=True)
+            pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", align="C")
+            pdf.cell(7)
+            pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", ln=True, align="C")
             pdf.output(file_pdf)
             arquivos_saida.append(file_pdf)
-            
             # --- 2. GERAÇÃO EXCEL ---
             wb = xlsxwriter.Workbook(file_xlsx)
             ws = wb.add_worksheet("Relatório")
-            ws.set_paper(9); ws.fit_to_pages(1, 0); ws.set_margins(left=0.2, right=0.2, top=0.4, bottom=0.4) 
-            ws.set_column('A:A', 13); ws.set_column('B:B', 15); ws.set_column('C:C', 13); ws.set_column('D:D', 11) 
-            ws.set_column('E:E', 13); ws.set_column('F:F', 13); ws.set_column('G:G', 8); ws.set_column('H:H', 11) 
-            
+            ws.set_paper(9)
+            ws.fit_to_pages(1, 0)
+            ws.set_margins(left=0.2, right=0.2, top=0.4, bottom=0.4)
+            ws.set_column('A:A', 13)
+            ws.set_column('B:B', 15)
+            ws.set_column('C:C', 13)
+            ws.set_column('D:D', 11)
+            ws.set_column('E:E', 13)
+            ws.set_column('F:F', 13)
+            ws.set_column('G:G', 8)
+            ws.set_column('H:H', 11)
             f_title = wb.add_format({'bold': True, 'font_size': 13})
             f_hdr_u = wb.add_format({'bold': True, 'underline': True, 'font_size': 10})
             f_bold = wb.add_format({'bold': True, 'font_size': 10, 'valign': 'vcenter'})
-            f_norm = wb.add_format({'font_size': 10, 'valign': 'vcenter'}) 
+            f_norm = wb.add_format({'font_size': 10, 'valign': 'vcenter'})
             f_blue = wb.add_format({'bold': True, 'bg_color': '#0070c0', 'font_color': 'white', 'align': 'center', 'valign': 'vcenter', 'border': 1})
             f_yellow = wb.add_format({'bold': True, 'bg_color': '#FFC000', 'font_color': 'black', 'align': 'center', 'valign': 'vcenter', 'border': 1})
             f_red = wb.add_format({'font_color': 'red', 'align': 'center', 'valign': 'vcenter', 'text_wrap': True})
             f_center = wb.add_format({'align': 'center', 'valign': 'top', 'font_size': 10})
             f_sign = wb.add_format({'top': 1, 'align': 'center', 'font_size': 10, 'valign': 'top'})
-            
             f_TL = wb.add_format({'top': 1, 'left': 1, 'bold': True, 'valign': 'vcenter'})
             f_T = wb.add_format({'top': 1, 'valign': 'vcenter'})
             f_T_b = wb.add_format({'top': 1, 'bold': True, 'valign': 'vcenter'})
@@ -557,24 +662,34 @@ if btn_gerar:
             f_merge_mid = wb.add_format({'valign': 'top', 'text_wrap': True, 'right': 1})
             f_merge_bot = wb.add_format({'bottom': 1, 'valign': 'top', 'text_wrap': True, 'right': 1})
             f_BL = wb.add_format({'bottom': 1, 'left': 1, 'bold': True, 'valign': 'top'})
-            
+
             if os.path.exists(LOGO):
                 ws.insert_image('F1', LOGO, {'x_offset': 10, 'y_offset': 2, 'x_scale': 2.00, 'y_scale': 2.00})
-            
+
             ws.write('A2', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_title)
             ws.write('A4', "DADOS GERAIS:", f_hdr_u)
-            ws.write('F4', "RESUMO DO RELATÓRIO:", f_hdr_u) 
-            ws.write('A5', "Cliente:", f_bold); ws.merge_range('B5:D5', cliente[:45], f_norm)
-            ws.write('F5', "Período:", f_bold); ws.merge_range('G5:H5', f"{data_inicio_rel} até {data_fim_rel}", f_norm)
-            ws.write('A6', "Solicitante:", f_bold); ws.merge_range('B6:D6', solicitante, f_norm)
-            ws.write('F6', "Total de Horas:", f_bold); ws.merge_range('G6:H6', total_hr_str, f_norm)
-            ws.write('A7', "Tipo de Atend.:", f_bold); ws.merge_range('B7:D7', "Implantação CRTI", f_norm)
-            ws.write('F7', "Deslocamento:", f_bold); ws.merge_range('G7:H7', total_hr_str_d, f_norm)
-            ws.write('A8', "Unidade:", f_bold); ws.merge_range('B8:D8', local, f_norm)
-            ws.write('F8', "Distância (KM):", f_bold); ws.merge_range('G8:H8', f"{total_km:.2f} km".replace('.', ','), f_norm)
+            ws.write('F4', "RESUMO DO RELATÓRIO:", f_hdr_u)
+            ws.write('A5', "Cliente:", f_bold)
+            ws.merge_range('B5:D5', cliente[:45], f_norm)
+            ws.write('F5', "Período:", f_bold)
+            ws.merge_range('G5:H5', f"{data_inicio_rel} até {data_fim_rel}", f_norm)
+            ws.write('A6', "Solicitante:", f_bold)
+            ws.merge_range('B6:D6', solicitante, f_norm)
+            ws.write('F6', "Total de Horas:", f_bold)
+            ws.merge_range('G6:H6', total_hr_str, f_norm)
+            ws.write('A7', "Tipo de Atend.:", f_bold)
+            ws.merge_range('B7:D7', "Implantação CRTI", f_norm)
+            ws.write('F7', "Deslocamento:", f_bold)
+            ws.merge_range('G7:H7', total_hr_str_d, f_norm)
+            ws.write('A8', "Unidade:", f_bold)
+            ws.merge_range('B8:D8', local, f_norm)
+            ws.write('F8', "Distância (KM):", f_bold)
+            ws.merge_range('G8:H8', f"{total_km:.2f} km".replace('.', ','), f_norm)
             
             row = 10
-            ws.merge_range(f'A{row}:H{row}', "DESCRIÇÃO DAS ATIVIDADES", f_blue); ws.set_row(row - 1, 18); row += 1
+            ws.merge_range(f'A{row}:H{row}', "DESCRIÇÃO DAS ATIVIDADES", f_blue)
+            ws.set_row(row - 1, 18)
+            row += 1
             for _, linha_a in grupo.iterrows():
                 d = pd.to_datetime(linha_a["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_a["DATA"]) else ""
                 ob = str(linha_a["OBSERVAÇÕES"]).strip()
@@ -607,22 +722,21 @@ if btn_gerar:
                 ws.merge_range(f'B{row}:H{row}', pa if pa else "-", f_merge_bot)
                 ws.set_row(row - 1, 15 * linhas_pa)
                 row += 1
+
             if tem_desl:
                 ws.merge_range(f'A{row}:H{row}', "DESLOCAMENTOS", f_blue)
                 ws.set_row(row - 1, 18)
                 row += 1
-                for _, linha_desl in grupo.iterrows():
-                    km_s = str(linha_desl.get("KM_D", "")).strip().replace(',', '.')
+                for _, linha_e in grupo.iterrows():
+                    km_s = str(linha_e.get("KM_D", "")).strip().replace(',', '.')
                     if km_s in ["", "nan", "None", "0", "0.0"]:
-                        continue 
-                    
-                    dd = pd.to_datetime(linha_desl["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_desl["DATA"]) else ""
-                    hi_d = str(linha_desl["HR_INICIO_D"])[0:5] if pd.notnull(linha_desl["HR_INICIO_D"]) else "00:00"
-                    hf_d = str(linha_desl["HR_FIM_D"])[0:5] if pd.notnull(linha_desl["HR_FIM_D"]) else "00:00"
-                    tt_d = str(linha_desl["TOTAL_HR_D"])[0:5] if pd.notnull(linha_desl["TOTAL_HR_D"]) else "00:00"
-                    ds_d = str(linha_desl.get("DESCRICAO_D", "")).strip()
-                    fm_d = str(linha_desl.get("FORMA_D", "Carro Próprio")).strip()
-                    
+                        continue
+                    dd = pd.to_datetime(linha_e["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_e["DATA"]) else ""
+                    hi_d = str(linha_e["HR_INICIO_D"])[0:5] if pd.notnull(linha_e["HR_INICIO_D"]) else "00:00"
+                    hf_d = str(linha_e["HR_FIM_D"])[0:5] if pd.notnull(linha_e["HR_FIM_D"]) else "00:00"
+                    tt_d = str(linha_e["TOTAL_HR_D"])[0:5] if pd.notnull(linha_e["TOTAL_HR_D"]) else "00:00"
+                    ds_d = str(linha_e.get("DESCRICAO_D", "")).strip()
+                    fm_d = str(linha_e.get("FORMA_D", "Carro Próprio")).strip()
                     ws.write(f'A{row}', "Data:", f_TL)
                     ws.write(f'B{row}', dd, f_T)
                     ws.write(f'C{row}', "Hora Início:", f_T_b)
@@ -639,119 +753,94 @@ if btn_gerar:
                     ws.write(f'G{row}', "Consultor:", f_M_b)
                     ws.write(f'H{row}', consultor, f_merge_mid)
                     row += 1
-                    
                     linhas_ds = max(1, len(ds_d) // 90 + 1)
                     ws.write(f'A{row}', "Descrição:", f_BL)
                     ws.merge_range(f'B{row}:H{row}', ds_d if ds_d else "-", f_merge_bot)
                     ws.set_row(row - 1, 15 * linhas_ds)
                     row += 1
 
-            # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO EXCEL (CABEÇALHO AMARELO CORRIGIDO) ---
+            # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO EXCEL (MESMA ORDEM DO PDF E EM AMARELO) ---
             if tem_pendencias:
                 ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS", f_yellow)
                 ws.set_row(row - 1, 18)
                 row += 1
                 for _, linha_p in grupo_pendencias.iterrows():
-                    dp_data = pd.to_datetime(linha_p["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_p["DATA"]) else data_inicio_rel
                     desc_p = str(linha_p["DESCRICAO_P"]).strip()
                     resp_p = str(linha_p["RESPONSAVEL_P"]).strip()
                     status_p = str(linha_p["STATUS_P"]).strip()
-                    
                     ws.write(f'A{row}', "Data:", f_TL)
-                    ws.write(f'B{row}', dp_data, f_T)
-                    ws.write(f'C{row}', "Responsável:", f_T_b)
-                    ws.write(f'D{row}', resp_p, f_T)
-                    ws.write(f'E{row}', "Status:", f_T_b)
-                    ws.write(f'F{row}', status_p, f_T)
-                    ws.write(f'G{row}', "", f_T_b)
-                    ws.write(f'H{row}', "", f_TR)
+                    ws.write(f'B{row}', pd.to_datetime(linha_p["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_p["DATA"]) else data_inicio_rel, f_T)
+                    ws.write(f'C{row}', "Descrição:", f_T_b)
+                    ws.write(f'D{row}', desc_p, f_T)
+                    ws.write(f'E{row}', "Responsável:", f_T_b)
+                    ws.write(f'F{row}', resp_p, f_T)
+                    ws.write(f'G{row}', "Status:", f_T_b)
+                    ws.write(f'H{row}', status_p, f_TR)
                     row += 1
-                    
                     linhas_dp = max(1, len(desc_p) // 90 + 1)
                     ws.write(f'A{row}', "Descrição:", f_BL)
                     ws.merge_range(f'B{row}:H{row}', desc_p if desc_p else "-", f_merge_bot)
                     ws.set_row(row - 1, 15 * linhas_dp)
                     row += 1
+
             row += 2
-            
             ws.merge_range(f'A{row}:D{row}', f"Curitiba, {data_rodape}.", f_norm)
             row += 2
-            ws.merge_range(f'A{row}:H{row}', "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram prestados e confirmado como aceitos.", f_red)
+            ws.merge_range(f'A{row}:H{row}', "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram prestados e confirmado como aceitos.")
             ws.set_row(row - 1, 30)
             row += 5
-            
             ws.merge_range(f'A{row}:C{row}', consultor, f_sign)
             ws.merge_range(f'F{row}:H{row}', solicitante, f_sign)
             row += 1
             ws.merge_range(f'A{row}:C{row}', "CRTI", f_center)
-            ws.merge_range(f'F{row}:H{row}', cliente[:30], f_center)
-            row += 1
-            ws.merge_range(f'A{row}:C{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
-            ws.merge_range(f'F{row}:H{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
+            ws.write(f'F{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
             
-                       # --- CORREÇÃO DA LINHA DO EXCEL (MANTENDO O ALINHAMENTO DO SEU ARQUIVO) ---
             ws.hide_gridlines(2)
             wb.close()
             arquivos_saida.append(file_xlsx)
-            
-        resumo_status.success(f"✅ Feito! Foram gerados **{len(arquivos_saida)}** arquivos da aba '{aba_selecionada}'.")
+
+        resumo_status.success(f"✅ Feito! Foram gerados {len(arquivos_saida)} arquivos da aba '{aba_selecionada}'.")
         nome_zip = f"Relatorios_{aba_selecionada.replace(' ', '_')}"
         caminho_zip = f"{nome_zip}.zip"
         shutil.make_archive(nome_zip, 'zip', PASTA_SAIDA)
- 
+
         st.markdown("### Download dos Arquivos")
         with open(caminho_zip, "rb") as f_zip:
-            st.download_button(
-                label="📦 BAIXAR TODOS OS RELATÓRIOS (ZIP)",
-                data=f_zip,
-                file_name=caminho_zip,
-                mime="application/zip",
-                type="primary",
-                use_container_width=True
-            )
- 
+            st.download_button(label="📦 BAIXAR TODOS OS RELATÓRIOS (ZIP)", data=f_zip, file_name=caminho_zip, mime="application/zip", type="primary", use_container_width=True)
+            
         with st.expander("Ver arquivos individualmente..."):
             cols_dw = st.columns(3)
             for i, path in enumerate(arquivos_saida):
                 nome_arq = os.path.basename(path)
+                file_ext = "📄 PDF" if ".pdf" in nome_arq.lower() else "📊 Excel"
                 with open(path, "rb") as file:
-                    ext = "📄 PDF" if ".pdf" in nome_arq.lower() else "📊 Excel"
-                    cols_dw[i % 3].download_button(label=f"Baixar {ext}: {nome_arq[:15]}...", data=file, file_name=nome_arq, key=path)
+                    cols_dw[i % 3].download_button(label=f"Baixar {file_ext}: {nome_arq[:15]}...", data=file, file_name=nome_arq, key=path)
 
 if st.session_state.relatorios_gerados:
     arquivos_pasta = glob.glob(os.path.join(PASTA_SAIDA, "*.*"))
-    # CORREÇÃO DA VARIÁVEL: Mudado de archivos_exibicao para arquivos_exibicao
     arquivos_exibicao = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx")]
- 
     if arquivos_exibicao:
         st.subheader("📥 Baixar Relatórios Gerados")
         cols_dw = st.columns(3)
         for i, path in enumerate(arquivos_exibicao):
             nome_arq = os.path.basename(path)
+            file_ext = "📄 PDF" if ".pdf" in nome_arq.lower() else "📊 Excel"
             with open(path, "rb") as file:
-                ext = "📄 PDF" if ".pdf" in nome_arq.lower() else "📊 Excel"
-                cols_dw[i % 3].download_button(
-                    label=f"Baixar {ext}: {nome_arq[:15]}...", 
-                    data=file, 
-                    file_name=nome_arq, 
-                    key=f"btn_{path}" 
-                )
+                cols_dw[i % 3].download_button(label=f"Baixar {file_ext}: {nome_arq[:15]}...", data=file, file_name=nome_arq, key=f"btn_{path}")
 
 @st.dialog("📩 Confirmação de Disparo em Lote")
 def confirmar_envio_atendimentos_popup(arquivos_validos):
     agrupados_por_ra = {}
     for arq in arquivos_validos:
         base = arq.replace(".pdf", "").replace(".xlsx", "")
-        if base not in agrupados_por_ra: 
+        if base not in agrupados_por_ra:
             agrupados_por_ra[base] = []
         agrupados_por_ra[base].append(arq)
- 
     total_envios = len(agrupados_por_ra)
     st.write("Você tem certeza que deseja disparar os relatórios de atendimento em lote?")
-    st.write(f"• **Destinatário Cadastrado:** `{email_destinatario}`")
-    st.write(f"• **Total de e-mails a serem gerados:** {total_envios} mensagens")
+    st.write(f"• Destinatário Cadastrado: {email_destinatario}")
+    st.write(f"• Total de e-mails a serem gerados: {total_envios} mensagens")
     st.markdown("---")
- 
     col_p1, col_p2 = st.columns(2)
     with col_p1:
         if st.button("✅ Sim, Disparar Todos", use_container_width=True):
@@ -759,26 +848,21 @@ def confirmar_envio_atendimentos_popup(arquivos_validos):
             st.subheader("🚀 Iniciando disparo...")
             sucessos = 0
             barra = st.progress(0)
- 
             for i, (base, lista_anexos) in enumerate(agrupados_por_ra.items()):
-                sucesso, msg = enviar_relatorio_email(
-                    lista_anexos, "://gmail.com", 587, "hudson.valente@crti.com.br", senha_app, email_destinatario
-                )
+                sucesso, msg = enviar_relatorio_email(lista_anexos, "smtp.gmail.com", 587, "hudson.valente@crti.com.br", senha_app, email_destinatario)
                 if sucesso:
                     sucessos += 1
                     st.success(msg)
-                else: 
+                else:
                     st.error(msg)
                 barra.progress((i + 1) / total_envios)
- 
-            st.info(f"📊 **{sucessos}** de **{total_envios}** e-mails enviados.")
+            st.info(f"📊 {sucessos} de {total_envios} e-mails enviados.")
             if sucessos == total_envios:
                 st.balloons()
                 time.sleep(10)
             else:
                 time.sleep(5)
             st.rerun()
- 
     with col_p2:
         if st.button("❌ Não, Cancelar", use_container_width=True):
             st.rerun()
@@ -787,9 +871,7 @@ if btn_enviar_emails:
     st.markdown("---")
     arquivos_pasta = glob.glob(os.path.join(PASTA_SAIDA, "*.*"))
     arquivos_validos = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx")]
- 
     if not arquivos_validos:
         st.warning("⚠️ Gere os relatórios primeiro.")
         st.stop()
- 
     confirmar_envio_atendimentos_popup(arquivos_validos)
