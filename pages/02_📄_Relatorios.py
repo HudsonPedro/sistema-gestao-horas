@@ -234,17 +234,64 @@ with st.spinner("⏳ Analisando Dados..."):
         st.stop()
  
 st.sidebar.markdown("### Seleção da Base")
+
+
 def limpar_estado():
     st.session_state.relatorios_gerados = False
 
-aba_selecionada = st.sidebar.selectbox("**Selecione o Mês:**", abas_disponiveis, on_change=limpar_estado)
+
+aba_selecionada = st.sidebar.selectbox(
+    "**Selecione o Mês:**", abas_disponiveis, on_change=limpar_estado
+)
 
 df_completo = dict_abas[aba_selecionada].copy()
+df_completo["DATA"] = pd.to_datetime(
+    df_completo["DATA"], errors="coerce", dayfirst=True
+)
+
+# 1. Calcula os limites reais de data para o mês que você clicou
+min_data_aba = df_completo["DATA"].min()
+max_data_aba = df_completo["DATA"].max()
+
+# 2. Garante que se a planilha estiver vazia, ele não trave o sistema
+if pd.isnull(min_data_aba):
+    min_data_aba = datetime(2026, 6, 1)
+if pd.isnull(max_data_aba):
+    max_data_aba = datetime(2026, 6, 30)
+
+# 3. CONTROLE AUTOMÁTICO: Limpa a memória se você trocar de aba
+if "aba_anterior" not in st.session_state:
+    st.session_state.aba_anterior = aba_selecionada
+
+if st.session_state.aba_anterior != aba_selecionada:
+    st.session_state.aba_anterior = aba_selecionada
+    st.session_state.data_inicio_val = pd.to_datetime(min_data_aba).date()
+    st.session_state.data_fim_val = pd.to_datetime(max_data_aba).date()
+else:
+    if "data_inicio_val" not in st.session_state:
+        st.session_state.data_inicio_val = pd.to_datetime(min_data_aba).date()
+    if "data_fim_val" not in st.session_state:
+        st.session_state.data_fim_val = pd.to_datetime(max_data_aba).date()
 
 st.sidebar.markdown("### Filtro de Datas")
-data_inicio_selecionada = st.sidebar.date_input("**Data Início**", value=datetime(2026, 5, 1).date())
-data_fim_selecionada = st.sidebar.date_input("**Data Fim**", value=datetime(2026, 5, 31).date())
-btn_gerar = st.sidebar.button("🚀 **GERAR RELATÓRIOS**", type="primary", use_container_width=True)
+# 4. Exibe os calendários com as datas automáticas sincronizadas
+data_inicio_selecionada = st.sidebar.date_input(
+    "**Data Início**",
+    value=st.session_state.data_inicio_val,
+    key="dt_ini_input",
+)
+data_fim_selecionada = st.sidebar.date_input(
+    "**Data Fim**", value=st.session_state.data_fim_val, key="dt_fim_input"
+)
+
+# 5. Salva a escolha se o usuário clicar para mudar o dia manualmente
+st.session_state.data_inicio_val = data_inicio_selecionada
+st.session_state.data_fim_val = data_fim_selecionada
+
+btn_gerar = st.sidebar.button(
+    "🚀 **GERAR RELATÓRIOS**", type="primary", use_container_width=True
+)
+
 
 st.sidebar.markdown("---")
 st.sidebar.header("📨 Disparo de E-mails")
