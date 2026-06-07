@@ -580,7 +580,7 @@ if btn_gerar:
                 pdf.set_font("Arial", "B", 10)
                 pdf.set_fill_color(250, 250, 0)
                 pdf.set_text_color(0, 0, 0)
-                pdf.cell(190, 10, "PENDÊNCIAS", border=1, ln=True, fill=True, align="C")
+                pdf.cell(190, 10, "PENDÊNCIAS (Obrigatório)", border=1, ln=True, fill=True, align="C")
                 
                 total_linhas = len(grupo_pendencias)
                 for index, linha_p in enumerate(grupo_pendencias.iterrows()):
@@ -778,7 +778,7 @@ if btn_gerar:
 
             # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO EXCEL (MESMA ORDEM DO PDF E EM AMARELO) ---
             if tem_pendencias:
-                ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS", f_yellow)
+                ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS (Obrigatório)", f_yellow)
                 ws.set_row(row - 1, 18)
                 row += 1
                 for _, linha_p in grupo_pendencias.iterrows():
