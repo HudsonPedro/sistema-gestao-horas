@@ -449,32 +449,39 @@ if btn_gerar:
                 pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Participante: ", ln=False); pdf.set_font('Arial', '', 10); pdf.multi_cell(0, 5, str(linha["PARTICIPANTE"]).strip() or participante_padrao)
                 pdf.set_y(pdf.get_y() + 2); pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
             # --- NOVO BLOCO 3: PENDÊNCIAS NO PDF ---
+                        # --- NOVO BLOCO 3: PENDÊNCIAS NO PDF (CORREÇÃO DE ORDEM E COR AMARELA) ---
             if tem_pendencias:
                 if pdf.get_y() > 220:
                     pdf.add_page()
                 pdf.ln(2)
                 pdf.set_font("Arial", "B", 10)
-                pdf.set_fill_color(0, 112, 192)
-                pdf.set_text_color(255, 255, 255)
-                pdf.cell(190, 10, "PENDÊNCIAS", border=1, ln=True, fill=True, align="C")
+                pdf.set_fill_color(255, 192, 0)
                 pdf.set_text_color(0, 0, 0)
+                pdf.cell(190, 10, "PENDÊNCIAS", border=1, ln=True, fill=True, align="C")
                 for _, linha_p in grupo_pendencias.iterrows():
                     if pdf.get_y() > 245:
                         pdf.add_page()
                     y_i = pdf.get_y()
                     x_i = 10
+                    dp_data = pd.to_datetime(linha_p["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_p["DATA"]) else data_inicio_rel
                     desc_p = str(linha_p["DESCRICAO_P"]).strip()
                     resp_p = str(linha_p["RESPONSAVEL_P"]).strip()
                     status_p = str(linha_p["STATUS_P"]).strip()
+                    
                     pdf.set_xy(x_i + 2, y_i + 2)
                     pdf.set_font('Arial', 'B', 10)
-                    pdf.cell(22, 5, "Responsável: ", ln=False)
+                    pdf.cell(14, 5, "Data: ", ln=False)
                     pdf.set_font('Arial', '', 10)
-                    pdf.cell(67, 5, resp_p, ln=False)
+                    pdf.cell(30, 5, dp_data, ln=False)
                     pdf.set_font('Arial', 'B', 10)
-                    pdf.cell(20, 5, "Status: ", ln=False)
+                    pdf.cell(25, 5, "Responsável: ", ln=False)
+                    pdf.set_font('Arial', '', 10)
+                    pdf.cell(50, 5, resp_p, ln=False)
+                    pdf.set_font('Arial', 'B', 10)
+                    pdf.cell(15, 5, "Status: ", ln=False)
                     pdf.set_font('Arial', '', 10)
                     pdf.cell(0, 5, status_p, ln=True)
+                    
                     pdf.set_x(x_i + 2)
                     pdf.set_font('Arial', 'B', 10)
                     pdf.cell(22, 5, "Descrição: ", ln=False)
@@ -512,6 +519,289 @@ if btn_gerar:
             
             pdf.output(file_pdf)
             arquivos_saida.append(file_pdf)
+            # --- 2. GERAÇÃO EXCEL ---
+            wb = xlsxwriter.Workbook(file_xlsx)
+            ws = wb.add_worksheet("Relatório")
+            ws.set_paper(9)
+            ws.fit_to_pages(1, 0)
+            ws.set_margins(left=0.2, right=0.2, top=0.4, bottom=0.4) 
+            ws.set_column('A:A', 13)
+            ws.set_column('B:B', 15)
+            ws.set_column('C:C', 13)
+            ws.set_column('D:D', 11) 
+            ws.set_column('E:E', 13)
+            ws.set_column('F:F', 13)
+            ws.set_column('G:G', 8)
+            ws.set_column('H:H', 11) 
+            
+            f_title = wb.add_format({'bold': True, 'font_size': 13})
+            f_hdr_u = wb.add_format({'bold': True, 'underline': True, 'font_size': 10})
+            f_bold = wb.add_format({'bold': True, 'font_size': 10, 'valign': 'vcenter'})
+            f_norm = wb.add_format({'font_size': 10, 'valign': 'vcenter'}) 
+            f_blue = wb.add_format({'bold': True, 'bg_color': '#0070c0', 'font_color': 'white', 'align': 'center', 'valign': 'vcenter', 'border': 1})
+            f_yellow = wb.add_format({'bold': True, 'bg_color': '#FFC000', 'font_color': 'black', 'align': 'center', 'valign': 'vcenter', 'border': 1})
+            f_red = wb.add_format({'font_color': 'red', 'align': 'center', 'valign': 'vcenter', 'text_wrap': True})
+            f_center = wb.add_format({'align': 'center', 'valign': 'top', 'font_size': 10})
+            f_sign = wb.add_format({'top': 1, 'align': 'center', 'font_size': 10, 'valign': 'top'})
+            
+            f_TL = wb.add_format({'top': 1, 'left': 1, 'bold': True, 'valign': 'vcenter'})
+            f_T = wb.add_format({'top': 1, 'valign': 'vcenter'})
+            f_T_b = wb.add_format({'top': 1, 'bold': True, 'valign': 'vcenter'})
+            f_TR = wb.add_format({'top': 1, 'right': 1, 'valign': 'vcenter'})
+            f_ML = wb.add_format({'left': 1, 'bold': True, 'valign': 'top'})
+            f_M = wb.add_format({'valign': 'top'})
+            f_M_b = wb.add_format({'bold': True, 'valign': 'top'})
+            f_merge_mid = wb.add_format({'valign': 'top', 'text_wrap': True, 'right': 1})
+            f_merge_bot = wb.add_format({'bottom': 1, 'valign': 'top', 'text_wrap': True, 'right': 1})
+            f_BL = wb.add_format({'bottom': 1, 'left': 1, 'bold': True, 'valign': 'top'})
+            
+            if os.path.exists(LOGO):
+                ws.insert_image('F1', LOGO, {'x_offset': 10, 'y_offset': 2, 'x_scale': 2.00, 'y_scale': 2.00})
+            
+            ws.write('A2', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_title)
+            ws.write('A4', "DADOS GERAIS:", f_hdr_u)
+            ws.write('F4', "RESUMO DO RELATÓRIO:", f_hdr_u) 
+            ws.write('A5', "Cliente:", f_bold)
+            ws.merge_range('B5:D5', cliente[:45], f_norm)
+            ws.write('F5', "Período:", f_bold)
+            ws.merge_range('G5:H5', f"{data_inicio_rel} até {data_fim_rel}", f_norm)
+            ws.write('A6', "Solicitante:", f_bold)
+            ws.merge_range('B6:D6', solicitante, f_norm)
+            ws.write('F6', "Total de Horas:", f_bold)
+            ws.merge_range('G6:H6', total_hr_str, f_norm)
+            ws.write('A7', "Tipo de Atend.:", f_bold)
+            ws.merge_range('B7:D7', "Implantação CRTI", f_norm)
+            ws.write('F7', "Deslocamento:", f_bold)
+            ws.merge_range('G7:H7', total_hr_str_d, f_norm)
+            ws.write('A8', "Unidade:", f_bold)
+            ws.merge_range('B8:D8', local, f_norm)
+            ws.write('F8', "Distância (KM):", f_bold)
+            ws.merge_range('G8:H8', f"{total_km:.2f} km".replace('.', ','), f_norm)
+            
+            row = 10
+            ws.merge_range(f'A{row}:H{row}', "DESCRIÇÃO DAS ATIVIDADES", f_blue)
+            ws.set_row(row - 1, 18)
+            row += 1
+            for _, linha_atv in grupo.iterrows():
+                d = pd.to_datetime(linha_atv["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_atv["DATA"]) else ""
+                ob = str(linha_atv["OBSERVAÇÕES"]).strip()
+                fo = str(linha_atv.get("FORMA", "Remoto")).strip()
+                pa = str(linha_atv["PARTICIPANTE"]).strip() or participante_padrao
+                hi = str(linha_atv["HR_INICIO"])[0:5] if pd.notnull(linha_atv["HR_INICIO"]) else "00:00"
+                hf = str(linha_atv["HR_FIM"])[0:5] if pd.notnull(linha_atv["HR_FIM"]) else "00:00"
+                tt = str(linha_atv["TOTAL_HR"])[0:5] if pd.notnull(linha_atv["TOTAL_HR"]) else "00:00"
+                
+                ws.write(f'A{row}', "Data:", f_TL)
+                ws.write(f'B{row}', d, f_T)
+                ws.write(f'C{row}', "Hora Início:", f_T_b)
+                ws.write(f'D{row}', hi, f_T)
+                ws.write(f'E{row}', "Hora Final:", f_T_b)
+                ws.write(f'F{row}', hf, f_T)
+                ws.write(f'G{row}', "Total:", f_T_b)
+                ws.write(f'H{row}', tt, f_TR)
+                row += 1
+                ws.write(f'A{row}', "Consultor:", f_ML)
+                ws.merge_range(f'B{row}:D{row}', consultor, f_M)
+                ws.merge_range(f'E{row}:F{row}', "Forma de Atendimento:", f_M_b)
+                ws.merge_range(f'G{row}:H{row}', fo, f_merge_mid)
+                row += 1
+                
+                linhas_obs = max(1, len(ob) // 90 + 1)
+                ws.write(f'A{row}', "Atividade:", f_ML)
+                ws.merge_range(f'B{row}:H{row}', ob if ob else "-", f_merge_mid)
+                ws.set_row(row - 1, 15 * linhas_obs)
+                row += 1
+                
+                linhas_pa = max(1, len(pa) // 90 + 1)
+                ws.write(f'A{row}', "Participante:", f_BL)
+                ws.merge_range(f'B{row}:H{row}', pa if pa else "-", f_merge_bot)
+                ws.set_row(row - 1, 15 * linhas_pa)
+                row += 1
+                
+            if tem_desl:
+                ws.merge_range(f'A{row}:H{row}', "DESLOCAMENTOS", f_blue)
+                ws.set_row(row - 1, 18)
+                row += 1
+                for _, linha_desl in grupo.iterrows():
+                    km_s = str(linha_desl.get("KM_D", "")).strip().replace(',', '.')
+                    if km_s in ["", "nan", "None", "0", "0.0"]:
+                        continue 
+                    
+                    dd = pd.to_datetime(linha_desl["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_desl["DATA"]) else ""
+                    hi_d = str(linha_desl["HR_INICIO_D"])[0:5] if pd.notnull(linha_desl["HR_INICIO_D"]) else "00:00"
+                    hf_d = str(linha_desl["HR_FIM_D"])[0:5] if pd.notnull(linha_desl["HR_FIM_D"]) else "00:00"
+                    tt_d = str(linha_desl["TOTAL_HR_D"])[0:5] if pd.notnull(linha_desl["TOTAL_HR_D"]) else "00:00"
+                    ds_d = str(linha_desl.get("DESCRICAO_D", "")).strip()
+                    fm_d = str(linha_desl.get("FORMA_D", "Carro Próprio")).strip()
+                    
+                    ws.write(f'A{row}', "Data:", f_TL)
+                    ws.write(f'B{row}', dd, f_T)
+                    ws.write(f'C{row}', "Hora Início:", f_T_b)
+                    ws.write(f'D{row}', hi_d, f_T)
+                    ws.write(f'E{row}', "Hora Final:", f_T_b)
+                    ws.write(f'F{row}', hf_d, f_T)
+                    ws.write(f'G{row}', "Total:", f_T_b)
+                    ws.write(f'H{row}', tt_d, f_TR)
+                    row += 1
+                    ws.write(f'A{row}', "Distância:", f_ML)
+                    ws.write(f'B{row}', f"{km_s} km", f_M)
+                    ws.merge_range(f'C{row}:D{row}', "Forma Desloc.:", f_M_b)
+                    ws.merge_range(f'E{row}:F{row}', fm_d, f_M)
+                    ws.write(f'G{row}', "Consultor:", f_M_b)
+                    ws.write(f'H{row}', consultor, f_merge_mid)
+                    row += 1
+                    
+                    linhas_ds = max(1, len(ds_d) // 90 + 1)
+                    ws.write(f'A{row}', "Descrição:", f_BL)
+                    ws.merge_range(f'B{row}:H{row}', ds_d if ds_d else "-", f_merge_bot)
+                    ws.set_row(row - 1, 15 * linhas_ds)
+                    row += 1
+
+            # --- NOVO BLOCO 3: PENDÊNCIAS NO EXCEL (CABEÇALHO AMARELO CORRIGIDO) ---
+            if tem_pendencias:
+                ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS", f_yellow)
+                ws.set_row(row - 1, 18)
+                row += 1
+                for _, linha_p in grupo_pendencias.iterrows():
+                    dp_data = pd.to_datetime(linha_p["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_p["DATA"]) else data_inicio_rel
+                    desc_p = str(linha_p["DESCRICAO_P"]).strip()
+                    resp_p = str(linha_p["RESPONSAVEL_P"]).strip()
+                    status_p = str(linha_p["STATUS_P"]).strip()
+                    
+                    ws.write(f'A{row}', "Data:", f_TL)
+                    ws.write(f'B{row}', dp_data, f_T)
+                    ws.write(f'C{row}', "Responsável:", f_T_b)
+                    ws.write(f'D{row}', resp_p, f_T)
+                    ws.write(f'E{row}', "Status:", f_T_b)
+                    ws.write(f'F{row}', status_p, f_T)
+                    ws.write(f'G{row}', "", f_T_b)
+                    ws.write(f'H{row}', "", f_TR)
+                    row += 1
+                    
+                    linhas_dp = max(1, len(desc_p) // 90 + 1)
+                    ws.write(f'A{row}', "Descrição:", f_BL)
+                    ws.merge_range(f'B{row}:H{row}', desc_p if desc_p else "-", f_merge_bot)
+                    ws.set_row(row - 1, 15 * linhas_dp)
+                    row += 1
+            row += 2
+            ws.merge_range(f'A{row}:D{row}', f"Curitiba, {data_rodape}.", f_norm)
+            row += 2
+            ws.merge_range(f'A{row}:H{row}', "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram realizados conforme solicitado.")
+            ws.set_row(row - 1, 30)
+            row += 5
+            
+            ws.merge_range(f'A{row}:C{row}', consultor, f_sign)
+            ws.merge_range(f'F{row}:H{row}', solicitante, f_sign)
+            row += 1
+            ws.merge_range(f'A{row}:C{row}', "CRTI", f_center)
+            ws.merge_range(f'F{row}:H{row}', cliente[:30], f_center)
+            row += 1
+            ws.merge_range(f'A{row}:C{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
+            ws.merge_range(f'F{row}:H{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
+            
+            ws.hide_gridlines(2)
+            wb.close()
+            arquivos_saida.append(file_xlsx)
+            
+        resumo_status.success(f"✅ Feito! Foram gerados **{len(arquivos_saida)}** arquivos da aba '{aba_selecionada}'.")
+        nome_zip = f"Relatorios_{aba_selecionada.replace(' ', '_')}"
+        caminho_zip = f"{nome_zip}.zip"
+        shutil.make_archive(nome_zip, 'zip', PASTA_SAIDA)
+ 
+        st.markdown("### Download dos Arquivos")
+        with open(caminho_zip, "rb") as f_zip:
+            st.download_button(
+                label="📦 BAIXAR TODOS OS RELATÓRIOS (ZIP)",
+                data=f_zip,
+                file_name=caminho_zip,
+                mime="application/zip",
+                type="primary",
+                use_container_width=True
+            )
+ 
+        with st.expander("Ver arquivos individualmente..."):
+            cols_dw = st.columns(3)
+            for i, path in enumerate(arquivos_saida):
+                nome_arq = os.path.basename(path)
+                with open(path, "rb") as file:
+                    ext = "📄 PDF" if ".pdf" in nome_arq.lower() else "📊 Excel"
+                    cols_dw[i % 3].download_button(label=f"Baixar {ext}: {nome_arq[:15]}...", data=file, file_name=nome_arq, key=path)
+
+if st.session_state.relatorios_gerados:
+    arquivos_pasta = glob.glob(os.path.join(PASTA_SAIDA, "*.*"))
+    arquivos_exibicao = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx")]
+ 
+    if arquivos_exibicao:
+        st.subheader("📥 Baixar Relatórios Gerados")
+        cols_dw = st.columns(3)
+        for i, path in enumerate(arquivos_exibicao):
+            nome_arq = os.path.basename(path)
+            with open(path, "rb") as file:
+                ext = "📄 PDF" if ".pdf" in nome_arq.lower() else "📊 Excel"
+                cols_dw[i % 3].download_button(
+                    label=f"Baixar {ext}: {nome_arq[:15]}...", 
+                    data=file, 
+                    file_name=nome_arq, 
+                    key=f"btn_{path}" 
+                )
+
+@st.dialog("📩 Confirmação de Disparo em Lote")
+def confirmar_envio_atendimentos_popup(arquivos_validos):
+    agrupados_por_ra = {}
+    for arq in arquivos_validos:
+        base = arq.replace(".pdf", "").replace(".xlsx", "")
+        if base not in agrupados_por_ra: 
+            agrupados_por_ra[base] = []
+        agrupados_por_ra[base].append(arq)
+ 
+    total_envios = len(agrupados_por_ra)
+    st.write("Você tem certeza que deseja disparar os relatórios de atendimento em lote?")
+    st.write(f"• **Destinatário Cadastrado:** `{email_destinatario}`")
+    st.write(f"• **Total de e-mails a serem gerados:** {total_envios} mensagens")
+    st.markdown("---")
+ 
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+        if st.button("✅ Sim, Disparar Todos", use_container_width=True):
+            import time
+            st.subheader("🚀 Iniciando disparo...")
+            sucessos = 0
+            barra = st.progress(0)
+ 
+            for i, (base, lista_anexos) in enumerate(agrupados_por_ra.items()):
+                sucesso, msg = enviar_relatorio_email(
+                    lista_anexos, "://gmail.com", 587, "hudson.valente@crti.com.br", senha_app, email_destinatario
+                )
+                if sucesso:
+                    sucessos += 1
+                    st.success(msg)
+                else: 
+                    st.error(msg)
+                barra.progress((i + 1) / total_envios)
+ 
+            st.info(f"📊 **{sucessos}** de **{total_envios}** e-mails enviados.")
+            if sucessos == total_envios:
+                st.balloons()
+                time.sleep(10)
+            else:
+                time.sleep(5)
+            st.rerun()
+ 
+    with col_p2:
+        if st.button("❌ Não, Cancelar", use_container_width=True):
+            st.rerun()
+
+if btn_enviar_emails:
+    st.markdown("---")
+    arquivos_pasta = glob.glob(os.path.join(PASTA_SAIDA, "*.*"))
+    arquivos_validos = [f for f in arquivos_pasta if f.endswith(".pdf") or f.endswith(".xlsx")]
+ 
+    if not arquivos_validos:
+        st.warning("⚠️ Gere os relatórios primeiro.")
+        st.stop()
+ 
+    confirmar_envio_atendimentos_popup(arquivos_validos)
+
             
             # --- 2. GERAÇÃO EXCEL ---
             wb = xlsxwriter.Workbook(file_xlsx)
