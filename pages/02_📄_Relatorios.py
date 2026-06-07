@@ -503,7 +503,7 @@ if btn_gerar:
                     pdf.set_xy(x_i + 2, y_i + 2)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(12, 5, "Data: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(22, 5, dp_data, ln=False)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Descrição: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, desc_p, ln=False)
-                    #pdf.set_y(pdf.get_y() + 2)
+                    pdf.set_y(pdf.get_y() + 2)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(25, 5, "Responsável: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(22, 5, resp_p, ln=False)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(14, 5, "Status: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(20, 5, status_p, ln=False)
                     # Continua na mesma linha horizontal sem quebrar
