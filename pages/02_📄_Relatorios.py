@@ -665,7 +665,7 @@ if btn_gerar:
             f_bold = wb.add_format({'bold': True, 'font_size': 10, 'valign': 'vcenter'})
             f_norm = wb.add_format({'font_size': 10, 'valign': 'vcenter'})
             f_blue = wb.add_format({'bold': True, 'bg_color': '#0070c0', 'font_color': 'white', 'align': 'center', 'valign': 'vcenter', 'border': 1})
-            f_yellow = wb.add_format({'bold': True, 'bg_color': '#FAF200', 'font_color': 'black', 'align': 'center', 'valign': 'vcenter', 'border': 1})
+            f_yellow = wb.add_format({'bold': True, 'bg_color': '#FAFA00', 'font_color': 'black', 'align': 'center', 'valign': 'vcenter', 'border': 1})
             f_red = wb.add_format({'font_color': 'red', 'align': 'center', 'valign': 'vcenter', 'text_wrap': True})
             f_center = wb.add_format({'align': 'center', 'valign': 'top', 'font_size': 10})
             f_sign = wb.add_format({'top': 1, 'align': 'center', 'font_size': 10, 'valign': 'top'})
