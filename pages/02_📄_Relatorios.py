@@ -472,8 +472,10 @@ if btn_gerar:
                     pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Distância: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(30, 5, f"{km_s} km", ln=False)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(45, 5, "Forma de Deslocamento: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(30, 5, fm_d, ln=False)
                     pdf.set_font('Arial', 'B', 10); pdf.cell(20, 5, "Consultor: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, consultor, ln=True)
-                    pdf.set_x(x_i + 2); pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Descrição: ", ln=False); pdf.set_font('Arial', '', 10); pdf.multi_cell(0, 5, ds_d if ds_d else "-")
-                    pdf.set_y(pdf.get_y() + 2); pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
+                                        # Ajuste fino: Alinha a Descrição na mesma linha dos campos de cima
+                    pdf.set_font('Arial', 'B', 10); pdf.cell(22, 5, "Descrição: ", ln=False); pdf.set_font('Arial', '', 10); pdf.cell(0, 5, desc_p, ln=True)
+                    pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i + 2)
+
 
             # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO PDF (ORDEM CORRIGIDA E FUNDO AMARELO) ---
             if tem_pend:
