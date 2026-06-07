@@ -401,13 +401,17 @@ if btn_gerar:
             
             # --- FILTRAGEM DINÂMICA DE PENDÊNCIAS HISTÓRICAS DO CLIENTE ---
                         # --- FILTRAGEM DINÂMICA DE PENDÊNCIAS HISTÓRICAS DO CLIENTE ---
+                       # --- FILTRAGEM DINÂMICA DE PENDÊNCIAS HISTÓRICAS DO CLIENTE ---
             grupo_pendencias = df_todas_pendencias[
                 (df_todas_pendencias["CLIENTE"].astype(str).str.strip() == str(cliente).strip()) &
                 (df_todas_pendencias["STATUS_P"].astype(str).str.strip() == "Pendente") &
                 (df_todas_pendencias["DESCRICAO_P"].astype(str).str.strip() != "")
             ]
-            # ALTERAÇÃO CIRÚRGICA: Mudado o nome para bater com a verificação de baixo
+            
+            # DUPLA SEGURANÇA: Registra os dois nomes na memória para eliminar os NameErrors de vez
             tem_pendencias = not grupo_pendencias.empty
+            tem_pend = tem_pendencias
+
 
             
             # --- 1. GERAÇÃO PDF ---
