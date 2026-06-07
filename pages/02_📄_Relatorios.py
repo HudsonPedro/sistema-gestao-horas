@@ -290,7 +290,7 @@ if btn_gerar:
             st.error("❌ Nenhum registro encontrado para estas datas nesta aba.")
             st.stop()
             
-        cols_obr = ["CLIENTE", "OBSERVAÇÕES", "CONSULTOR", "SOLICITANTE", "PARTICIPANTE", "FORMA", "RA", "LOCAL", "SITUACAO_RA", "HR_INICIO_D", "HR_FIM_D", "TOTAL_HR_D", "KM_D", "FORMA_D", 'DESCRICAO_D', 'HR_INICIO', 'HR_FIM', 'TOTAL_HR', 'DATA']
+        cols_obr = ["CLIENTE", "OBSERVAÇÕES", "CONSULTOR", "SOLICITANTE", "PARTICIPANTE", "FORMA", "RA", "LOCAL", "SITUACAO_RA", "HR_INICIO_D", "HR_FIM_D", "TOTAL_HR_D", "KM_D", "FORMA_D", 'DESCRICAO_D', 'HR_INICIO', 'HR_FIM', 'TOTAL_HR', 'DATA', "DESCRICAO_P", "RESPONSAVEL_P", "STATUS_P"]
         for col in cols_obr:
             if col not in df.columns: df[col] = ""
             
