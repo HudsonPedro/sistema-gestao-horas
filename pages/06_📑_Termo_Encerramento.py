@@ -197,9 +197,7 @@ with st.sidebar:
         st.switch_page("pages/04_💰_Medicao_Mensal.py")
     if st.button("📋 Termo Homologação", use_container_width=True): 
        st.switch_page("pages/05_📋_Termos.py")
-    if st.button("📑 Termo Encerramento", use_container_width=True): 
-        st.switch_page("pages/06_📑_Termo_Encerramento.py")
-    
+        
     # INTERFACE DE DISPARO DA SIDEBAR
     st.markdown("---")
     st.header("📬 Disparo de Termos")
