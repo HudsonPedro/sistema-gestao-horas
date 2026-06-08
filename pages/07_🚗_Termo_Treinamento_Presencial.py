@@ -190,7 +190,7 @@ if not df_leg.empty and cliente_selecionado:
 
 col_dados_1, col_dados_2 = st.columns(2)
 with col_dados_1:
-    solicitante_nome = st.text_input("Nome do Responsável / Administrador (Cliente):", value=gerente_cliente_sugerido)
+    solicitante_nome = st.selectbox("Nome do Responsável / Administrador (Cliente):", options=gerente_cliente_sugerido) #text_input
     participantes_txt = st.text_area("Responsáveis pelo recebimento dos treinamentos (Participantes):", placeholder="Ex:\nJoão Silva - Compras\nMaria Souza - Financeiro")
 with col_dados_2:
     consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="HUDSON VALENTE")
