@@ -197,8 +197,8 @@ with st.form("form_lancamento", clear_on_submit=True):
         forma = st.selectbox("FORMA", ["Remoto", "Presencial"])
         
     with col3:
-        hr_inicio_d = st.time_input("HORA INICIO(Desloc)", value=None)
-        hr_fim_d = st.time_input("HORA FIM(Desloc)", value=None)
+        hr_inicio_d = st.time_input("HORA INICIO(Desloc)", value='00:00')
+        hr_fim_d = st.time_input("HORA FIM(Desloc)", value='00:00')
         km_d = st.number_input("KM(Desloc)", min_value=0.0, step=0.1)
         forma_d = st.selectbox("FORMA(Desloc)", [" ", "Carro Próprio", "Ônibus", "Taxi/Uber", "Avião"])
 
