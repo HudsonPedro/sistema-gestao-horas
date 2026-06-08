@@ -97,6 +97,8 @@ with st.sidebar:
        st.switch_page("pages/05_📋_Termos.py")
     if st.button("📑 Termo Encerramento", use_container_width=True): 
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
+    if st.button("🚗 Termo Presencial", use_container_width=True): 
+        st.switch_page("pages/07_🚗_Termo_Treinamento_Presencial.py")
              
     st.divider()
     st.caption("v1.0 - 11052026")
@@ -126,7 +128,7 @@ except:
     st.title("Bem-vindo ao Sistema de Gestão HPTECH")
 st.markdown("---")
 
-col1, col2, col3, col4, col5, col6 = st.columns(6)
+col1, col2, col3, col4, col5, col6, col7 = st.columns(6)
 
 with col1:
     st.subheader("📈 Dashboard")
@@ -162,7 +164,13 @@ with col6:
     st.subheader("📑 Encerramento")
     st.write("Gere os Termos de Encerramento.")
     if st.button("Novo Encerramento", key="btn_termo_encerra"):
-        st.switch_page("pages/06_📑_Termo_Encerramento.py")        
+        st.switch_page("pages/06_📑_Termo_Encerramento.py")
+
+with col7:
+    st.subheader("🚗 Termo Presencial")
+    st.write("Gere o Termo Presencial.")
+    if st.button("Novo Termo Presencial", key="btn_termo_encerra"):
+        st.switch_page("pages/07_🚗_Termo_Treinamento_Presencial.py")
 
 st.divider()
 st.info("Sistema integrado HPtech Informática ME.")
