@@ -75,7 +75,7 @@ st.markdown("""
 
 # 3. FUNÇÕES DE DADOS
 @st.cache_data(ttl=600)
-def carregar_legendas():
+def carregar_dados():
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
     df = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
     return df
@@ -127,8 +127,12 @@ with st.sidebar:
     st.caption("Copyright ©2026 HPtech Informática ME")
 
 # 5. CARREGAMENTO DE LISTAS
+st.sidebar.header("⚙️ Configurações GERAIS")
+if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
+    st.cache_data.clear()
+    st.rerun()
 try:
-    df_leg = carregar_legendas()
+    df_leg = carregar_dados()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
     lista_situacao = sorted(df_leg.iloc[:, 4].dropna().unique().tolist())
     
