@@ -161,6 +161,7 @@ except Exception as e:
     st.info("💡 Dica: Verifique se em 'Arquivo > Compartilhar > Publicar na Web', a opção 'Todo o documento' está selecionada como 'Microsoft Excel'.")
     st.stop()
    
+st.sidebar.header("⚙️ Configurações GERAIS")
 if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
     st.cache_data.clear()
     st.rerun()
