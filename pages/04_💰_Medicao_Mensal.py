@@ -133,10 +133,10 @@ with st.sidebar:
              
     
     st.divider()
-    st.markdown("### Configurações GERAIS")
-    if st.button("🔄 Atualizar Base de Dados", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
+    st.sidebar.header("⚙️ Configurações GERAIS")
+    if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
+    st.cache_data.clear()
+    st.rerun()
   
     st.divider()
     st.caption("v1.0 - 11052026")
