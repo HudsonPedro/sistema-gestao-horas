@@ -167,7 +167,7 @@ with col6:
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
 
 with col7:
-    st.subheader("🚗 Termo Presencial")
+    st.subheader("🚗 Presencial")
     st.write("Gere o Termo Presencial.")
     if st.button("Novo Termo Presencial", key="btn_termo_presencial"):
         st.switch_page("pages/07_🚗_Termo_Treinamento_Presencial.py")
