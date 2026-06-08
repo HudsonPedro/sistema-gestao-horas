@@ -130,6 +130,8 @@ with st.sidebar:
        st.switch_page("pages/05_📋_Termos.py")
     if st.button("📑 Termo Encerramento", use_container_width=True): 
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
+    if st.button("🚗 Termo Presencial", use_container_width=True): 
+        st.switch_page("pages/07_🚗_Termo_Treinamento_Presencial.py")
              
     
     st.divider()
