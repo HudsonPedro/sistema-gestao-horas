@@ -184,7 +184,7 @@ cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if li
 # Coleta dinâmica do solicitante (gerente do cliente)
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
-    solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
+    solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
         gerente_cliente_sugerido = str(solicitantes).strip()
 
