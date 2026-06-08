@@ -210,7 +210,9 @@ with st.form("form_lancamento", clear_on_submit=True):
     st.markdown("---")
     observacoes = st.text_area("OBSERVAÇÕES")
     participante = st.text_input("PARTICIPANTES")
-    descricao_d = st.text_area("DESCRICAO(Desloc)")
+    descricao_d = st.text_area("DESCRIÇÃO(Desloc)")
+    desc_pres = st.text_area("DESCRIÇÃO PRESENCIAL")
+    obs_pres = st.text_area("OBSERVAÇÕES PRESENCIAL")
     
 
     btn_enviar = st.form_submit_button("🚀 Gravar na Base de Dados")
@@ -284,7 +286,9 @@ if btn_enviar:
                 {'range': f'X{linha_destino}', 'values': [[descricao_d]]},
                 {'range': f'Y{linha_destino}', 'values': [[descricao_p]]},
                 {'range': f'Z{linha_destino}', 'values': [[responsavel_p]]},
-                {'range': f'AA{linha_destino}', 'values': [[status_p]]}
+                {'range': f'AA{linha_destino}', 'values': [[status_p]]},
+                {'range': f'AB{linha_destino}', 'values': [[desc_pres]]},
+                {'range': f'AC{linha_destino}', 'values': [[obs_pres]]}
             ]
 
             aba.batch_update(valores_atualizacao, value_input_option='USER_ENTERED')
