@@ -198,7 +198,7 @@ if not df_leg.empty and cliente_selecionado:
         gerente_cliente_sugerido = str(solicitantes_df.iloc[0]).strip()
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
-consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="HUDSON VALENTE")
+consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="Hudson Valente")
 
 data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
