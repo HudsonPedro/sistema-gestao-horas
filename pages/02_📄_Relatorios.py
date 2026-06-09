@@ -227,7 +227,7 @@ st.markdown("---")
 
 # --- LÊ A PLANILHA TODA (TODAS AS ABAS) ---
 @st.cache_data(ttl=600) 
-def carregar_base_de_dados():
+def carregar_dados():
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
     dict_abas = pd.read_excel(url, sheet_name=None, engine='openpyxl')
     return dict_abas
@@ -238,7 +238,7 @@ if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
 
 with st.spinner("⏳ Analisando Dados..."):
     try:
-        dict_abas = carregar_base_de_dados()
+        dict_abas = carregar_dados()
         abas_disponiveis = list(dict_abas.keys())
     except Exception as e:
         st.error(f"❌ Erro ao baixar base de dados: {e}")
