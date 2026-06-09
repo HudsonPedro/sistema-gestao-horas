@@ -178,6 +178,7 @@ data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de {data_emissao.year}"
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
+# --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -188,11 +189,9 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 xl_dados = pd.ExcelFile(io.BytesIO(res_dados.content))
                 df_dados = pd.read_excel(xl_dados, sheet_name=aba_mes_selecionada, engine='openpyxl')
                 
-                # Força o reset dos eixos de linhas para remover duplicidades antes de filtrar
                 df_dados = df_dados.reset_index(drop=True)
                 df_dados.columns = df_dados.columns.str.strip()
                 
-                # Definição e mapeamento estrito das colunas conforme seu banco de dados
                 col_cliente = "CLIENTE"
                 col_situacao = "SITUACAO_RA"
                 col_ra = "RA"
@@ -201,7 +200,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 if col_situacao in df_dados.columns:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                 
-                # Filtra os lançamentos pela regra de negócio mestre
+                # Regra de negócio mestre: filtra por cliente, situação ativa em elaboração e que possuam RA
                 atendimentos_cliente = df_dados[
                     (df_dados[col_cliente] == cliente_selecionado) & 
                     (df_dados[col_situacao] == "Em Elaboração") & 
@@ -209,13 +208,12 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 ].copy()
                 
                 if atendimentos_cliente.empty:
-                    st.warning(f"⚠️ Nenhum lançamento em elaboração com RA ativo foi localizado na aba '{aba_mes_selecionada}'.")
+                    st.warning(f"⚠️ Nenhum lançamento com SITUACAO_RA = 'Em Elaboração' foi localizado na aba '{aba_mes_selecionada}'.")
                 else:
                     for antigo in glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.*")):
                         try: os.remove(antigo)
                         except: pass
 
-                    # Reseta o índice e aplica a ordenação cronológica estrita
                     atendimentos_cliente = atendimentos_cliente.reset_index(drop=True)
                     atendimentos_cliente[col_data] = pd.to_datetime(atendimentos_cliente[col_data], errors='coerce')
                     atendimentos_cliente = atendimentos_cliente.sort_values(by=col_data)
@@ -227,27 +225,34 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     lista_atendimentos_word = []
                     lista_observacoes_gerais = []
                     
-                    # Nomes exatos das colunas da planilha mestre
-                    col_part = "PARTICIPANTE"
-                    col_desc = "DESC_PRES"
-                    col_obs = "OBS_PRES"
-                    col_entrada = "ENTRADA"
-                    col_saida = "SAÍDA" if "SAÍDA" in df_dados.columns else "SAIDA"
-                    col_modulo = "MÓDULO / ATIVIDADE" if "MÓDULO / ATIVIDADE" in df_dados.columns else "MODULO / ATIVIDADE"
+                    col_part = next((c for c in df_dados.columns if "PARTICIPANTE" in c.upper()), "PARTICIPANTE")
+                    col_desc = next((c for c in df_dados.columns if "DESC_PRES" in c.upper() or "DESCRIÇÃO" in c.upper()), "DESC_PRES")
+                    col_obs = next((c for c in df_dados.columns if "OBS_PRES" in c.upper() or "OBSERVAÇÃO" in c.upper()), "OBS_PRES")
+                    col_entrada = next((c for c in df_dados.columns if "ENTRADA" in c.upper()), "ENTRADA")
+                    col_saida = next((c for c in df_dados.columns if "SAIDA" in c.upper() or "SAÍDA" in c.upper()), "SAÍDA")
+                    col_modulo = next((c for c in df_dados.columns if "MÓDULO" in c.upper() or "MODULO" in c.upper()), "MÓDULO / ATIVIDADE")
                     
-                    # O laço iterrows processa cada registro de forma isolada e sequencial por linha física
-                    for idx, linha in atendimentos_cliente.iterrows():
-                        dt_str = linha[col_data].strftime("%d/%m/%Y") if pd.notnull(linha[col_data]) else ""
+                    dict_part = atendimentos_cliente[col_part].to_dict()
+                    dict_desc = atendimentos_cliente[col_desc].to_dict()
+                    dict_obs = atendimentos_cliente[col_obs].to_dict()
+                    dict_entrada = atendimentos_cliente[col_entrada].to_dict()
+                    dict_saida = atendimentos_cliente[col_saida].to_dict()
+                    dict_modulo = atendimentos_cliente[col_modulo].to_dict()
+                    dict_data_dia = atendimentos_cliente[col_data].to_dict()
+
+                    for idx in atendimentos_cliente.index:
+                        dt_objeto = dict_data_dia.get(idx)
+                        dt_str = dt_objeto.strftime("%d/%m/%Y") if pd.notnull(dt_objeto) else ""
                         
-                        part_val = str(linha.get(col_part, "")).strip()
-                        desc_pres_val = str(linha.get(col_desc, "")).strip()
-                        obs_pres_val = str(linha.get(col_obs, "")).strip()
-                        modulo_val = str(linha.get(col_modulo, "")).strip()
+                        part_val = str(dict_part.get(idx, "")).strip()
+                        desc_pres_val = str(dict_desc.get(idx, "")).strip()
+                        obs_pres_val = str(dict_obs.get(idx, "")).strip()
+                        modulo_val = str(dict_modulo.get(idx, "")).strip()
                         
-                        # Extração isolada por linha de registro para coletar horários mutáveis da tarde
-                        hora_ini_raw = str(linha.get(col_entrada, "08:00")).strip()
-                        hora_fim_raw = str(linha.get(col_saida, "12:00")).strip()
+                        hora_ini_raw = str(dict_entrada.get(idx, "08:00")).strip()
+                        hora_fim_raw = str(dict_saida.get(idx, "12:00")).strip()
                         
+                        # Limpa strings mantendo as variações exatas (Ex: 08:00 ou 13:00) de cada linha
                         hora_ini_val = hora_ini_raw[:5] if ":" in hora_ini_raw else hora_ini_raw
                         hora_fim_val = hora_fim_raw[:5] if ":" in hora_fim_raw else hora_fim_raw
                         
@@ -255,10 +260,14 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         if not participante_final or participante_final.lower() in ["nan", "", "none"]:
                             participante_final = str(solicitante_nome).strip()
                         
+                        # CORREÇÃO CRUCIAL: Nome da variável alinhado sem o caractere fantasma
                         lista_atendimentos_word.append({
                             "modulos": modulo_val if modulo_val.lower() != "nan" else "",
+                            "modulo": modulo_val if modulo_val.lower() != "nan" else "",
                             "participantes": participante_final,
+                            "participante": participante_final,
                             "data_dia": dt_str,
+                            "data": dt_str,
                             "hora_inicio": hora_ini_val if hora_ini_val.lower() != "nan" else "08:00",
                             "hora_fim": hora_fim_val if hora_fim_val.lower() != "nan" else "12:00",
                             "desc_pres": desc_pres_val if desc_pres_val.lower() != "nan" else ""
@@ -268,6 +277,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                             lista_observacoes_gerais.append(obs_pres_val.strip())
 
                     resumao_geral_ac = "\n".join(lista_observacoes_gerais) if lista_observacoes_gerais else "Nenhuma observação técnica registrada."
+
 
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
                     
@@ -351,4 +361,3 @@ if btn_enviar_emails:
         st.sidebar.warning("⚠️ Mapeie os dados na tela primeiro antes de disparar.")
     else: 
         confirmar_envio_presencial_popup(email_destinatario, arquivos_gerados_p)
-
