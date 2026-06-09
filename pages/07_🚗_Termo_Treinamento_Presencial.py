@@ -150,7 +150,10 @@ def carregar_estrutura_abas_p02():
     abas_reais = xl.sheet_names
     abas_meses = [a for a in abas_reais if a not in ["Legendas", "Config", "Dashboard", "Parâmetros", "Parametros"]]
     return df_leg, abas_meses
-
+st.sidebar.header("⚙️ Configurações GERAIS")
+if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
+    st.cache_data.clear()
+    st.rerun()
 try:
     df_leg, lista_abas_meses = carregar_estrutura_abas_p02()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
