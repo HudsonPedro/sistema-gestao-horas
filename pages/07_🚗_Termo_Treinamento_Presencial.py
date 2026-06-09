@@ -138,7 +138,7 @@ with st.sidebar:
 # URL oficial mestre da planilha publicada
 URL_PLANILHA_MUDANCA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
 
-# 5. CARREGAMENTO DAS ABAS UTILIZANDO A ENGENHARIA LIMPA DO PANDAS
+# 5. CARREGAMENTO DAS ABAS UTILIZANDO A ENGENHARIA DO EXCELFILE
 @st.cache_data(ttl=600)
 def carregar_estrutura_abas_p02():
     xl = pd.ExcelFile(URL_PLANILHA_MUDANCA)
@@ -159,16 +159,15 @@ st.title("🚗 Confirmação de Treinamento Presencial (Por Blocos)")
 st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos do mês selecionado.")
 st.markdown("---")
 
-# SELECTBOXES CORRIGIDOS: Carregam as listas de primeira na tela
 cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 aba_mes_selecionada = st.selectbox("Selecione o Mês do Atendimento (Aba da Planilha):", lista_abas_meses) if lista_abas_meses else st.text_input("Aba do Mês:")
 
-# CORREÇÃO DO NOME DO GESTOR: Extrai o primeiro registro sem aspas e sem colchetes
+# Extração limpa do nome do gerente para sumir com aspas e colchetes
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
     if not solicitantes_df.empty:
-        gerente_cliente_sugerido = str(solicitantes_df.iloc[0]).strip()
+        gerente_cliente_sugerido = str(solicitantes_df.values[0]).strip()
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="HUDSON VALENTE")
@@ -176,8 +175,6 @@ consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="HUDSON VA
 data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de {data_emissao.year}"
-# --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
-# --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
 # --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
@@ -187,26 +184,28 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
             try:
                 df_dados = pd.read_excel(URL_PLANILHA_MUDANCA, sheet_name=aba_mes_selecionada, engine='openpyxl')
                 
-                # Normaliza os cabeçalhos transformando tudo em maiúsculas e removendo espaços extras
+                # CORREÇÃO ABSOLUTA DO ERRO DE INDICE DUPLICADO: Reconstrói os rótulos de linha da planilha do zero antes de filtrar
+                df_dados = df_dados.reset_index(drop=True)
+                
+                # Normaliza cabeçalhos em maiúsculas
                 df_dados.columns = df_dados.columns.str.upper().str.strip()
                 
-                # Definição exata das colunas da sua planilha mestre
+                # Mapeia a coluna mestre informada
                 col_situacao = "SITUACAO_RA"
                 col_cliente = "CLIENTE"
                 col_ra = "RA"
                 col_data = "DATA"
                 
-                # Validação de segurança para garantir que a coluna informada existe na aba ativa
+                # Fallback de redundância caso a coluna mestre mude de padrão
                 if col_situacao not in df_dados.columns:
-                    # Fallback flexível caso em algum mês esteja escrito com acento
                     col_situacao = next((c for c in df_dados.columns if "SITUACAO" in c or "SITUAÇÃO" in c), None)
 
                 if not col_situacao or col_cliente not in df_dados.columns:
-                    st.error(f"⚠️ Erro de Estrutura: A coluna '{col_situacao}' ou '{col_cliente}' não foi localizada na aba '{aba_mes_selecionada}'. Verifique a planilha.")
+                    st.error(f"⚠️ Erro de Estrutura: A coluna de validação ou de cliente não foi localizada na aba '{aba_mes_selecionada}'.")
                 else:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                     
-                    # FILTRAGEM DE REGRA DE NEGÓCIO: Cliente ativo, Situação = Em Elaboração e possui número de RA
+                    # Filtra apenas as linhas com as regras de negócio ativas
                     atendimentos_cliente = df_dados[
                         (df_dados[col_cliente] == cliente_selecionado) & 
                         (df_dados[col_situacao] == "Em Elaboração") & 
@@ -220,7 +219,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                             try: os.remove(antigo)
                             except: pass
 
-                        # Reseta os índices para eliminar duplicidades antes de ordenar cronologicamente
+                        # Força o segundo reset no lote filtrado eliminando qualquer risco residual de eixo duplicado
                         atendimentos_cliente = atendimentos_cliente.reset_index(drop=True)
                         atendimentos_cliente[col_data] = pd.to_datetime(atendimentos_cliente[col_data], errors='coerce')
                         atendimentos_cliente = atendimentos_cliente.sort_values(by=col_data)
@@ -232,7 +231,6 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         lista_atendimentos_word = []
                         lista_observacoes_gerais = []
                         
-                        # Mapeamento flexível de acentuação para as colunas de conteúdo de texto
                         col_desc = next((c for c in df_dados.columns if "DESCRICAO" in c or "DESCRIÇÃO" in c), "DESCRIÇÃO ATENDIMENTO")
                         col_obs = next((c for c in df_dados.columns if "OBSERVACAO" in c or "OBSERVAÇÃO" in c), "OBSERVAÇÃO")
                         col_modulo = next((c for c in df_dados.columns if "MODULO" in c or "MÓDULO" in c), "MÓDULO / ATIVIDADE")
@@ -336,4 +334,3 @@ def confirmar_envio_presencial_popup(email, arquivos_lote):
 if btn_enviar_emails:
     if not arquivos_gerados_p: st.sidebar.warning("⚠️ Mapeie os dados na tela primeiro antes de disparar.")
     else: confirmar_envio_presencial_popup(email_destinatario, arquivos_gerados_p)
-
