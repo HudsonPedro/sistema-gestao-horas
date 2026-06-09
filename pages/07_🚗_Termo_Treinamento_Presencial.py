@@ -95,6 +95,7 @@ def enviar_email_treinamento_presencial(string_destinatarios, cliente_nome, arqu
         return False, f"Falha no envio SMTP (Segurança de Rede): {str(e)}"
 # 4. SIDEBAR COM MENU INTEGRADO ATUALIZADO
 # 4. SIDEBAR COM MENU INTEGRADO ATUALIZADO
+# 4. SIDEBAR COM MENU INTEGRADO ATUALIZADO
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -137,22 +138,35 @@ with st.sidebar:
     st.divider()
     st.caption("v1.0 - 08062026")
 
-# 5. CARREGAMENTO DOS DADOS DA PLANILHA GOOGLE (Mapeamento idêntico à página 02)
+# 5. CARREGAMENTO DOS DADOS DA PLANILHA GOOGLE
 @st.cache_data(ttl=600)
 def carregar_dados_planilha():
     url_legendas = "https://google.com"
+    
+    # Forçamos a leitura crua sem filtros iniciais para diagnosticar a estrutura
     df_leg = pd.read_excel(url_legendas, sheet_name="Legendas", engine='openpyxl')
     df_dados = pd.read_excel(url_legendas, sheet_name="Lancamentos", engine='openpyxl')
     
-    # Padroniza os cabeçalhos em maiúsculas para o Pandas nunca se perder
-    df_dados.columns = df_dados.columns.str.upper().str.strip()
-    df_leg.columns = df_leg.columns.str.upper().str.strip()
     return df_leg, df_dados
 
+# Execução mestre com print de erro na tela para auditoria
+erro_carregamento = None
 try:
     df_leg, df_dados = carregar_dados_planilha()
-    lista_clientes = sorted(df_dados["CLIENTE"].dropna().unique().tolist())
-except:
+    
+    # Descobre dinamicamente os nomes das colunas da sua planilha ativa
+    colunas_reais_dados = [str(c).strip() for c in df_dados.columns]
+    colunas_reais_leg = [str(c).strip() for c in df_leg.columns]
+    
+    # Procura pela coluna de cliente de forma flexível (independente de maiúscula ou minúscula)
+    col_cliente_ativa = next((c for c in colunas_reais_dados if c.upper() == "CLIENTE"), None)
+    
+    if col_cliente_ativa:
+        lista_clientes = sorted(df_dados[col_cliente_ativa].dropna().unique().tolist())
+    else:
+        lista_clientes = []
+except Exception as e:
+    erro_carregamento = str(e)
     df_leg = pd.DataFrame()
     df_dados = pd.DataFrame()
     lista_clientes = []
@@ -161,19 +175,36 @@ st.title("🚗 Confirmação de Treinamento Presencial (Por Blocos)")
 st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos.")
 st.markdown("---")
 
-# selectbox mestre restaurado com sucesso!
+# PAINEL DE DIAGNÓSTICO ATIVO (Se a lista estiver vazia, ele se abre e te mostra o motivo)
+if erro_carregamento or not lista_clientes:
+    st.error("⚠️ Alerta do Sistema: Não foi possível mapear os clientes automaticamente.")
+    with st.expander("🔍 Clique aqui para ver o Diagnóstico Técnico do Erro", expanded=True):
+        if erro_carregamento:
+            st.write(f"**Falha na leitura do arquivo Excel:** `{erro_carregamento}`")
+        if not df_dados.empty:
+            st.write("**Abas lidas com sucesso!**")
+            st.write(f"**Colunas encontradas na aba Lancamentos:** `{list(df_dados.columns)}`")
+            st.write(f"**Colunas encontradas na aba Legendas:** `{list(df_leg.columns)}`")
+        else:
+            st.write("**A planilha não retornou dados. Verifique se o link de publicação Web da planilha continua ativo.**")
+
+# Interface Dinâmica Adaptativa
 if lista_clientes:
     cliente_selecionado = st.selectbox("Selecione o Cliente para o Relatório:", lista_clientes)
 else:
-    cliente_selecionado = st.text_input("Nome do Cliente:")
+    cliente_selecionado = st.text_input("Nome do Cliente (Preenchimento Manual devido ao diagnóstico):")
 
-# Coleta dinâmica do gestor institucional do cliente removendo colchetes
+# Coleta dinâmica do gestor institucional do cliente
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     try:
-        solicitantes = df_leg[df_leg["CLIENTES"] == cliente_selecionado]["SOLICITANTE1"].dropna().unique().tolist()
-        if solicitantes:
-            gerente_cliente_sugerido = str(solicitantes[0]).strip()
+        col_clientes_leg = next((c for c in df_leg.columns if str(c).strip().upper() == "CLIENTES"), None)
+        col_solicitante_leg = next((c for c in df_leg.columns if str(c).strip().upper() == "SOLICITANTE1"), None)
+        
+        if col_clientes_leg and col_solicitante_leg:
+            solicitantes = df_leg[df_leg[col_clientes_leg] == cliente_selecionado][col_solicitante_leg].dropna().unique().tolist()
+            if solicitantes:
+                gerente_cliente_sugerido = str(solicitantes[0]).strip()
     except:
         pass
 
@@ -183,6 +214,7 @@ data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
 
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de {data_emissao.year}"
+
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
