@@ -153,13 +153,13 @@ st.sidebar.header("⚙️ Configurações GERAIS")
 if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
     st.cache_data.clear()
     st.rerun()    
-    try:
-        df_leg, lista_abas_meses = carregar_dados()
-        lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
-    except:
-        df_leg = pd.DataFrame()
-        lista_abas_meses = []
-        lista_clientes = []
+try:
+    df_leg, lista_abas_meses = carregar_dados()
+    lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
+except:
+    df_leg = pd.DataFrame()
+    lista_abas_meses = []
+    lista_clientes = []
 
 # Função para converter imagem local para Base64 (para funcionar dentro do HTML)
 def get_image_base64(path):
