@@ -52,18 +52,18 @@ def enviar_email_treinamento_presencial(string_destinatarios, cliente_nome, arqu
     msg = MIMEMultipart()
     msg["From"] = email_remetente
     msg["To"] = ", ".join(lista_destinatarios)
-    msg["Subject"] = f"Termo de Confirmacao de Treinamento Presencial – {cliente_nome}"
+    msg["Subject"] = f"Termo de Confirmação de Treinamento Presencial – {cliente_nome}"
     
     corpo_html = f"""
     <html>
     <body>
         <p>Prezados(as), espero que se encontre bem.</p>
-        <p>Segue em anexo o <b>Termo de Confirmação de Treinamento Presencial</b> referente às visitas e consultorias realizadas no cliente <b>{cliente_nome}</b>.</p>
-        <p>O documento detalha o histórico completo de visitas por blocos de atendimento.</p>
+        <p>Segue em anexo o <b>Termo de Confirmação de Treinamento Presencial</b>Em {periodo_visita_total}, referente às visitas e consultorias realizadas no cliente <b>{cliente_nome}</b>.</p>
+        <p>O documento detalha o histórico completo de visitas por atendimentos.</p>
         <p>Favor colher a assinatura institucional do Sr(a). {gerente_cliente_nome}.</p>
         <br>
         <p>Me coloco à inteira disposição para possíveis esclarecimentos.</p>
-        <p>Atenciosamente,<br><b>Hudson Valente</b><br>HPtech Informática ME</p>
+        <p>Atenciosamente,<br><b>Hudson Valente</b><br></p>
     </body>
     </html>
     """
@@ -114,8 +114,7 @@ with st.sidebar:
     if st.button("💰 Medição Mensal", use_container_width=True): st.switch_page("pages/04_💰_Medicao_Mensal.py")
     if st.button("📋 Termo Homologação", use_container_width=True): st.switch_page("pages/05_📋_Termos.py")
     if st.button("📑 Termo Encerramento", use_container_width=True): st.switch_page("pages/06_📑_Termo_Encerramento.py")
-    if st.button("🚗 Treinamento Presencial", use_container_width=True): st.switch_page("pages/07_🚗_Termo_Treinamento_Presencial.py")
-    
+       
     st.markdown("---")
     st.header("📬 Disparo de Termos")
     st.caption("Separe os e-mails usando vírgula (,)")
@@ -135,30 +134,58 @@ with st.sidebar:
 
     st.divider()
     st.caption("v1.0 - 08062026")
+    st.caption("Todos os direitos reservados")
+    st.caption("Copyright ©2026 HPtech Informática ME")
 
 # URL oficial mestre da planilha publicada
 URL_PLANILHA_MUDANCA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
 
 # 5. CACHE DE ALTA VELOCIDADE EXCLUSIVO PARA CARREGAR A TELA INICIAL INSTANTANEAMENTE
 @st.cache_data(ttl=300)
-def carregar_estrutura_abas_p02():
+def carregar_dados():
     response = requests.get(URL_PLANILHA_MUDANCA, timeout=30, stream=True)
     xl = pd.ExcelFile(io.BytesIO(response.content))
     df_leg = pd.read_excel(xl, sheet_name="Legendas", engine='openpyxl')
     abas_reais = xl.sheet_names
     abas_meses = [a for a in abas_reais if a not in ["Legendas", "Config", "Dashboard", "Parâmetros", "Parametros"]]
     return df_leg, abas_meses
-
+    
+st.sidebar.header("⚙️ Configurações GERAIS")
+if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
+    st.cache_data.clear()
+    st.rerun()
 try:
-    df_leg, lista_abas_meses = carregar_estrutura_abas_p02()
+    df_leg, lista_abas_meses = carregar_dados()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
 except:
     df_leg = pd.DataFrame()
     lista_abas_meses = []
     lista_clientes = []
 
-st.title("🚗 Confirmação de Treinamento Presencial")
-st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos do mês selecionado.")
+# Função para converter imagem local para Base64 (para funcionar dentro do HTML)
+def get_image_base64(path):
+    with open(path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# Tenta carregar a imagem que está no repositório GitHub
+try:
+    img_base64 = get_image_base64("hptechICO.png")
+    
+    st.markdown(
+        f"""
+        <div style="display: flex; align-items: center;">
+            <h1 style="margin: 0; font-size: 2.5rem;">Confirmação de Treinamento Presencial</h1>
+            <img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;">
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+    st.write("O sistema extrai os dados e descrições diretamente da base de lançamentos do mês selecionado.")
+except:
+    # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
+    st.title("🚗 Confirmação de Treinamento Presencial")
+#st.title("🚗 Confirmação de Treinamento Presencial")
+#st.write("O sistema extrai os dados e descrições diretamente da base de lançamentos do mês selecionado.")
 st.markdown("---")
 
 cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
