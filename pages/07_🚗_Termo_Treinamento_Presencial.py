@@ -135,22 +135,17 @@ with st.sidebar:
     st.divider()
     st.caption("v1.0 - 08062026")
 
-# 5. CARREGAMENTO DOS DADOS ATRAVÉS DO MOTOR ESTÁVEL DE EXPORTAÇÃO DO DRIVE
-@st.cache_data(ttl=300)
-def carregar_dados_planilha():
-    spreadsheet_id = "1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE"
-    url_base_drive = f"https://google.com{spreadsheet_id}/export?format=xlsx"
-    
-    df_leg = pd.read_excel(url_base_drive, sheet_name="Legendas", engine='openpyxl')
-    df_dados = pd.read_excel(url_base_drive, sheet_name="Lancamentos", engine='openpyxl')
-    
-    df_dados.columns = df_dados.columns.str.upper().str.strip()
-    df_leg.columns = df_leg.columns.str.upper().str.strip()
+# 5. CARREGAMENTO DOS DADOS (CORRIGIDO NOME DA ABA COM ACENTO)
+@st.cache_data(ttl=600)
+def carregar_legendas():
+    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
+    df_leg = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
+    df_dados = pd.read_excel(url, sheet_name="Lançamentos", engine='openpyxl')
     return df_leg, df_dados
 
 try:
-    df_leg, df_dados = carregar_dados_planilha()
-    lista_clientes = sorted(df_dados["CLIENTE"].dropna().unique().tolist())
+    df_leg, df_dados = carregar_legendas()
+    lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
 except:
     df_leg = pd.DataFrame()
     df_dados = pd.DataFrame()
@@ -160,19 +155,13 @@ st.title("🚗 Confirmação de Treinamento Presencial (Por Blocos)")
 st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos.")
 st.markdown("---")
 
-if lista_clientes:
-    cliente_selecionado = st.selectbox("Selecione o Cliente para o Relatório:", lista_clientes)
-else:
-    cliente_selecionado = st.text_input("Nome do Cliente:")
+cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
-    try:
-        solicitantes = df_leg[df_leg["CLIENTES"] == cliente_selecionado]["SOLICITANTE1"].dropna().unique().tolist()
-        if solicitantes:
-            gerente_cliente_sugerido = str(solicitantes[0]).strip()
-    except:
-        pass
+    solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
+    if solicitantes: 
+        gerente_cliente_sugerido = str(solicitantes).strip()
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="HUDSON VALENTE")
