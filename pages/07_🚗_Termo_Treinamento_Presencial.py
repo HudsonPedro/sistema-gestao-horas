@@ -187,12 +187,12 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 
                 # Normaliza cabeçalhos em maiúsculas
                 df_dados.columns = df_dados.columns.str.upper().str.strip()
-                df_dados["SITUAÇÃO"] = df_dados["SITUAÇÃO"].astype(str).str.strip()
+                df_dados["SITUACAO_RA"] = df_dados["SITUACAO_RA"].astype(str).str.strip()
                 
                 # Filtra apenas as linhas com RA válido e Situação = Em Elaboração
                 atendimentos_cliente = df_dados[
                     (df_dados["CLIENTE"] == cliente_selecionado) & 
-                    (df_dados["SITUAÇÃO"] == "Em Elaboração") & 
+                    (df_dados["SITUACAO_RA"] == "Em Elaboração") & 
                     (df_dados["RA"].notna())
                 ].copy()
                 
