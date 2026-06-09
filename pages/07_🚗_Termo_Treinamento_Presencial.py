@@ -181,6 +181,7 @@ meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
 data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de {data_emissao.year}"
 # --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
+# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -192,95 +193,96 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 xl_dados = pd.ExcelFile(io.BytesIO(res_dados.content))
                 df_dados = pd.read_excel(xl_dados, sheet_name=aba_mes_selecionada, engine='openpyxl')
                 
-                # CORREÇÃO CRUCIAL 1: Remove o risco de eixos duplicados antes do processamento
+                # BLINDAGEM ABSOLUTA: Força o reset completo do índice de linhas antes de qualquer filtro
                 df_dados = df_dados.reset_index(drop=True)
                 
-                # Normaliza todos os cabeçalhos em maiúsculas retirando espaços em branco
-                df_dados.columns = df_dados.columns.str.upper().str.strip()
+                # BLINDAGEM ABSOLUTA DE COLUNAS: Força o Pandas a renomear colunas duplicadas na memória (evita reindex error)
+                df_dados.columns = [f"COL_{i}_{str(c).upper().strip()}" for i, c in enumerate(df_dados.columns)]
                 
-                # CORREÇÃO CRUCIAL 2: Definição manual e estrita das colunas sem rotinas de fallback
-                col_situacao = "SITUACAO_RA"
-                col_cliente = "CLIENTE"
-                col_ra = "RA"
-                col_data = "DATA"
-                col_desc = "DESCRIÇÃO ATENDIMENTO"
-                col_obs = "OBSERVAÇÃO"
-                col_modulo = "MÓDULO / ATIVIDADE"
+                # Mapeamento dinâmico e exato das colunas baseado no novo padrão blindado
+                col_situacao = next((c for c in df_dados.columns if "SITUACAO_RA" in c), None)
+                col_cliente = next((c for c in df_dados.columns if "CLIENTE" in c), None)
+                col_ra = next((c for c in df_dados.columns if "RA" in c), None)
+                col_data = next((c for c in df_dados.columns if "DATA" in c), None)
+                col_desc = next((c for c in df_dados.columns if "DESCRIÇÃO ATENDIMENTO" in c or "DESCRICAO ATENDIMENTO" in c), None)
+                col_obs = next((c for c in df_dados.columns if "OBSERVAÇÃO" in c or "OBSERVACAO" in c), None)
+                col_modulo = next((c for c in df_dados.columns if "MÓDULO / ATIVIDADE" in c or "MODULO / ATIVIDADE" in c), None)
                 
-                # Converte os dados da coluna de situação para texto limpo
-                df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
-                
-                # Executa o filtro mestre de regras de negócio com o nome exato da sua coluna
-                atendimentos_cliente = df_dados[
-                    (df_dados[col_cliente] == cliente_selecionado) & 
-                    (df_dados[col_situacao] == "Em Elaboração") & 
-                    (df_dados[col_ra].notna())
-                ].copy()
-                
-                if atendimentos_cliente.empty:
-                    st.warning(f"⚠️ Nenhum lançamento com SITUACAO_RA = 'Em Elaboração' e RA preenchido foi localizado para o cliente '{cliente_selecionado}' na aba '{aba_mes_selecionada}'.")
+                if not col_situacao or not col_cliente:
+                    st.error(f"⚠️ Erro de Estrutura: A coluna 'SITUACAO_RA' ou 'CLIENTE' não foi localizada na aba '{aba_mes_selecionada}'.")
                 else:
-                    # Esvazia a pasta local para receber estritamente o pacote novo
-                    for antigo in glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.*")):
-                        try: os.remove(antigo)
-                        except: pass
-
-                    # Consolida o índice e ordena as visitas de forma cronológica sequencial
-                    atendimentos_cliente = atendimentos_cliente.reset_index(drop=True)
-                    atendimentos_cliente[col_data] = pd.to_datetime(atendimentos_cliente[col_data], errors='coerce')
-                    atendimentos_cliente = atendimentos_cliente.sort_values(by=col_data)
+                    df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                     
-                    data_inicio_ra_str = atendimentos_cliente[col_data].min().strftime("%d/%m/%Y")
-                    data_fim_ra_str = atendimentos_cliente[col_data].max().strftime("%d/%m/%Y")
-                    periodo_visita_total = f"{data_inicio_ra_str} até {data_fim_ra_str}"
-
-                    lista_atendimentos_word = []
-                    lista_observacoes_gerais = []
+                    # Filtra apenas as linhas com as regras de negócio solicitadas
+                    atendimentos_cliente = df_dados[
+                        (df_dados[col_cliente] == cliente_selecionado) & 
+                        (df_dados[col_situacao] == "Em Elaboração") & 
+                        (df_dados[col_ra].notna())
+                    ].copy()
                     
-                    for idx, linha in atendimentos_cliente.iterrows():
-                        dt_str = linha[col_data].strftime("%d/%m/%Y") if pd.notnull(linha[col_data]) else ""
-                        desc_pres_val = str(linha.get(col_desc, linha.get("DESCRICAO ATENDIMENTO", ""))).strip()
-                        obs_pres_val = str(linha.get(col_obs, linha.get("OBSERVACAO", ""))).strip()
-                        modulo_val = str(linha.get(col_modulo, linha.get("MODULO / ATIVIDADE", ""))).strip()
-                        
-                        lista_atendimentos_word.append({
-                            "modulos": modulo_val,
-                            "data_dia": dt_str,
-                            "hora_inicio": str(linha.get("ENTRADA", "08:00")),
-                            "hora_fim": str(linha.get("SAIDA", linha.get("SAÍDA", "17:00"))),
-                            "desc_pres": desc_pres_val
-                        })
-                        
-                        if obs_pres_val and obs_pres_val.lower() != "nan" and obs_pres_val.strip() != "":
-                            lista_observacoes_gerais.append(f"• Data {dt_str}: {obs_pres_val}")
-
-                    resumao_geral_ac = "\n".join(lista_observacoes_gerais) if lista_observacoes_gerais else "Nenhuma observação técnica registrada."
-
-                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
-                    
-                    if not os.path.exists(caminho_modelo):
-                        st.error("⚠️ O arquivo de modelo mestre 'presencial.docx' não foi encontrado na pasta 'modelos'.")
+                    if atendimentos_cliente.empty:
+                        st.warning(f"⚠️ Nenhum lançamento em elaboração com RA ativo foi localizado para o cliente '{cliente_selecionado}' na aba '{aba_mes_selecionada}'.")
                     else:
-                        doc = DocxTemplate(caminho_modelo)
-                        contexto = {
-                            "cliente": cliente_selecionado,
-                            "consultor": consultor_nome,
-                            "periodo_visita": periodo_visita_total,
-                            "solicitante": solicitante_nome,
-                            "data_extenso": data_extenso_str,
-                            "atendimentos": lista_atendimentos_word,
-                            "obs_geral_resumo": resumao_geral_ac
-                        }
-                        doc.render(contexto)
+                        for antigo in glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.*")):
+                            try: os.remove(antigo)
+                            except: pass
+
+                        # Reseta os índices de linha do bloco filtrado para garantir ordenação cronológica perfeita
+                        atendimentos_cliente = atendimentos_cliente.reset_index(drop=True)
+                        atendimentos_cliente[col_data] = pd.to_datetime(atendimentos_cliente[col_data], errors='coerce')
+                        atendimentos_cliente = atendimentos_cliente.sort_values(by=col_data)
                         
-                        nome_final = f"Termo_Treinamento_Presencial_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
-                        caminho_docx = os.path.join(PASTA_TREINAMENTO_P, f"{nome_final}.docx")
-                        doc.save(caminho_docx)
+                        data_inicio_ra_str = atendimentos_cliente[col_data].min().strftime("%d/%m/%Y")
+                        data_fim_ra_str = atendimentos_cliente[col_data].max().strftime("%d/%m/%Y")
+                        periodo_visita_total = f"{data_inicio_ra_str} até {data_fim_ra_str}"
+
+                        lista_atendimentos_word = []
+                        lista_observacoes_gerais = []
                         
-                        subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TREINAMENTO_P}" "{caminho_docx}"', shell=True, check=True)
-                        st.success("✨ Relatório gerado com sucesso!")
-                        time.sleep(1)
-                        st.rerun()
+                        for idx, linha in atendimentos_cliente.iterrows():
+                            dt_str = linha[col_data].strftime("%d/%m/%Y") if pd.notnull(linha[col_data]) else ""
+                            desc_pres_val = str(linha.get(col_desc, "")).strip()
+                            obs_pres_val = str(linha.get(col_obs, "")).strip()
+                            modulo_val = str(linha.get(col_modulo, "")).strip()
+                            
+                            lista_atendimentos_word.append({
+                                "modulos": modulo_val,
+                                "data_dia": dt_str,
+                                "hora_inicio": str(linha.get(next((c for c in df_dados.columns if "ENTRADA" in c), "ENTRADA"), "08:00")),
+                                "hora_fim": str(linha.get(next((c for c in df_dados.columns if "SAIDA" in c or "SAÍDA" in c), "SAÍDA"), "17:00")),
+                                "desc_pres": desc_pres_val
+                            })
+                            
+                            if obs_pres_val and obs_pres_val.lower() != "nan" and obs_pres_val.strip() != "":
+                                lista_observacoes_gerais.append(f"• Data {dt_str}: {obs_pres_val}")
+
+                        resumao_geral_ac = "\n".join(lista_observacoes_gerais) if lista_observacoes_gerais else "Nenhuma observação técnica registrada."
+
+                        caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
+                        
+                        if not os.path.exists(caminho_modelo):
+                            st.error("⚠️ O modelo 'presencial.docx' não foi localizado na pasta 'modelos'.")
+                        else:
+                            doc = DocxTemplate(caminho_modelo)
+                            contexto = {
+                                "cliente": cliente_selecionado,
+                                "consultor": consultor_nome,
+                                "periodo_visita": periodo_visita_total,
+                                "solicitante": solicitante_nome,
+                                "data_extenso": data_extenso_str,
+                                "atendimentos": lista_atendimentos_word,
+                                "obs_geral_resumo": resumao_geral_ac
+                            }
+                            doc.render(contexto)
+                            
+                            nome_final = f"Termo_Treinamento_Presencial_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
+                            caminho_docx = os.path.join(PASTA_TREINAMENTO_P, f"{nome_final}.docx")
+                            doc.save(caminho_docx)
+                            
+                            subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TREINAMENTO_P}" "{caminho_docx}"', shell=True, check=True)
+                            st.success("✨ Relatório gerado com sucesso!")
+                            time.sleep(1)
+                            st.rerun()
             except Exception as e:
                 st.error(f"Erro ao processar lote na aba selecionada: {e}")
 
@@ -332,9 +334,13 @@ def confirmar_envio_presencial_popup(email, arquivos_lote):
                     st.error(r_msg)
                     time.sleep(4)
                 st.rerun()
-    with col_p2:
-        if st.button("Não, Cancelar", use_container_width=True): st.rerun()
+        with col_p2:
+        if st.button("Não, Cancelar", use_container_width=True): 
+            st.rerun()
 
 if btn_enviar_emails:
-    if not arquivos_gerados_p: st.sidebar.warning("⚠️ Mapeie os dados na tela primeiro antes de disparar.")
-    else: confirmar_envio_presencial_popup(email_destinatario, arquivos_gerados_p)
+    if not arquivos_gerados_p: 
+        st.sidebar.warning("⚠️ Mapeie os dados na tela primeiro antes de disparar.")
+    else: 
+        confirmar_envio_presencial_popup(email_destinatario, arquivos_gerados_p)
+
