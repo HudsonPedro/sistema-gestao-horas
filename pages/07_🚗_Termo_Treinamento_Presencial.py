@@ -11,6 +11,8 @@ import zipfile
 import glob
 import smtplib
 import time
+import base64
+import openpyxl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -134,41 +136,48 @@ with st.sidebar:
     st.divider()
     st.caption("v1.0 - 08062026")
 
-# ID mestre da sua planilha Google Sheets
-SPREADSHEET_ID = "1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE"
+# URL oficial mestre da planilha publicada
+URL_PLANILHA_MUDANCA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
 
-# 5. CARREGAMENTO DA ABA LEGENDAS VIA ENDPOINT DE EXPORTAÇÃO SEGURO DO DRIVE
+# 5. CARREGAMENTO DAS ABAS UTILIZANDO A ENGENHARIA DA PÁGINA 02
 @st.cache_data(ttl=600)
-def carregar_legendas_limpo():
-    url_export_leg = f"https://google.com{SPREADSHEET_ID}/export?format=xlsx&sheet_name=Legendas"
-    df = pd.read_excel(url_export_leg, engine='openpyxl')
-    return df
+def carregar_estrutura_abas_p02():
+    df_leg = pd.read_excel(URL_PLANILHA_MUDANCA, sheet_name="Legendas", engine='openpyxl')
+    
+    # Lê os metadados do arquivo para extrair a lista real de abas (meses) igual à tela de relatórios
+    resposta = io.BytesIO(pd.ExcelFile(URL_PLANILHA_MUDANCA).密.read() if hasattr(pd.ExcelFile(URL_PLANILHA_MUDANCA), '密') else openpyxl.load_workbook(URL_PLANILHA_MUDANCA).sheetnames)
+    xl = pd.ExcelFile(URL_PLANILHA_MUDANCA)
+    abas_reais = xl.sheet_names
+    
+    # Filtra e deixa apenas as abas dos meses, removendo as abas de configuração
+    abas_meses = [a for a in abas_reais if a not in ["Legendas", "Config", "Dashboard", "Parâmetros"]]
+    return df_leg, abas_meses
 
 try:
-    df_leg = carregar_legendas_limpo()
+    df_leg, lista_abas_meses = carregar_estrutura_abas_p02()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
 except:
     df_leg = pd.DataFrame()
+    lista_abas_meses = []
     lista_clientes = []
 
 st.title("🚗 Confirmação de Treinamento Presencial (Por Blocos)")
-st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos do mês.")
+st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos do mês selecionado.")
 st.markdown("---")
 
-cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
+# SELETORES EM LOTE RESTAURADOS DE FORMA PERFEITA
+cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
+aba_mes_selecionada = st.selectbox("Selecione o Mês do Atendimento (Aba da Planilha):", lista_abas_meses) if lista_abas_meses else st.text_input("Aba do Mês:")
 
-# CORREÇÃO 1: Extração limpa do nome do gerente para sumir com aspas e colchetes
+# CORREÇÃO 1: Nome do gestor limpo direto pelo índice (.iloc[0]), sem aspas ou colchetes na tela
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
-    solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
-    if solicitantes: 
-        gerente_cliente_sugerido = str(solicitantes[0]).strip()
+    solicitantes_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
+    if not solicitantes_df.empty:
+        gerente_cliente_sugerido = str(solicitantes_df.iloc[0]).strip()
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="HUDSON VALENTE")
-
-# CORREÇÃO 2: Seletor de Abas para você definir o mês que quer encontrar os dados
-nome_aba_mes = st.text_input("Nome exato da aba do mês na Planilha (Ex: Lançamentos, Janeiro, Fevereiro):", value="Lançamentos")
 
 data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
@@ -178,16 +187,16 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
     else:
-        with st.spinner(f"⏳ Baixando aba '{nome_aba_mes}' via API do Drive e processando regras..."):
+        with st.spinner(f"⏳ Lendo aba '{aba_mes_selecionada}' e compilando relatório..."):
             try:
-                # CORREÇÃO 3: Baixa a aba informada usando a API de exportação direta do Drive, eliminando o erro de zip file
-                url_export_dados = f"https://google.com{SPREADSHEET_ID}/export?format=xlsx&sheet_name={nome_aba_mes}"
-                df_dados = pd.read_excel(url_export_dados, engine='openpyxl')
+                # Carrega dinamicamente a aba do mês que você escolheu no selectbox
+                df_dados = pd.read_excel(URL_PLANILHA_MUDANCA, sheet_name=aba_mes_selecionada, engine='openpyxl')
                 
-                # Normaliza as colunas em maiúsculas
+                # Normaliza os cabeçalhos para maiúsculas para não haver erros de digitação
                 df_dados.columns = df_dados.columns.str.upper().str.strip()
-                
                 df_dados["SITUAÇÃO"] = df_dados["SITUAÇÃO"].astype(str).str.strip()
+                
+                # Regra de Negócio mestre por Cliente, Situação = Em Elaboração e RA válido
                 atendimentos_cliente = df_dados[
                     (df_dados["CLIENTE"] == cliente_selecionado) & 
                     (df_dados["SITUAÇÃO"] == "Em Elaboração") & 
@@ -195,7 +204,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 ].copy()
                 
                 if atendimentos_cliente.empty:
-                    st.warning(f"⚠️ Nenhum lançamento com RA ativo e Situação 'Em Elaboração' foi localizado na aba '{nome_aba_mes}' para este cliente.")
+                    st.warning(f"⚠️ Nenhum lançamento com RA ativo e Situação 'Em Elaboração' foi localizado na aba '{aba_mes_selecionada}'.")
                 else:
                     for antigo in glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.*")):
                         try: os.remove(antigo)
@@ -233,7 +242,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
                     
                     if not os.path.exists(caminho_modelo):
-                        st.error("⚠️ O modelo 'presencial.docx' não foi localizado.")
+                        st.error("⚠️ O modelo 'presencial.docx' não foi localizado na pasta 'modelos'.")
                     else:
                         doc = DocxTemplate(caminho_modelo)
                         contexto = {
@@ -256,7 +265,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         time.sleep(1)
                         st.rerun()
             except Exception as e:
-                st.error(f"Erro ao processar lote: {e}")
+                st.error(f"Erro ao processar lote na aba selecionada: {e}")
 
 # --- PAINEL VISUAL DE DOWNLOADS E ZIP ---
 arquivos_gerados_p = glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.pdf")) + glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.docx"))
