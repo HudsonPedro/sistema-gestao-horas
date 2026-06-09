@@ -135,26 +135,25 @@ with st.sidebar:
     st.divider()
     st.caption("v1.0 - 08062026")
 
-# 5. CARREGAMENTO DOS DADOS (CORRIGIDO NOME DA ABA COM ACENTO)
+# 5. CARREGAMENTO EXCLUSIVO DA ABA LEGENDAS (IGUALZINHO AS PAGES 05 E 06)
 @st.cache_data(ttl=600)
-def carregar_legendas():
+def carregar_legendas_p05():
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
-    df_leg = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
-    df_dados = pd.read_excel(url, sheet_name="Lançamentos", engine='openpyxl')
-    return df_leg, df_dados
+    df = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
+    return df
 
 try:
-    df_leg, df_dados = carregar_legendas()
+    df_leg = carregar_legendas_p05()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
 except:
     df_leg = pd.DataFrame()
-    df_dados = pd.DataFrame()
     lista_clientes = []
 
 st.title("🚗 Confirmação de Treinamento Presencial (Por Blocos)")
 st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos.")
 st.markdown("---")
 
+# SELECTBOX DA FILTRAGEM IDÊNTICO ÀS PÁGINAS 05 E 06 (PREENCHIDO COM SUCESSO)
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
 gerente_cliente_sugerido = ""
@@ -169,15 +168,19 @@ data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
 
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de {data_emissao.year}"
-# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
+# --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA LANÇAMENTOS ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
-    elif df_dados.empty:
-        st.error("Erro: A base de dados da planilha não pôde ser lida.")
     else:
-        with st.spinner("⏳ Filtrando lançamentos ativos em elaboração..."):
+        with st.spinner("⏳ Baixando aba de Lançamentos e filtrando por regras de negócio..."):
             try:
+                # Carrega de forma oculta a aba Lançamentos apenas neste milésimo de segundo do clique
+                url_planilha = "https://google.com"
+                df_dados = pd.read_excel(url_planilha, sheet_name="Lançamentos", engine='openpyxl')
+                
+                # Executa os filtros de regra de negócio solicitados
+                df_dados["SITUAÇÃO"] = df_dados["SITUAÇÃO"].astype(str).str.strip()
                 atendimentos_cliente = df_dados[
                     (df_dados["CLIENTE"] == cliente_selecionado) & 
                     (df_dados["SITUAÇÃO"] == "Em Elaboração") & 
@@ -185,7 +188,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 ].copy()
                 
                 if atendimentos_cliente.empty:
-                    st.warning(f"Nenhum lançamento com RA válido e Situação 'Em Elaboração' foi localizado.")
+                    st.warning(f"⚠️ Nenhum lançamento com RA ativo e Situação 'Em Elaboração' foi localizado para a empresa '{cliente_selecionado}'.")
                 else:
                     for antigo in glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.*")):
                         try: os.remove(antigo)
@@ -223,7 +226,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
                     
                     if not os.path.exists(caminho_modelo):
-                        st.error("⚠️ O modelo 'presencial.docx' não foi localizado.")
+                        st.error("⚠️ O modelo 'presencial.docx' não foi localizado na pasta modelos do repositório.")
                     else:
                         doc = DocxTemplate(caminho_modelo)
                         contexto = {
