@@ -184,6 +184,7 @@ data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
+# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -194,17 +195,17 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 xl_dados = pd.ExcelFile(io.BytesIO(res_dados.content))
                 df_dados = pd.read_excel(xl_dados, sheet_name=aba_mes_selecionada, engine='openpyxl')
                 
-                # Reseta o índice de linhas eliminando duplicidades operacionais
+                # Limpa e reseta os eixos duplicados na memória
                 df_dados = df_dados.reset_index(drop=True)
                 df_dados.columns = df_dados.columns.str.strip()
                 
-                # Mapeamento estável de cabeçalhos institucionais
-                col_cliente = next((c for c in df_dados.columns if c.upper() == "CLIENTE"), "CLIENTE")
-                col_situacao = "SITUACAO_RA" if "SITUACAO_RA" in df_dados.columns else next((c for c in df_dados.columns if "SITUACAO" in c or "SITUAÇÃO" in c), None)
-                col_ra = next((c for c in df_dados.columns if c.upper() == "RA"), "RA")
-                col_data = next((c for c in df_dados.columns if c.upper() == "DATA"), "DATA")
+                # Mapeamento fixo de cabeçalhos institucionais
+                col_cliente = "CLIENTE"
+                col_situacao = "SITUACAO_RA"
+                col_ra = "RA"
+                col_data = "DATA"
                 
-                if col_situacao and col_situacao in df_dados.columns:
+                if col_situacao in df_dados.columns:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                 
                 # Filtra apenas os lançamentos "Em Elaboração" com RA preenchido
@@ -215,7 +216,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 ].copy()
                 
                 if atendimentos_cliente.empty:
-                    st.warning(f"⚠️ Nenhum lançamento em elaboração com RA ativo foi localizado na aba '{aba_mes_selecionada}'.")
+                    st.warning(f"⚠️ Nenhum lançamento com SITUACAO_RA = 'Em Elaboração' foi localizado na aba '{aba_mes_selecionada}'.")
                 else:
                     for antigo in glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.*")):
                         try: os.remove(antigo)
@@ -232,18 +233,17 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     lista_atendimentos_word = []
                     lista_observacoes_gerais = []
                     
-                    # ALINHAMENTO COM AS SUAS COLUNAS DA PLANILHA (INDICAÇÃO DA IMAGEM)
-                    col_part = next((c for c in df_dados.columns if c.upper() in ["PARTICIPANTE", "PARTICIPANTES"]), "PARTICIPANTE")  # Coluna P
-                    col_desc = next((c for c in df_dados.columns if c.upper() in ["DESC_PRES", "DESCRIÇÃO ATENDIMENTO", "DESCRICAO ATENDIMENTO"]), "DESC_PRES")  # Coluna AB
-                    col_obs = next((c for c in df_dados.columns if c.upper() in ["OBS_PRES", "OBSERVAÇÃO", "OBSERVACAO"]), "OBS_PRES")    # Coluna AC
-                    
-                    col_entrada = next((c for c in df_dados.columns if c.upper() == "ENTRADA"), "ENTRADA")
-                    col_saida = next((c for c in df_dados.columns if c.upper() in ["SAÍDA", "SAIDA"]), "SAÍDA")
-                    col_modulo = next((c for c in df_dados.columns if c.upper() in ["MÓDULO / ATIVIDADE", "MODULO / ATIVIDADE", "MODULO"]), "MÓDULO / ATIVIDADE")
+                    # CORREÇÃO DEFINITIVA: Aponta para os nomes reais e exatos das colunas do Excel
+                    col_part = "PARTICIPANTES"
+                    col_desc = "DESC_PRES"
+                    col_obs = "OBS_PRES"
+                    col_entrada = "ENTRADA"
+                    col_saida = "SAÍDA" if "SAÍDA" in df_dados.columns else "SAIDA"
+                    col_modulo = "MÓDULO / ATIVIDADE" if "MÓDULO / ATIVIDADE" in df_dados.columns else "MODULO / ATIVIDADE"
                     
                     for idx, linha in atendimentos_cliente.iterrows():
                         dt_str = linha[col_data].strftime("%d/%m/%Y") if pd.notnull(linha[col_data]) else ""
-                        part_val = str(linha.get(col_part, "")).strip()
+                        part_val = str(linha.get(col_part, linha.get("PARTICIPANTE", solicitante_nome))).strip()
                         desc_pres_val = str(linha.get(col_desc, "")).strip()
                         obs_pres_val = str(linha.get(col_obs, "")).strip()
                         modulo_val = str(linha.get(col_modulo, "")).strip()
@@ -251,7 +251,6 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         hora_ini_val = str(linha.get(col_entrada, "08:00")).strip()
                         hora_fim_val = str(linha.get(col_saida, "12:00")).strip()
                         
-                        # Injeta no laço vertical 'atendimentos' do Word
                         lista_atendimentos_word.append({
                             "modulos": modulo_val,
                             "participantes": part_val if part_val and part_val.lower() != "nan" else solicitante_nome,
@@ -261,11 +260,11 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                             "desc_pres": desc_pres_val
                         })
                         
+                        # CORREÇÃO DEFINITIVA: Traz o texto puro e idêntico da coluna AC, sem inserir a data na frente
                         if obs_pres_val and obs_pres_val.lower() != "nan" and obs_pres_val.strip() != "":
-                            lista_observacoes_gerais.append(f"• Data {dt_str}: {obs_pres_val}")
+                            lista_observacoes_gerais.append(obs_pres_val.strip())
 
                     resumao_geral_ac = "\n".join(lista_observacoes_gerais) if lista_observacoes_gerais else "Nenhuma observação técnica registrada."
-
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
                     
                     if not os.path.exists(caminho_modelo):
@@ -344,8 +343,5 @@ def confirmar_envio_presencial_popup(email, arquivos_lote):
         if st.button("Não, Cancelar", use_container_width=True): st.rerun()
 
 if btn_enviar_emails:
-    if not arquivos_gerados_p: 
-        st.sidebar.warning("⚠️ Mapeie os dados na tela primeiro antes de disparar.")
-    else: 
-        confirmar_envio_presencial_popup(email_destinatario, arquivos_gerados_p)
-
+    if not arquivos_gerados_p: st.sidebar.warning("⚠️ Mapeie os dados na tela primeiro antes de disparar.")
+    else: confirmar_envio_presencial_popup(email_destinatario, arquivos_gerados_p)
