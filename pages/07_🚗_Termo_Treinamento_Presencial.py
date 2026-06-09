@@ -177,6 +177,7 @@ data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de {data_emissao.year}"
 # --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
+# --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -187,12 +188,12 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 
                 # Normaliza cabeçalhos em maiúsculas
                 df_dados.columns = df_dados.columns.str.upper().str.strip()
-                df_dados["SITUACAO_RA"] = df_dados["SITUACAO_RA"].astype(str).str.strip()
+                df_dados["SITUAÇÃO"] = df_dados["SITUAÇÃO"].astype(str).str.strip()
                 
                 # Filtra apenas as linhas com RA válido e Situação = Em Elaboração
                 atendimentos_cliente = df_dados[
                     (df_dados["CLIENTE"] == cliente_selecionado) & 
-                    (df_dados["SITUACAO_RA"] == "Em Elaboração") & 
+                    (df_dados["SITUAÇÃO"] == "Em Elaboração") & 
                     (df_dados["RA"].notna())
                 ].copy()
                 
@@ -203,6 +204,8 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         try: os.remove(antigo)
                         except: pass
 
+                    # CORREÇÃO CRUCIAL: Reseta os índices para eliminar duplicidades antes de ordenar cronologicamente
+                    atendimentos_cliente = atendimentos_cliente.reset_index(drop=True)
                     atendimentos_cliente["DATA"] = pd.to_datetime(atendimentos_cliente["DATA"], errors='coerce')
                     atendimentos_cliente = atendimentos_cliente.sort_values(by="DATA")
                     
