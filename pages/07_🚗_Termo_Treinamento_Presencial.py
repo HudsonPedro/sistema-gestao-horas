@@ -191,6 +191,7 @@ data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
+# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -205,11 +206,11 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 df_dados = df_dados.reset_index(drop=True)
                 df_dados.columns = df_dados.columns.str.strip()
                 
-                # Mapeamento fixo de cabeçalhos institucionais
-                col_cliente = "CLIENTE"
-                col_situacao = "SITUACAO_RA"
-                col_ra = "RA"
-                col_data = "DATA"
+                # Mapeamento dinâmico de cabeçalhos institucionais para evitar KeyError
+                col_cliente = next((c for c in df_dados.columns if c.upper() == "CLIENTE"), "CLIENTE")
+                col_situacao = next((c for c in df_dados.columns if "SITUACAO" in c.upper()), "SITUACAO_RA")
+                col_ra = next((c for c in df_dados.columns if c.upper() == "RA"), "RA")
+                col_data = next((c for c in df_dados.columns if c.upper() == "DATA"), "DATA")
                 
                 if col_situacao in df_dados.columns:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
@@ -240,43 +241,50 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     lista_atendimentos_word = []
                     lista_observacoes_gerais = []
                     
-                    # Identifica os cabeçalhos reais da planilha para evitar KeyError silencioso
-                    col_part = next((c for c in df_dados.columns if "PARTICIPANTE" in c.upper() or "PARTICIPANTES" in c.upper()), "PARTICIPANTE")
+                    # Identifica os cabeçalhos reais da planilha mapeando as colunas exatas da imagem
+                    col_part = next((c for c in df_dados.columns if "PARTICIPANTE" in c.upper()), "PARTICIPANTE")
                     col_desc = next((c for c in df_dados.columns if "DESC_PRES" in c.upper() or "DESCRIÇÃO" in c.upper()), "DESC_PRES")
                     col_obs = next((c for c in df_dados.columns if "OBS_PRES" in c.upper() or "OBSERVAÇÃO" in c.upper()), "OBS_PRES")
                     col_entrada = next((c for c in df_dados.columns if "ENTRADA" in c.upper()), "ENTRADA")
                     col_saida = next((c for c in df_dados.columns if "SAIDA" in c.upper() or "SAÍDA" in c.upper()), "SAÍDA")
                     col_modulo = next((c for c in df_dados.columns if "MÓDULO" in c.upper() or "MODULO" in c.upper()), "MÓDULO / ATIVIDADE")
                     
-                    # Percorre o dataframe garantindo o isolamento completo por linha física usando o laço iterrows
+                    # BLINDAGEM OPERACIONAL: Transforma as colunas críticas em strings puras eliminando objetos datetime travados
+                    atendimentos_cliente[col_part] = atendimentos_cliente[col_part].astype(str).str.strip().fillna('')
+                    atendimentos_cliente[col_entrada] = atendimentos_cliente[col_entrada].astype(str).str.strip().fillna('')
+                    atendimentos_cliente[col_saida] = atendimentos_cliente[col_saida].astype(str).str.strip().fillna('')
+                    atendimentos_cliente[col_desc] = atendimentos_cliente[col_desc].astype(str).str.strip().fillna('')
+                    atendimentos_cliente[col_obs] = atendimentos_cliente[col_obs].astype(str).str.strip().fillna('')
+                    atendimentos_cliente[col_modulo] = atendimentos_cliente[col_modulo].astype(str).str.strip().fillna('')
+
+                    # Percorre o dataframe garantindo o isolamento completo extraindo o valor indexado exato da linha
                     for idx, linha in atendimentos_cliente.iterrows():
                         dt_str = linha[col_data].strftime("%d/%m/%Y") if pd.notnull(linha[col_data]) else ""
                         
-                        part_val = str(linha.get(col_part, "")).strip()
-                        desc_pres_val = str(linha.get(col_desc, "")).strip()
-                        obs_pres_val = str(linha.get(col_obs, "")).strip()
-                        modulo_val = str(linha.get(col_modulo, "")).strip()
+                        part_val = linha[col_part]
+                        desc_pres_val = linha[col_desc]
+                        obs_pres_val = linha[col_obs]
+                        modulo_val = r_mod = linha[col_modulo]
                         
-                        # Captura e trata horários limpando segundos extras do formato datetime do Excel
-                        hora_ini_raw = str(linha.get(col_entrada, "08:00")).strip()
-                        hora_fim_raw = str(linha.get(col_saida, "12:00")).strip()
+                        # Captura e limpa os horários diários cortando segundos (ex: "13:00:00" vira "13:00")
+                        hora_ini_raw = linha[col_entrada]
+                        hora_fim_raw = linha[col_saida]
                         
-                        # Higienização de strings de horário (deixa apenas HH:MM caso venha com segundos)
-                        hora_ini_val = hora_ini_raw[:5] if len(hora_ini_raw) >= 5 else hora_ini_raw
-                        hora_fim_val = hora_fim_raw[:5] if len(hora_fim_raw) >= 5 else hora_fim_raw
+                        hora_ini_val = hora_ini_raw[:5] if ":" in hora_ini_raw else hora_ini_raw
+                        hora_fim_val = hora_fim_raw[:5] if ":" in hora_fim_raw else hora_fim_raw
                         
-                        # Tratamento estrito de participante nulo ou vazio
+                        # Fallback seguro para o nome do gestor institucional caso a célula esteja vazia
                         participante_final = part_val
-                        if not participante_final or participante_final.lower() in ["nan", ""]:
+                        if not participante_final or participante_final.lower() in ["nan", "", "none"]:
                             participante_final = str(solicitante_nome).strip()
                         
                         lista_atendimentos_word.append({
-                            "modulos": modulo_val,
+                            "modulos": modulo_val if modulo_val.lower() != "nan" else "",
                             "participantes": participante_final,
                             "data_dia": dt_str,
-                            "hora_inicio": hora_ini_val,
-                            "hora_fim": hora_fim_val,
-                            "desc_pres": desc_pres_val
+                            "hora_inicio": hora_ini_val if hora_ini_val.lower() != "nan" else "08:00",
+                            "hora_fim": hora_fim_val if hora_fim_val.lower() != "nan" else "12:00",
+                            "desc_pres": desc_pres_val if desc_pres_val.lower() != "nan" else ""
                         })
                         
                         if obs_pres_val and obs_pres_val.lower() != "nan" and obs_pres_val.strip() != "":
