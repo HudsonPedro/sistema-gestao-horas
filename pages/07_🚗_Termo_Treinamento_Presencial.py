@@ -186,6 +186,7 @@ data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
+# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -223,6 +224,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         try: os.remove(antigo)
                         except: pass
 
+                    # Reseta o índice da tabela filtrada para garantir indexação sequencial correta por linha
                     atendimentos_cliente = atendimentos_cliente.reset_index(drop=True)
                     atendimentos_cliente[col_data] = pd.to_datetime(atendimentos_cliente[col_data], errors='coerce')
                     atendimentos_cliente = atendimentos_cliente.sort_values(by=col_data)
@@ -234,7 +236,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     lista_atendimentos_word = []
                     lista_observacoes_gerais = []
                     
-                    # CORREÇÃO CRUCIAL: Mapeia estritamente a coluna no singular "PARTICIPANTE" conforme sua planilha
+                    # Nome exato das colunas cruas mapeadas do Excel
                     col_part = "PARTICIPANTE" if "PARTICIPANTE" in df_dados.columns else "PARTICIPANTES"
                     col_desc = "DESC_PRES"
                     col_obs = "OBS_PRES"
@@ -242,20 +244,28 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     col_saida = "SAÍDA" if "SAÍDA" in df_dados.columns else "SAIDA"
                     col_modulo = "MÓDULO / ATIVIDADE" if "MÓDULO / ATIVIDADE" in df_dados.columns else "MODULO / ATIVIDADE"
                     
-                    for idx, linha in atendimentos_cliente.iterrows():
+                    # Percorre o dataframe garantindo o isolamento completo por linha física
+                    for i in range(len(atendimentos_cliente)):
+                        linha = atendimentos_cliente.iloc[i]
+                        
                         dt_str = linha[col_data].strftime("%d/%m/%Y") if pd.notnull(linha[col_data]) else ""
                         part_val = str(linha.get(col_part, "")).strip()
                         desc_pres_val = str(linha.get(col_desc, "")).strip()
                         obs_pres_val = str(linha.get(col_obs, "")).strip()
                         modulo_val = str(linha.get(col_modulo, "")).strip()
                         
+                        # CORREÇÃO CRUCIAL: Captura os horários específicos da linha atual do loop
                         hora_ini_val = str(linha.get(col_entrada, "08:00")).strip()
                         hora_fim_val = str(linha.get(col_saida, "12:00")).strip()
                         
+                        # CORREÇÃO DE PARTICIPANTE: Garante fallbacks limpos sem poluir o Word
+                        participante_final = part_val
+                        if not participante_final or participante_final.lower() in ["nan", ""]:
+                            participante_final = str(solicitante_nome).strip()
+                        
                         lista_atendimentos_word.append({
                             "modulos": modulo_val,
-                            # Fallback para o nome do gestor caso a linha da planilha venha vazia
-                            "participantes": part_val if part_val and part_val.lower() != "nan" and part_val != "" else solicitante_nome,
+                            "participantes": participante_final,
                             "data_dia": dt_str,
                             "hora_inicio": hora_ini_val,
                             "hora_fim": hora_fim_val,
@@ -266,7 +276,6 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                             lista_observacoes_gerais.append(obs_pres_val.strip())
 
                     resumao_geral_ac = "\n".join(lista_observacoes_gerais) if lista_observacoes_gerais else "Nenhuma observação técnica registrada."
-
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
                     
                     if not os.path.exists(caminho_modelo):
