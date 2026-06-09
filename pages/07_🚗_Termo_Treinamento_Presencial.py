@@ -335,8 +335,8 @@ def confirmar_envio_presencial_popup(email, arquivos_lote):
                     time.sleep(4)
                 st.rerun()
         with col_p2:
-        if st.button("Não, Cancelar", use_container_width=True): 
-            st.rerun()
+            if st.button("Não, Cancelar", use_container_width=True): 
+                st.rerun()
 
 if btn_enviar_emails:
     if not arquivos_gerados_p: 
