@@ -12,6 +12,7 @@ import glob
 import smtplib
 import time
 import base64
+import requests
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -138,10 +139,13 @@ with st.sidebar:
 # URL oficial mestre da planilha publicada
 URL_PLANILHA_MUDANCA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
 
-# 5. CARREGAMENTO DAS ABAS UTILIZANDO A ENGENHARIA DO EXCELFILE
+# 5. CARREGAMENTO EXCLUSIVO DA ESTRUTURA USANDO TEMPO DE ESPERA PROTEGIDO (TIMEOUT)
 @st.cache_data(ttl=600)
 def carregar_estrutura_abas_p02():
-    xl = pd.ExcelFile(URL_PLANILHA_MUDANCA)
+    # Protege o download contra IncompleteRead forçando streaming completo e timeout de 30 segundos
+    response = requests.get(URL_PLANILHA_MUDANCA, timeout=30, stream=True)
+    xl = pd.ExcelFile(io.BytesIO(response.content))
+    
     df_leg = pd.read_excel(xl, sheet_name="Legendas", engine='openpyxl')
     abas_reais = xl.sheet_names
     abas_meses = [a for a in abas_reais if a not in ["Legendas", "Config", "Dashboard", "Parâmetros", "Parametros"]]
@@ -162,7 +166,7 @@ st.markdown("---")
 cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 aba_mes_selecionada = st.selectbox("Selecione o Mês do Atendimento (Aba da Planilha):", lista_abas_meses) if lista_abas_meses else st.text_input("Aba do Mês:")
 
-# Extração limpa do nome do gerente para sumir com aspas e colchetes
+# Coleta limpa do gestor do cliente sem lixo estrutural
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
@@ -180,23 +184,26 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
     else:
-        with st.spinner(f"⏳ Processando atendimentos da aba '{aba_mes_selecionada}'..."):
+        with st.spinner(f"⏳ Baixando e processando os lançamentos da aba '{aba_mes_selecionada}' de forma segura..."):
             try:
-                df_dados = pd.read_excel(URL_PLANILHA_MUDANCA, sheet_name=aba_mes_selecionada, engine='openpyxl')
+                # CORREÇÃO DEFINITIVA DO INCOMPLETE READ: Força o download por barramento estável de streaming via requests
+                res_dados = requests.get(URL_PLANILHA_MUDANCA, timeout=45, stream=True)
+                xl_dados = pd.ExcelFile(io.BytesIO(res_dados.content))
+                df_dados = pd.read_excel(xl_dados, sheet_name=aba_mes_selecionada, engine='openpyxl')
                 
-                # CORREÇÃO ABSOLUTA DO ERRO DE INDICE DUPLICADO: Reconstrói os rótulos de linha da planilha do zero antes de filtrar
+                # Reseta índices para blindar contra rótulos duplicados
                 df_dados = df_dados.reset_index(drop=True)
                 
                 # Normaliza cabeçalhos em maiúsculas
                 df_dados.columns = df_dados.columns.str.upper().str.strip()
+                df_dados["SITUAÇÃO"] = df_dados["SITUAÇÃO"].astype(str).str.strip()
                 
-                # Mapeia a coluna mestre informada
+                # Mapeia as chaves das colunas
                 col_situacao = "SITUACAO_RA"
                 col_cliente = "CLIENTE"
                 col_ra = "RA"
                 col_data = "DATA"
                 
-                # Fallback de redundância caso a coluna mestre mude de padrão
                 if col_situacao not in df_dados.columns:
                     col_situacao = next((c for c in df_dados.columns if "SITUACAO" in c or "SITUAÇÃO" in c), None)
 
@@ -205,7 +212,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 else:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                     
-                    # Filtra apenas as linhas com as regras de negócio ativas
+                    # Filtra apenas as linhas com as regras de negócio solicitadas
                     atendimentos_cliente = df_dados[
                         (df_dados[col_cliente] == cliente_selecionado) & 
                         (df_dados[col_situacao] == "Em Elaboração") & 
@@ -219,7 +226,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                             try: os.remove(antigo)
                             except: pass
 
-                        # Força o segundo reset no lote filtrado eliminando qualquer risco residual de eixo duplicado
+                        # Reseta índices e ordena cronologicamente
                         atendimentos_cliente = atendimentos_cliente.reset_index(drop=True)
                         atendimentos_cliente[col_data] = pd.to_datetime(atendimentos_cliente[col_data], errors='coerce')
                         atendimentos_cliente = atendimentos_cliente.sort_values(by=col_data)
