@@ -139,21 +139,15 @@ with st.sidebar:
 # URL oficial mestre da planilha publicada
 URL_PLANILHA_MUDANCA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
 
-# 5. CARREGAMENTO EXCLUSIVO DA ESTRUTURA USANDO TEMPO DE ESPERA PROTEGIDO (TIMEOUT)
-@st.cache_data(ttl=600)
+# 5. CARREGAMENTO SEM CACHE PARA RESOLVER CONGELAMENTO DE HORÁRIOS
 def carregar_estrutura_abas_p02():
-    # Protege o download contra IncompleteRead forçando streaming completo e timeout de 30 segundos
     response = requests.get(URL_PLANILHA_MUDANCA, timeout=30, stream=True)
     xl = pd.ExcelFile(io.BytesIO(response.content))
-    
     df_leg = pd.read_excel(xl, sheet_name="Legendas", engine='openpyxl')
     abas_reais = xl.sheet_names
     abas_meses = [a for a in abas_reais if a not in ["Legendas", "Config", "Dashboard", "Parâmetros", "Parametros"]]
     return df_leg, abas_meses
-st.sidebar.header("⚙️ Configurações GERAIS")
-if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
-    st.cache_data.clear()
-    st.rerun()
+
 try:
     df_leg, lista_abas_meses = carregar_estrutura_abas_p02()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
@@ -169,7 +163,6 @@ st.markdown("---")
 cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 aba_mes_selecionada = st.selectbox("Selecione o Mês do Atendimento (Aba da Planilha):", lista_abas_meses) if lista_abas_meses else st.text_input("Aba do Mês:")
 
-# Coleta limpa do gestor do cliente sem lixo estrutural
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
@@ -182,16 +175,6 @@ consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="HUDSON VA
 data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de {data_emissao.year}"
-# --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
-# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
-# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
-# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
-# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
-# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
-# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
-# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
-# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
-# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
@@ -203,20 +186,17 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 xl_dados = pd.ExcelFile(io.BytesIO(res_dados.content))
                 df_dados = pd.read_excel(xl_dados, sheet_name=aba_mes_selecionada, engine='openpyxl')
                 
-                # Limpa e reseta os eixos duplicados na memória
                 df_dados = df_dados.reset_index(drop=True)
                 df_dados.columns = df_dados.columns.str.strip()
                 
-                # Mapeamento dinâmico de cabeçalhos institucionais para evitar KeyError
-                col_cliente = next((c for c in df_dados.columns if c.upper() == "CLIENTE"), "CLIENTE")
-                col_situacao = "SITUACAO_RA" if "SITUACAO_RA" in df_dados.columns else next((c for c in df_dados.columns if "SITUACAO" in c.upper()), None)
-                col_ra = next((c for c in df_dados.columns if c.upper() == "RA"), "RA")
-                col_data = next((c for c in df_dados.columns if c.upper() == "DATA"), "DATA")
+                col_cliente = "CLIENTE"
+                col_situacao = "SITUACAO_RA"
+                col_ra = "RA"
+                col_data = "DATA"
                 
-                if col_situacao and col_situacao in df_dados.columns:
+                if col_situacao in df_dados.columns:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                 
-                # Filtra apenas os lançamentos "Em Elaboração" com RA preenchido
                 atendimentos_cliente = df_dados[
                     (df_dados[col_cliente] == cliente_selecionado) & 
                     (df_dados[col_situacao] == "Em Elaboração") & 
@@ -230,7 +210,6 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         try: os.remove(antigo)
                         except: pass
 
-                    # Reseta o índice da tabela filtrada para garantir indexação sequencial correta por linha
                     atendimentos_cliente = atendimentos_cliente.reset_index(drop=True)
                     atendimentos_cliente[col_data] = pd.to_datetime(atendimentos_cliente[col_data], errors='coerce')
                     atendimentos_cliente = atendimentos_cliente.sort_values(by=col_data)
@@ -242,32 +221,26 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     lista_atendimentos_word = []
                     lista_observacoes_gerais = []
                     
-                    # IDENTIFICAÇÃO FLEXÍVEL DAS COLUNAS CRÍTICAS (Evita travar por acento ou maiúscula)
                     col_part = next((c for c in df_dados.columns if "PARTICIPANTE" in c.upper()), "PARTICIPANTE")
                     col_desc = next((c for c in df_dados.columns if "DESC_PRES" in c.upper() or "DESCRIÇÃO" in c.upper()), "DESC_PRES")
                     col_obs = next((c for c in df_dados.columns if "OBS_PRES" in c.upper() or "OBSERVAÇÃO" in c.upper()), "OBS_PRES")
-                    col_entrada = next((c for c in df_dados.columns if "ENTRADA" in c.upper() or "H_INICIO" in c.upper()), "ENTRADA")
-                    col_saida = next((c for c in df_dados.columns if "SAIDA" in c.upper() or "SAÍDA" in c.upper() or "H_FIM" in c.upper()), "SAÍDA")
+                    col_entrada = next((c for c in df_dados.columns if "ENTRADA" in c.upper()), "ENTRADA")
+                    col_saida = next((c for c in df_dados.columns if "SAIDA" in c.upper() or "SAÍDA" in c.upper()), "SAÍDA")
                     col_modulo = next((c for c in df_dados.columns if "MÓDULO" in c.upper() or "MODULO" in c.upper()), "MÓDULO / ATIVIDADE")
                     
-                    # Percorre o dataframe extraindo os valores reais linha por linha de forma isolada
                     for idx, linha in atendimentos_cliente.iterrows():
                         dt_str = linha[col_data].strftime("%d/%m/%Y") if pd.notnull(linha[col_data]) else ""
-                        
                         part_val = str(linha.get(col_part, "")).strip()
                         desc_pres_val = str(linha.get(col_desc, "")).strip()
                         obs_pres_val = str(linha.get(col_obs, "")).strip()
                         modulo_val = str(linha.get(col_modulo, "")).strip()
                         
-                        # Extrai os horários diários reais usando as variáveis dinâmicas identificadas
                         hora_ini_raw = str(linha.get(col_entrada, "08:00")).strip()
                         hora_fim_raw = str(linha.get(col_saida, "12:00")).strip()
                         
-                        # Formata o texto limpando segundos caso venha do Excel como datetime completo
                         hora_ini_val = hora_ini_raw[:5] if ":" in hora_ini_raw else hora_ini_raw
                         hora_fim_val = hora_fim_raw[:5] if ":" in hora_fim_raw else hora_fim_raw
                         
-                        # Tratamento de participante nulo ou ausente na linha do lançamento
                         participante_final = part_val
                         if not participante_final or participante_final.lower() in ["nan", "", "none"]:
                             participante_final = str(solicitante_nome).strip()
