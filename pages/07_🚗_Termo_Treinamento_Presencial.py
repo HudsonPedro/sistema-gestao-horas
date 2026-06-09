@@ -150,10 +150,6 @@ def carregar_dados():
     abas_meses = [a for a in abas_reais if a not in ["Legendas", "Config", "Dashboard", "Parâmetros", "Parametros"]]
     return df_leg, abas_meses
     
-st.sidebar.header("⚙️ Configurações GERAIS")
-if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
-    st.cache_data.clear()
-    st.rerun()
 try:
     df_leg, lista_abas_meses = carregar_dados()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
@@ -189,7 +185,7 @@ except:
 st.markdown("---")
 
 cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
-aba_mes_selecionada = st.selectbox("Selecione o Mês do Atendimento:", lista_abas_meses) if lista_abas_meses else st.text_input("Aba do Mês:")
+aba_mes_selecionada = st.selectbox("Selecione o Mês do Atendimento:", lista_abas_meses) if lista_abas_meses else st.text_input("Mês:")
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
@@ -207,6 +203,10 @@ data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
 # --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
+st.sidebar.header("⚙️ Configurações GERAIS")
+if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
+    st.cache_data.clear()
+    st.rerun()
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
