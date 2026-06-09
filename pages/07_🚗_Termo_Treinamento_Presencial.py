@@ -211,7 +211,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
     else:
-        with st.spinner(f"⏳ Processando atendimentos da aba '{aba_mes_selecionada}'..."):
+        with st.spinner(f"⏳ Processando atendimentos do mês: '{aba_mes_selecionada}'..."):
             try:
                 res_dados = requests.get(URL_PLANILHA_MUDANCA, timeout=45, stream=True)
                 xl_dados = pd.ExcelFile(io.BytesIO(res_dados.content))
