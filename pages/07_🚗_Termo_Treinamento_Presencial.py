@@ -179,6 +179,7 @@ meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
 data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de {data_emissao.year}"
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
+# --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -200,7 +201,6 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 if col_situacao in df_dados.columns:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                 
-                # Regra de negócio mestre: filtra por cliente, situação ativa em elaboração e que possuam RA
                 atendimentos_cliente = df_dados[
                     (df_dados[col_cliente] == cliente_selecionado) & 
                     (df_dados[col_situacao] == "Em Elaboração") & 
@@ -225,20 +225,25 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     lista_atendimentos_word = []
                     lista_observacoes_gerais = []
                     
-                    col_part = next((c for c in df_dados.columns if "PARTICIPANTE" in c.upper()), "PARTICIPANTE")
-                    col_desc = next((c for c in df_dados.columns if "DESC_PRES" in c.upper() or "DESCRIÇÃO" in c.upper()), "DESC_PRES")
-                    col_obs = next((c for c in df_dados.columns if "OBS_PRES" in c.upper() or "OBSERVAÇÃO" in c.upper()), "OBS_PRES")
-                    col_entrada = next((c for c in df_dados.columns if "ENTRADA" in c.upper()), "ENTRADA")
-                    col_saida = next((c for c in df_dados.columns if "SAIDA" in c.upper() or "SAÍDA" in c.upper()), "SAÍDA")
-                    col_modulo = next((c for c in df_dados.columns if "MÓDULO" in c.upper() or "MODULO" in c.upper()), "MÓDULO / ATIVIDADE")
+                    # Nome exato e estrito das colunas da sua planilha de dados
+                    col_part = "PARTICIPANTE"
+                    col_desc = "DESC_PRES"
+                    col_obs = "OBS_PRES"
+                    col_modulo = "MÓDULO / ATIVIDADE" if "MÓDULO / ATIVIDADE" in df_dados.columns else "MODULO / ATIVIDADE"
                     
-                    dict_part = atendimentos_cliente[col_part].to_dict()
-                    dict_desc = atendimentos_cliente[col_desc].to_dict()
-                    dict_obs = atendimentos_cliente[col_obs].to_dict()
-                    dict_entrada = atendimentos_cliente[col_entrada].to_dict()
-                    dict_saida = atendimentos_cliente[col_saida].to_dict()
-                    dict_modulo = atendimentos_cliente[col_modulo].to_dict()
+                    # CORREÇÃO DEFINITIVA: Vincula as colunas de horário reais da planilha
+                    col_hr_inicio = "HR_INICIO"
+                    col_hr_fim = "HR_FIM"
+                    
+                    dict_part = atendimentos_cliente[col_part].to_dict() if col_part in atendimentos_cliente.columns else {}
+                    dict_desc = atendimentos_cliente[col_desc].to_dict() if col_desc in atendimentos_cliente.columns else {}
+                    dict_obs = atendimentos_cliente[col_obs].to_dict() if col_obs in atendimentos_cliente.columns else {}
+                    dict_modulo = atendimentos_cliente[col_modulo].to_dict() if col_modulo in atendimentos_cliente.columns else {}
                     dict_data_dia = atendimentos_cliente[col_data].to_dict()
+                    
+                    # Extrai os dicionários usando os termos corretos passados por você
+                    dict_hr_ini = atendimentos_cliente[col_hr_inicio].to_dict() if col_hr_inicio in atendimentos_cliente.columns else {}
+                    dict_hr_fim = atendimentos_cliente[col_hr_fim].to_dict() if col_hr_fim in atendimentos_cliente.columns else {}
 
                     for idx in atendimentos_cliente.index:
                         dt_objeto = dict_data_dia.get(idx)
@@ -249,10 +254,10 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         obs_pres_val = str(dict_obs.get(idx, "")).strip()
                         modulo_val = str(dict_modulo.get(idx, "")).strip()
                         
-                        hora_ini_raw = str(dict_entrada.get(idx, "08:00")).strip()
-                        hora_fim_raw = str(dict_saida.get(idx, "12:00")).strip()
+                        # Captura os horários reais individuais da respectiva linha (manhã ou tarde)
+                        hora_ini_raw = str(dict_hr_ini.get(idx, "08:00")).strip()
+                        hora_fim_raw = str(dict_hr_fim.get(idx, "12:00")).strip()
                         
-                        # Limpa strings mantendo as variações exatas (Ex: 08:00 ou 13:00) de cada linha
                         hora_ini_val = hora_ini_raw[:5] if ":" in hora_ini_raw else hora_ini_raw
                         hora_fim_val = hora_fim_raw[:5] if ":" in hora_fim_raw else hora_fim_raw
                         
@@ -260,7 +265,6 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         if not participante_final or participante_final.lower() in ["nan", "", "none"]:
                             participante_final = str(solicitante_nome).strip()
                         
-                        # CORREÇÃO CRUCIAL: Nome da variável alinhado sem o caractere fantasma
                         lista_atendimentos_word.append({
                             "modulos": modulo_val if modulo_val.lower() != "nan" else "",
                             "modulo": modulo_val if modulo_val.lower() != "nan" else "",
@@ -268,8 +272,8 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                             "participante": participante_final,
                             "data_dia": dt_str,
                             "data": dt_str,
-                            "hora_inicio": hora_ini_val if hora_ini_val.lower() != "nan" else "08:00",
-                            "hora_fim": hora_fim_val if hora_fim_val.lower() != "nan" else "12:00",
+                            "hora_inicio": hora_ini_val,
+                            "hora_fim": hora_fim_val,
                             "desc_pres": desc_pres_val if desc_pres_val.lower() != "nan" else ""
                         })
                         
@@ -277,8 +281,6 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                             lista_observacoes_gerais.append(obs_pres_val.strip())
 
                     resumao_geral_ac = "\n".join(lista_observacoes_gerais) if lista_observacoes_gerais else "Nenhuma observação técnica registrada."
-
-
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
                     
                     if not os.path.exists(caminho_modelo):
