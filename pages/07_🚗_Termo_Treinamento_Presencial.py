@@ -11,7 +11,6 @@ import zipfile
 import glob
 import smtplib
 import time
-import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -58,7 +57,7 @@ def enviar_email_treinamento_presencial(string_destinatarios, cliente_nome, arqu
     <body>
         <p>Prezados(as), espero que se encontre bem.</p>
         <p>Segue em anexo o <b>Termo de Confirmação de Treinamento Presencial</b> referente às visitas e consultorias realizadas no cliente <b>{cliente_nome}</b>.</p>
-        <p>O documento detalha o histórico completo de dias, horários, escopos validados e observações técnicas por blocos de atendimento.</p>
+        <p>O documento detalha o histórico completo de visitas por blocos de atendimento.</p>
         <p>Favor colher a assinatura institucional do Sr(a). {gerente_cliente_nome}.</p>
         <br>
         <p>Me coloco à inteira disposição para possíveis esclarecimentos.</p>
@@ -135,51 +134,59 @@ with st.sidebar:
     st.divider()
     st.caption("v1.0 - 08062026")
 
-# 5. CARREGAMENTO EXCLUSIVO DA ABA LEGENDAS (IGUALZINHO AS PAGES 05 E 06)
+# ID mestre da sua planilha Google Sheets
+SPREADSHEET_ID = "1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE"
+
+# 5. CARREGAMENTO DA ABA LEGENDAS VIA ENDPOINT DE EXPORTAÇÃO SEGURO DO DRIVE
 @st.cache_data(ttl=600)
-def carregar_legendas_p05():
-    url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
-    df = pd.read_excel(url, sheet_name="Legendas", engine='openpyxl')
+def carregar_legendas_limpo():
+    url_export_leg = f"https://google.com{SPREADSHEET_ID}/export?format=xlsx&sheet_name=Legendas"
+    df = pd.read_excel(url_export_leg, engine='openpyxl')
     return df
 
 try:
-    df_leg = carregar_legendas_p05()
+    df_leg = carregar_legendas_limpo()
     lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
 except:
     df_leg = pd.DataFrame()
     lista_clientes = []
 
 st.title("🚗 Confirmação de Treinamento Presencial (Por Blocos)")
-st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos.")
+st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos do mês.")
 st.markdown("---")
 
-# SELECTBOX DA FILTRAGEM IDÊNTICO ÀS PÁGINAS 05 E 06 (PREENCHIDO COM SUCESSO)
 cliente_selecionado = st.selectbox("Nome do Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
+# CORREÇÃO 1: Extração limpa do nome do gerente para sumir com aspas e colchetes
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        gerente_cliente_sugerido = str(solicitantes).strip()
+        gerente_cliente_sugerido = str(solicitantes[0]).strip()
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="HUDSON VALENTE")
-data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
 
+# CORREÇÃO 2: Seletor de Abas para você definir o mês que quer encontrar os dados
+nome_aba_mes = st.text_input("Nome exato da aba do mês na Planilha (Ex: Lançamentos, Janeiro, Fevereiro):", value="Lançamentos")
+
+data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de {data_emissao.year}"
-# --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA LANÇAMENTOS ---
+# --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
     else:
-        with st.spinner("⏳ Baixando aba de Lançamentos e filtrando por regras de negócio..."):
+        with st.spinner(f"⏳ Baixando aba '{nome_aba_mes}' via API do Drive e processando regras..."):
             try:
-                # Carrega de forma oculta a aba Lançamentos apenas neste milésimo de segundo do clique
-                url_planilha = "https://google.com"
-                df_dados = pd.read_excel(url_planilha, sheet_name="Lançamentos", engine='openpyxl')
+                # CORREÇÃO 3: Baixa a aba informada usando a API de exportação direta do Drive, eliminando o erro de zip file
+                url_export_dados = f"https://google.com{SPREADSHEET_ID}/export?format=xlsx&sheet_name={nome_aba_mes}"
+                df_dados = pd.read_excel(url_export_dados, engine='openpyxl')
                 
-                # Executa os filtros de regra de negócio solicitados
+                # Normaliza as colunas em maiúsculas
+                df_dados.columns = df_dados.columns.str.upper().str.strip()
+                
                 df_dados["SITUAÇÃO"] = df_dados["SITUAÇÃO"].astype(str).str.strip()
                 atendimentos_cliente = df_dados[
                     (df_dados["CLIENTE"] == cliente_selecionado) & 
@@ -188,7 +195,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 ].copy()
                 
                 if atendimentos_cliente.empty:
-                    st.warning(f"⚠️ Nenhum lançamento com RA ativo e Situação 'Em Elaboração' foi localizado para a empresa '{cliente_selecionado}'.")
+                    st.warning(f"⚠️ Nenhum lançamento com RA ativo e Situação 'Em Elaboração' foi localizado na aba '{nome_aba_mes}' para este cliente.")
                 else:
                     for antigo in glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.*")):
                         try: os.remove(antigo)
@@ -226,7 +233,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
                     
                     if not os.path.exists(caminho_modelo):
-                        st.error("⚠️ O modelo 'presencial.docx' não foi localizado na pasta modelos do repositório.")
+                        st.error("⚠️ O modelo 'presencial.docx' não foi localizado.")
                     else:
                         doc = DocxTemplate(caminho_modelo)
                         contexto = {
@@ -276,9 +283,7 @@ if arquivos_gerados_p:
             mime_tipo = "application/pdf" if arq_caminho.endswith(".pdf") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             col_alvo.download_button(label=f"📥 Baixar {extensao_label}: {nome_real}", data=conteudo_bytes, file_name=nome_real, mime=mime_tipo, use_container_width=True, key=f"btn_dl_pres_v3_{idx}")
 
-# =========================================================================
 # Pop-up de Confirmação
-# =========================================================================
 @st.dialog(" Confirmação de Disparo de Termos")
 def confirmar_envio_presencial_popup(email, arquivos_lote):
     st.write("Você tem certeza que deseja disparar o termo de treinamento presencial gerado por e-mail?")
