@@ -118,7 +118,7 @@ with st.sidebar:
     st.markdown("---")
     st.header("📬 Disparo de Termos")
     st.caption("Separe os e-mails usando vírgula (,)")
-    email_destinatario = st.text_input("Enviar para (Destinatários):", value="financeiro@crti.com.br", key="pres_email_dest_key")
+    email_destinatario = st.text_input("Enviar para (Destinatários):",  value="financeiro@crti.com.br,tayna@crti.com.br,kamille.voitach@crti.com.br,camille@crti.com.br", key="pres_email_dest_key")
     btn_enviar_emails = st.button("🚀 **ENVIAR TERMO POR E-MAIL**", type="primary", key="pres_email_btn_key")
     
     st.markdown("---")
