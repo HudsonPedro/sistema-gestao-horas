@@ -209,13 +209,12 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     atendimentos_cliente["DATA"] = pd.to_datetime(atendimentos_cliente["DATA"], errors='coerce')
                     atendimentos_cliente = atendimentos_cliente.sort_values(by="DATA")
                     
-
-    data_inicio_ra_str = atendimentos_cliente["DATA"].min().strftime("%d/%m/%Y")
-    data_fim_ra_str = atendimentos_cliente["DATA"].max().strftime("%d/%m/%Y")
-    periodo_visita_total = f"{data_inicio_ra_str} até {data_fim_ra_str}"
-
-    lista_atendimentos_word = []
-    lista_observacoes_gerais = []
+                    data_inicio_ra_str = atendimentos_cliente["DATA"].min().strftime("%d/%m/%Y")
+                    data_fim_ra_str = atendimentos_cliente["DATA"].max().strftime("%d/%m/%Y")
+                    periodo_visita_total = f"{data_inicio_ra_str} até {data_fim_ra_str}"
+                
+                    lista_atendimentos_word = []
+                    lista_observacoes_gerais = []
 
     for idx, linha in atendimentos_cliente.iterrows():
         dt_str = linha["DATA"].strftime("%d/%m/%Y") if pd.notnull(linha["DATA"]) else ""
