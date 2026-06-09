@@ -185,6 +185,7 @@ data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
+# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -233,8 +234,8 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     lista_atendimentos_word = []
                     lista_observacoes_gerais = []
                     
-                    # CORREÇÃO DEFINITIVA: Aponta para os nomes reais e exatos das colunas do Excel
-                    col_part = "PARTICIPANTES"
+                    # CORREÇÃO CRUCIAL: Mapeia estritamente a coluna no singular "PARTICIPANTE" conforme sua planilha
+                    col_part = "PARTICIPANTE" if "PARTICIPANTE" in df_dados.columns else "PARTICIPANTES"
                     col_desc = "DESC_PRES"
                     col_obs = "OBS_PRES"
                     col_entrada = "ENTRADA"
@@ -243,7 +244,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     
                     for idx, linha in atendimentos_cliente.iterrows():
                         dt_str = linha[col_data].strftime("%d/%m/%Y") if pd.notnull(linha[col_data]) else ""
-                        part_val = str(linha.get(col_part, linha.get("PARTICIPANTE", solicitante_nome))).strip()
+                        part_val = str(linha.get(col_part, "")).strip()
                         desc_pres_val = str(linha.get(col_desc, "")).strip()
                         obs_pres_val = str(linha.get(col_obs, "")).strip()
                         modulo_val = str(linha.get(col_modulo, "")).strip()
@@ -253,18 +254,19 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         
                         lista_atendimentos_word.append({
                             "modulos": modulo_val,
-                            "participantes": part_val if part_val and part_val.lower() != "nan" else solicitante_nome,
+                            # Fallback para o nome do gestor caso a linha da planilha venha vazia
+                            "participantes": part_val if part_val and part_val.lower() != "nan" and part_val != "" else solicitante_nome,
                             "data_dia": dt_str,
                             "hora_inicio": hora_ini_val,
                             "hora_fim": hora_fim_val,
                             "desc_pres": desc_pres_val
                         })
                         
-                        # CORREÇÃO DEFINITIVA: Traz o texto puro e idêntico da coluna AC, sem inserir a data na frente
                         if obs_pres_val and obs_pres_val.lower() != "nan" and obs_pres_val.strip() != "":
                             lista_observacoes_gerais.append(obs_pres_val.strip())
 
                     resumao_geral_ac = "\n".join(lista_observacoes_gerais) if lista_observacoes_gerais else "Nenhuma observação técnica registrada."
+
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
                     
                     if not os.path.exists(caminho_modelo):
