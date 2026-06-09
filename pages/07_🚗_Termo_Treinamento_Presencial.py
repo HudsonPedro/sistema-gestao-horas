@@ -12,7 +12,6 @@ import glob
 import smtplib
 import time
 import base64
-import openpyxl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -139,18 +138,13 @@ with st.sidebar:
 # URL oficial mestre da planilha publicada
 URL_PLANILHA_MUDANCA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
 
-# 5. CARREGAMENTO DAS ABAS UTILIZANDO A ENGENHARIA DA PÁGINA 02
+# 5. CARREGAMENTO DAS ABAS UTILIZANDO A ENGENHARIA LIMPA DO PANDAS
 @st.cache_data(ttl=600)
 def carregar_estrutura_abas_p02():
-    df_leg = pd.read_excel(URL_PLANILHA_MUDANCA, sheet_name="Legendas", engine='openpyxl')
-    
-    # Lê os metadados do arquivo para extrair a lista real de abas (meses) igual à tela de relatórios
-    resposta = io.BytesIO(pd.ExcelFile(URL_PLANILHA_MUDANCA).密.read() if hasattr(pd.ExcelFile(URL_PLANILHA_MUDANCA), '密') else openpyxl.load_workbook(URL_PLANILHA_MUDANCA).sheetnames)
     xl = pd.ExcelFile(URL_PLANILHA_MUDANCA)
+    df_leg = pd.read_excel(xl, sheet_name="Legendas", engine='openpyxl')
     abas_reais = xl.sheet_names
-    
-    # Filtra e deixa apenas as abas dos meses, removendo as abas de configuração
-    abas_meses = [a for a in abas_reais if a not in ["Legendas", "Config", "Dashboard", "Parâmetros"]]
+    abas_meses = [a for a in abas_reais if a not in ["Legendas", "Config", "Dashboard", "Parâmetros", "Parametros"]]
     return df_leg, abas_meses
 
 try:
@@ -165,11 +159,11 @@ st.title("🚗 Confirmação de Treinamento Presencial (Por Blocos)")
 st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos do mês selecionado.")
 st.markdown("---")
 
-# SELETORES EM LOTE RESTAURADOS DE FORMA PERFEITA
+# SELECTBOXES CORRIGIDOS: Carregam as listas de primeira na tela
 cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 aba_mes_selecionada = st.selectbox("Selecione o Mês do Atendimento (Aba da Planilha):", lista_abas_meses) if lista_abas_meses else st.text_input("Aba do Mês:")
 
-# CORREÇÃO 1: Nome do gestor limpo direto pelo índice (.iloc[0]), sem aspas ou colchetes na tela
+# CORREÇÃO DO NOME DO GESTOR: Extrai o primeiro registro sem aspas e sem colchetes
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
@@ -187,16 +181,15 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
     else:
-        with st.spinner(f"⏳ Lendo aba '{aba_mes_selecionada}' e compilando relatório..."):
+        with st.spinner(f"⏳ Processando atendimentos da aba '{aba_mes_selecionada}'..."):
             try:
-                # Carrega dinamicamente a aba do mês que você escolheu no selectbox
                 df_dados = pd.read_excel(URL_PLANILHA_MUDANCA, sheet_name=aba_mes_selecionada, engine='openpyxl')
                 
-                # Normaliza os cabeçalhos para maiúsculas para não haver erros de digitação
+                # Normaliza cabeçalhos em maiúsculas
                 df_dados.columns = df_dados.columns.str.upper().str.strip()
                 df_dados["SITUAÇÃO"] = df_dados["SITUAÇÃO"].astype(str).str.strip()
                 
-                # Regra de Negócio mestre por Cliente, Situação = Em Elaboração e RA válido
+                # Filtra apenas as linhas com RA válido e Situação = Em Elaboração
                 atendimentos_cliente = df_dados[
                     (df_dados["CLIENTE"] == cliente_selecionado) & 
                     (df_dados["SITUAÇÃO"] == "Em Elaboração") & 
@@ -204,7 +197,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 ].copy()
                 
                 if atendimentos_cliente.empty:
-                    st.warning(f"⚠️ Nenhum lançamento com RA ativo e Situação 'Em Elaboração' foi localizado na aba '{aba_mes_selecionada}'.")
+                    st.warning(f"⚠️ Nenhum lançamento em elaboração com RA ativo foi localizado na aba '{aba_mes_selecionada}'.")
                 else:
                     for antigo in glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.*")):
                         try: os.remove(antigo)
