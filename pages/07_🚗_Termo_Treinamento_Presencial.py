@@ -187,6 +187,7 @@ data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
+# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -236,29 +237,32 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     lista_atendimentos_word = []
                     lista_observacoes_gerais = []
                     
-                    # Nome exato das colunas cruas mapeadas do Excel
-                    col_part = "PARTICIPANTE" if "PARTICIPANTE" in df_dados.columns else "PARTICIPANTES"
-                    col_desc = "DESC_PRES"
-                    col_obs = "OBS_PRES"
-                    col_entrada = "ENTRADA"
-                    col_saida = "SAÍDA" if "SAÍDA" in df_dados.columns else "SAIDA"
-                    col_modulo = "MÓDULO / ATIVIDADE" if "MÓDULO / ATIVIDADE" in df_dados.columns else "MODULO / ATIVIDADE"
+                    # Identifica os cabeçalhos reais da planilha para evitar KeyError silencioso
+                    col_part = next((c for c in df_dados.columns if "PARTICIPANTE" in c.upper() or "PARTICIPANTES" in c.upper()), "PARTICIPANTE")
+                    col_desc = next((c for c in df_dados.columns if "DESC_PRES" in c.upper() or "DESCRIÇÃO" in c.upper()), "DESC_PRES")
+                    col_obs = next((c for c in df_dados.columns if "OBS_PRES" in c.upper() or "OBSERVAÇÃO" in c.upper()), "OBS_PRES")
+                    col_entrada = next((c for c in df_dados.columns if "ENTRADA" in c.upper()), "ENTRADA")
+                    col_saida = next((c for c in df_dados.columns if "SAIDA" in c.upper() or "SAÍDA" in c.upper()), "SAÍDA")
+                    col_modulo = next((c for c in df_dados.columns if "MÓDULO" in c.upper() or "MODULO" in c.upper()), "MÓDULO / ATIVIDADE")
                     
-                    # Percorre o dataframe garantindo o isolamento completo por linha física
-                    for i in range(len(atendimentos_cliente)):
-                        linha = atendimentos_cliente.iloc[i]
-                        
+                    # Percorre o dataframe garantindo o isolamento completo por linha física usando o laço iterrows
+                    for idx, linha in atendimentos_cliente.iterrows():
                         dt_str = linha[col_data].strftime("%d/%m/%Y") if pd.notnull(linha[col_data]) else ""
+                        
                         part_val = str(linha.get(col_part, "")).strip()
                         desc_pres_val = str(linha.get(col_desc, "")).strip()
                         obs_pres_val = str(linha.get(col_obs, "")).strip()
                         modulo_val = str(linha.get(col_modulo, "")).strip()
                         
-                        # CORREÇÃO CRUCIAL: Captura os horários específicos da linha atual do loop
-                        hora_ini_val = str(linha.get(col_entrada, "08:00")).strip()
-                        hora_fim_val = str(linha.get(col_saida, "12:00")).strip()
+                        # Captura e trata horários limpando segundos extras do formato datetime do Excel
+                        hora_ini_raw = str(linha.get(col_entrada, "08:00")).strip()
+                        hora_fim_raw = str(linha.get(col_saida, "12:00")).strip()
                         
-                        # CORREÇÃO DE PARTICIPANTE: Garante fallbacks limpos sem poluir o Word
+                        # Higienização de strings de horário (deixa apenas HH:MM caso venha com segundos)
+                        hora_ini_val = hora_ini_raw[:5] if len(hora_ini_raw) >= 5 else hora_ini_raw
+                        hora_fim_val = hora_fim_raw[:5] if len(hora_fim_raw) >= 5 else hora_fim_raw
+                        
+                        # Tratamento estrito de participante nulo ou vazio
                         participante_final = part_val
                         if not participante_final or participante_final.lower() in ["nan", ""]:
                             participante_final = str(solicitante_nome).strip()
