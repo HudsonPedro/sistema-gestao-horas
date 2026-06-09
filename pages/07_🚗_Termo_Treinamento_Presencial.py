@@ -139,7 +139,8 @@ with st.sidebar:
 # URL oficial mestre da planilha publicada
 URL_PLANILHA_MUDANCA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
 
-# 5. CARREGAMENTO SEM CACHE PARA RESOLVER CONGELAMENTO DE HORÁRIOS
+# 5. CACHE DE ALTA VELOCIDADE EXCLUSIVO PARA CARREGAR A TELA INICIAL INSTANTANEAMENTE
+@st.cache_data(ttl=300)
 def carregar_estrutura_abas_p02():
     response = requests.get(URL_PLANILHA_MUDANCA, timeout=30, stream=True)
     xl = pd.ExcelFile(io.BytesIO(response.content))
@@ -156,7 +157,7 @@ except:
     lista_abas_meses = []
     lista_clientes = []
 
-st.title("🚗 Confirmação de Treinamento Presencial (Por Blocos)")
+st.title("🚗 Confirmação de Treinamento Presencial")
 st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos do mês selecionado.")
 st.markdown("---")
 
@@ -167,7 +168,8 @@ gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
     if not solicitantes_df.empty:
-        gerente_cliente_sugerido = str(solicitantes_df.values[0]).strip()
+        # Extrai a string limpa do nome do gerente para sumir com aspas e colchetes
+        gerente_cliente_sugerido = str(solicitantes_df.iloc[0]).strip()
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="HUDSON VALENTE")
@@ -186,9 +188,11 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 xl_dados = pd.ExcelFile(io.BytesIO(res_dados.content))
                 df_dados = pd.read_excel(xl_dados, sheet_name=aba_mes_selecionada, engine='openpyxl')
                 
+                # Força o reset dos eixos de linhas para remover duplicidades antes de filtrar
                 df_dados = df_dados.reset_index(drop=True)
                 df_dados.columns = df_dados.columns.str.strip()
                 
+                # Definição e mapeamento estrito das colunas conforme seu banco de dados
                 col_cliente = "CLIENTE"
                 col_situacao = "SITUACAO_RA"
                 col_ra = "RA"
@@ -197,6 +201,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 if col_situacao in df_dados.columns:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                 
+                # Filtra os lançamentos pela regra de negócio mestre
                 atendimentos_cliente = df_dados[
                     (df_dados[col_cliente] == cliente_selecionado) & 
                     (df_dados[col_situacao] == "Em Elaboração") & 
@@ -204,12 +209,13 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 ].copy()
                 
                 if atendimentos_cliente.empty:
-                    st.warning(f"⚠️ Nenhum lançamento com SITUACAO_RA = 'Em Elaboração' foi localizado na aba '{aba_mes_selecionada}'.")
+                    st.warning(f"⚠️ Nenhum lançamento em elaboração com RA ativo foi localizado na aba '{aba_mes_selecionada}'.")
                 else:
                     for antigo in glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.*")):
                         try: os.remove(antigo)
                         except: pass
 
+                    # Reseta o índice e aplica a ordenação cronológica estrita
                     atendimentos_cliente = atendimentos_cliente.reset_index(drop=True)
                     atendimentos_cliente[col_data] = pd.to_datetime(atendimentos_cliente[col_data], errors='coerce')
                     atendimentos_cliente = atendimentos_cliente.sort_values(by=col_data)
@@ -221,20 +227,24 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     lista_atendimentos_word = []
                     lista_observacoes_gerais = []
                     
-                    col_part = next((c for c in df_dados.columns if "PARTICIPANTE" in c.upper()), "PARTICIPANTE")
-                    col_desc = next((c for c in df_dados.columns if "DESC_PRES" in c.upper() or "DESCRIÇÃO" in c.upper()), "DESC_PRES")
-                    col_obs = next((c for c in df_dados.columns if "OBS_PRES" in c.upper() or "OBSERVAÇÃO" in c.upper()), "OBS_PRES")
-                    col_entrada = next((c for c in df_dados.columns if "ENTRADA" in c.upper()), "ENTRADA")
-                    col_saida = next((c for c in df_dados.columns if "SAIDA" in c.upper() or "SAÍDA" in c.upper()), "SAÍDA")
-                    col_modulo = next((c for c in df_dados.columns if "MÓDULO" in c.upper() or "MODULO" in c.upper()), "MÓDULO / ATIVIDADE")
+                    # Nomes exatos das colunas da planilha mestre
+                    col_part = "PARTICIPANTE"
+                    col_desc = "DESC_PRES"
+                    col_obs = "OBS_PRES"
+                    col_entrada = "ENTRADA"
+                    col_saida = "SAÍDA" if "SAÍDA" in df_dados.columns else "SAIDA"
+                    col_modulo = "MÓDULO / ATIVIDADE" if "MÓDULO / ATIVIDADE" in df_dados.columns else "MODULO / ATIVIDADE"
                     
+                    # O laço iterrows processa cada registro de forma isolada e sequencial por linha física
                     for idx, linha in atendimentos_cliente.iterrows():
                         dt_str = linha[col_data].strftime("%d/%m/%Y") if pd.notnull(linha[col_data]) else ""
+                        
                         part_val = str(linha.get(col_part, "")).strip()
                         desc_pres_val = str(linha.get(col_desc, "")).strip()
                         obs_pres_val = str(linha.get(col_obs, "")).strip()
                         modulo_val = str(linha.get(col_modulo, "")).strip()
                         
+                        # Extração isolada por linha de registro para coletar horários mutáveis da tarde
                         hora_ini_raw = str(linha.get(col_entrada, "08:00")).strip()
                         hora_fim_raw = str(linha.get(col_saida, "12:00")).strip()
                         
@@ -337,5 +347,8 @@ def confirmar_envio_presencial_popup(email, arquivos_lote):
         if st.button("Não, Cancelar", use_container_width=True): st.rerun()
 
 if btn_enviar_emails:
-    if not arquivos_gerados_p: st.sidebar.warning("⚠️ Mapeie os dados na tela primeiro antes de disparar.")
-    else: confirmar_envio_presencial_popup(email_destinatario, arquivos_gerados_p)
+    if not arquivos_gerados_p: 
+        st.sidebar.warning("⚠️ Mapeie os dados na tela primeiro antes de disparar.")
+    else: 
+        confirmar_envio_presencial_popup(email_destinatario, arquivos_gerados_p)
+
