@@ -172,7 +172,7 @@ gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        gerente_cliente_sugerido = str(df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().iloc[0]).strip()
+        gerente_cliente_sugerido = str(df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().iloc).strip()
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="HUDSON VALENTE")
@@ -190,7 +190,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
     else:
         with st.spinner("⏳ Filtrando planilha por regras de RA e Situação..."):
             try:
-                # REGRA CRUCIAL: Filtra apenas as linhas do cliente, que possuam número de RA preenchido e Situação = "Em Elaboração"
+                # Regras de Negócio: Filtra linhas por Cliente, RA válido e Situação = Em Elaboração
                 df_dados["SITUAÇÃO"] = df_dados["SITUAÇÃO"].astype(str).str.strip()
                 atendimentos_cliente = df_dados[
                     (df_dados["CLIENTE"] == cliente_selecionado) & 
@@ -205,11 +205,11 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         try: os.remove(antigo)
                         except: pass
 
-                    # Garante ordenação cronológica das visitas
+                    # CORREÇÃO ABSOLUTA DA SINTAXE: Ordenação limpa sem atribuições cruzadas
                     atendimentos_cliente["DATA"] = pd.to_datetime(atendimentos_cliente["DATA"], errors='coerce')
                     atendimentos_cliente = atendimentos_cliente.sort_values(by="DATA")
                     
-    # REGRA DO PERÍODO: Captura dinamicamente a primeira e a última data do lote de RAs
+
     data_inicio_ra_str = atendimentos_cliente["DATA"].min().strftime("%d/%m/%Y")
     data_fim_ra_str = atendimentos_cliente["DATA"].max().strftime("%d/%m/%Y")
     periodo_visita_total = f"{data_inicio_ra_str} até {data_fim_ra_str}"
@@ -220,12 +220,10 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
     for idx, linha in atendimentos_cliente.iterrows():
         dt_str = linha["DATA"].strftime("%d/%m/%Y") if pd.notnull(linha["DATA"]) else ""
 
-        # Coleta os dados das linhas e colunas AB e AC
         desc_pres_val = str(linha.get("DESCRIÇÃO ATENDIMENTO", "")).strip()
         obs_pres_val = str(linha.get("OBSERVAÇÃO", "")).strip()
         modulo_val = str(linha.get("MÓDULO / ATIVIDADE", "")).strip()
 
-        # Monta a estrutura de blocos repetíveis requisitada
         lista_atendimentos_word.append({
             "modulos": modulo_val,
             "data_dia": dt_str,
@@ -234,11 +232,9 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
             "desc_pres": desc_pres_val
         })
 
-        # Acumula as observações diárias para compor o Resumão Geral da coluna AC
         if obs_pres_val and obs_pres_val.lower() != "nan":
             lista_observacoes_gerais.append(f"• Data {dt_str}: {obs_pres_val}")
 
-    # Junta todas as observações em um bloco de texto único separado por quebras de linha
     resumao_geral_ac = "\n".join(lista_observacoes_gerais) if lista_observacoes_gerais else \
                        "Nenhuma observação técnica registrada no período."
 
@@ -264,21 +260,20 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
         caminho_docx = os.path.join(PASTA_TREINAMENTO_P, f"{nome_final}.docx")
         doc.save(caminho_docx)
 
-        # Compila para PDF usando o LibreOffice headless
         subprocess.run(
             f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TREINAMENTO_P}" "{caminho_docx}"',
             shell=True,
             check=True
         )
 
-        st.success("✨ Relatório gerado com sucesso em blocos cronológicos sequenciais!")
+        st.success("✨ Relatório gerado com sucesso!")
         time.sleep(1)
         st.rerun()
 
 except Exception as e:
     st.error(f"Erro ao processar planilha e gerar lote: {e}")
 
-# --- 7. PAINEL VISUAL DE DOWNLOADS E ZIP COMPACTADO ---
+# --- PAINEL VISUAL DE DOWNLOADS E ZIP COMPACTADO ---
 arquivos_gerados_p = glob.glob(os.path.join(PASTA_TREINAMENTO_P, ".pdf")) + \
                      glob.glob(os.path.join(PASTA_TREINAMENTO_P, ".docx"))
 
@@ -322,7 +317,7 @@ if arquivos_gerados_p:
             )
 
 # =========================================================================
-# 8. POP-UP DE CONFIRMAÇÃO DO DISPARO POR E-MAIL
+# Pop-up de Confirmação
 # =========================================================================
 @st.dialog(" Confirmação de Disparo de Termos")
 def confirmar_envio_presencial_popup(email, arquivos_lote):
