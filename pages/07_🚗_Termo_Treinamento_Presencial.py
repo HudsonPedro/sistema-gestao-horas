@@ -149,14 +149,17 @@ def carregar_dados():
     abas_reais = xl.sheet_names
     abas_meses = [a for a in abas_reais if a not in ["Legendas", "Config", "Dashboard", "Parâmetros", "Parametros"]]
     return df_leg, abas_meses
-    
-try:
-    df_leg, lista_abas_meses = carregar_dados()
-    lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
-except:
-    df_leg = pd.DataFrame()
-    lista_abas_meses = []
-    lista_clientes = []
+st.sidebar.header("⚙️ Configurações GERAIS")
+if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
+    st.cache_data.clear()
+    st.rerun()    
+    try:
+        df_leg, lista_abas_meses = carregar_dados()
+        lista_clientes = sorted(df_leg["Clientes"].dropna().unique().tolist())
+    except:
+        df_leg = pd.DataFrame()
+        lista_abas_meses = []
+        lista_clientes = []
 
 # Função para converter imagem local para Base64 (para funcionar dentro do HTML)
 def get_image_base64(path):
@@ -203,10 +206,7 @@ data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
 # --- 6. PROCESSAMENTO E FILTRAGEM DINÂMICA DA ABA SELECIONADA ---
-st.sidebar.header("⚙️ Configurações GERAIS")
-if st.sidebar.button("🔄 Atualizar Base de Dados", use_container_width=True):
-    st.cache_data.clear()
-    st.rerun()
+
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
