@@ -94,6 +94,7 @@ def enviar_email_treinamento_presencial(string_destinatarios, cliente_nome, arqu
     except Exception as e:
         return False, f"Falha no envio SMTP (Segurança de Rede): {str(e)}"
 # 4. SIDEBAR COM MENU INTEGRADO ATUALIZADO
+# 4. SIDEBAR COM MENU INTEGRADO ATUALIZADO
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -133,12 +134,19 @@ with st.sidebar:
         time.sleep(1.5)
         st.rerun()
 
-# 5. CARREGAMENTO DOS DADOS DA PLANILHA GOOGLE
-@st.cache_data(ttl=300)
+    st.divider()
+    st.caption("v1.0 - 08062026")
+
+# 5. CARREGAMENTO DOS DADOS DA PLANILHA GOOGLE (Mapeamento idêntico à página 02)
+@st.cache_data(ttl=600)
 def carregar_dados_planilha():
-    url_legendas = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
+    url_legendas = "https://google.com"
     df_leg = pd.read_excel(url_legendas, sheet_name="Legendas", engine='openpyxl')
     df_dados = pd.read_excel(url_legendas, sheet_name="Lancamentos", engine='openpyxl')
+    
+    # Padroniza os cabeçalhos em maiúsculas para o Pandas nunca se perder
+    df_dados.columns = df_dados.columns.str.upper().str.strip()
+    df_leg.columns = df_leg.columns.str.upper().str.strip()
     return df_leg, df_dados
 
 try:
@@ -153,13 +161,21 @@ st.title("🚗 Confirmação de Treinamento Presencial (Por Blocos)")
 st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos.")
 st.markdown("---")
 
-cliente_selecionado = st.selectbox("Selecione o Cliente para Filtro Dinâmico:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
+# selectbox mestre restaurado com sucesso!
+if lista_clientes:
+    cliente_selecionado = st.selectbox("Selecione o Cliente para o Relatório:", lista_clientes)
+else:
+    cliente_selecionado = st.text_input("Nome do Cliente:")
 
+# Coleta dinâmica do gestor institucional do cliente removendo colchetes
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
-    solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
-    if solicitantes: 
-        gerente_cliente_sugerido = str(solicitantes[0]).strip()
+    try:
+        solicitantes = df_leg[df_leg["CLIENTES"] == cliente_selecionado]["SOLICITANTE1"].dropna().unique().tolist()
+        if solicitantes:
+            gerente_cliente_sugerido = str(solicitantes[0]).strip()
+    except:
+        pass
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="HUDSON VALENTE")
@@ -176,7 +192,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
     else:
         with st.spinner("⏳ Filtrando lançamentos ativos em elaboração..."):
             try:
-                df_dados["SITUAÇÃO"] = df_dados["SITUAÇÃO"].astype(str).str.strip()
+                # Regras de Negócio: Filtra linhas por Cliente, RA válido e Situação = Em Elaboração
                 atendimentos_cliente = df_dados[
                     (df_dados["CLIENTE"] == cliente_selecionado) & 
                     (df_dados["SITUAÇÃO"] == "Em Elaboração") & 
@@ -200,7 +216,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                     lista_atendimentos_word = []
                     lista_observacoes_gerais = []
                     
-                    for idx, linha in sorted(atendimentos_cliente.iterrows(), key=lambda x: x[1]["DATA"]):
+                    for idx, linha in atendimentos_cliente.iterrows():
                         dt_str = linha["DATA"].strftime("%d/%m/%Y") if pd.notnull(linha["DATA"]) else ""
                         desc_pres_val = str(linha.get("DESCRIÇÃO ATENDIMENTO", "")).strip()
                         obs_pres_val = str(linha.get("OBSERVAÇÃO", "")).strip()
@@ -247,7 +263,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
             except Exception as e:
                 st.error(f"Erro ao processar lote: {e}")
 
-# --- 7. PAINEL VISUAL DE DOWNLOADS E ZIP ---
+# --- PAINEL VISUAL DE DOWNLOADS E ZIP ---
 arquivos_gerados_p = glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.pdf")) + glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.docx"))
 
 if arquivos_gerados_p:
