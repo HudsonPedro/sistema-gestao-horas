@@ -63,7 +63,7 @@ def enviar_email_treinamento_presencial(string_destinatarios, cliente_nome, arqu
         <p>Favor colher a assinatura institucional do Sr(a). {gerente_cliente_nome}.</p>
         <br>
         <p>Me coloco à inteira disposição para possíveis esclarecimentos.</p>
-        <p>Atenciosamente,<br><b>Hudson Valente</b><br></p>
+        <p>Com Gratidão!!,<br><b>Hudson Valente</b><br></p>
     </body>
     </html>
     """
