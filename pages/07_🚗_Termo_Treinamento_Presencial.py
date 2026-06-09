@@ -33,12 +33,7 @@ st.markdown("""
     [data-testid="stSidebarNav"] {display: none;}
     [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
     h1 { color: #b0231d; }
-    .user-block {
-    background-color: #f0f2f6;
-    padding: 8px;
-    border-radius: 8px;
-    margin-top: -10px;
-    }
+    .user-block { background-color: #f0f2f6; padding: 8px; border-radius: 8px; margin-top: -10px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -71,6 +66,7 @@ def enviar_email_treinamento_presencial(string_destinatarios, cliente_nome, arqu
     </body>
     </html>
     """
+    msg["To"] = ", ".join(lista_destinatarios)
     msg.attach(MIMEText(corpo_html, "html"))
     
     for caminho_arquivo in arquivos_anexos:
@@ -97,7 +93,6 @@ def enviar_email_treinamento_presencial(string_destinatarios, cliente_nome, arqu
         return True, "Pacote de treinamento presencial enviado com sucesso!"
     except Exception as e:
         return False, f"Falha no envio SMTP (Segurança de Rede): {str(e)}"
-
 # 4. SIDEBAR COM MENU INTEGRADO ATUALIZADO
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
@@ -121,14 +116,12 @@ with st.sidebar:
     if st.button("📑 Termo Encerramento", use_container_width=True): st.switch_page("pages/06_📑_Termo_Encerramento.py")
     if st.button("🚗 Treinamento Presencial", use_container_width=True): st.switch_page("pages/07_🚗_Termo_Treinamento_Presencial.py")
     
-    # INTERFACE DE DISPARO DA SIDEBAR
     st.markdown("---")
     st.header("📬 Disparo de Termos")
     st.caption("Separe os e-mails usando vírgula (,)")
     email_destinatario = st.text_input("Enviar para (Destinatários):", value="financeiro@crti.com.br", key="pres_email_dest_key")
-    btn_enviar_emails = st.button("🚀 **ENVIAR TERMO POR E-MAIL**", type="primary", use_container_width=True, key="pres_email_btn_key")
+    btn_enviar_emails = st.button("🚀 **ENVIAR TERMO POR E-MAIL**", type="primary", key="pres_email_btn_key")
     
-    # BOTAO AUXILIAR DE LIMPEZA NA SIDEBAR
     st.markdown("---")
     st.header("🗑️ Gerenciamento")
     if st.button("🗑️ Limpar Termos Presenciais", use_container_width=True):
@@ -139,9 +132,6 @@ with st.sidebar:
         st.success("Pasta de histórico esvaziada!")
         time.sleep(1.5)
         st.rerun()
-
-    st.divider()
-    st.caption("v1.0 - 08062026")
 
 # 5. CARREGAMENTO DOS DADOS DA PLANILHA GOOGLE
 @st.cache_data(ttl=300)
@@ -159,20 +149,17 @@ except:
     df_dados = pd.DataFrame()
     lista_clientes = []
 
-# Título Principal da Tela
 st.title("🚗 Confirmação de Treinamento Presencial (Por Blocos)")
-st.write("O sistema gera o documento de procedimento interno extraindo os dados e descrições diretamente da planilha.")
+st.write("O sistema extrai os dados e descrições diretamente da planilha de lançamentos.")
 st.markdown("---")
 
-# --- FORMULÁRIO DE SELEÇÃO ---
 cliente_selecionado = st.selectbox("Selecione o Cliente para Filtro Dinâmico:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
 
-# Coleta dinâmica do gestor institucional do cliente
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     solicitantes = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().unique().tolist()
     if solicitantes: 
-        gerente_cliente_sugerido = str(df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna().iloc).strip()
+        gerente_cliente_sugerido = str(solicitantes[0]).strip()
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 consultor_nome = st.text_input("Consultor Implantador (CRTI):", value="HUDSON VALENTE")
@@ -180,7 +167,6 @@ data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
 
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de {data_emissao.year}"
-
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
@@ -188,14 +174,13 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
     elif df_dados.empty:
         st.error("Erro: A base de dados da planilha não pôde ser lida.")
     else:
-        with st.spinner("⏳ Filtrando planilha por regras de RA e Situação..."):
+        with st.spinner("⏳ Filtrando lançamentos ativos em elaboração..."):
             try:
-                # Regras de Negócio: Filtra linhas por Cliente, RA válido e Situação = Em Elaboração
                 df_dados["SITUAÇÃO"] = df_dados["SITUAÇÃO"].astype(str).str.strip()
                 atendimentos_cliente = df_dados[
                     (df_dados["CLIENTE"] == cliente_selecionado) & 
                     (df_dados["SITUAÇÃO"] == "Em Elaboração") & 
-                    (df_dados["RA"].dropna())
+                    (df_dados["RA"].notna())
                 ].copy()
                 
                 if atendimentos_cliente.empty:
@@ -205,115 +190,87 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         try: os.remove(antigo)
                         except: pass
 
-                    # CORREÇÃO ABSOLUTA DA SINTAXE: Ordenação limpa sem atribuições cruzadas
                     atendimentos_cliente["DATA"] = pd.to_datetime(atendimentos_cliente["DATA"], errors='coerce')
                     atendimentos_cliente = atendimentos_cliente.sort_values(by="DATA")
                     
                     data_inicio_ra_str = atendimentos_cliente["DATA"].min().strftime("%d/%m/%Y")
                     data_fim_ra_str = atendimentos_cliente["DATA"].max().strftime("%d/%m/%Y")
                     periodo_visita_total = f"{data_inicio_ra_str} até {data_fim_ra_str}"
-                
+
                     lista_atendimentos_word = []
                     lista_observacoes_gerais = []
+                    
+                    for idx, linha in sorted(atendimentos_cliente.iterrows(), key=lambda x: x[1]["DATA"]):
+                        dt_str = linha["DATA"].strftime("%d/%m/%Y") if pd.notnull(linha["DATA"]) else ""
+                        desc_pres_val = str(linha.get("DESCRIÇÃO ATENDIMENTO", "")).strip()
+                        obs_pres_val = str(linha.get("OBSERVAÇÃO", "")).strip()
+                        modulo_val = str(linha.get("MÓDULO / ATIVIDADE", "")).strip()
+                        
+                        lista_atendimentos_word.append({
+                            "modulos": modulo_val,
+                            "data_dia": dt_str,
+                            "hora_inicio": str(linha.get("ENTRADA", "08:00")),
+                            "hora_fim": str(linha.get("SAÍDA", "17:00")),
+                            "desc_pres": desc_pres_val
+                        })
+                        
+                        if obs_pres_val and obs_pres_val.lower() != "nan":
+                            lista_observacoes_gerais.append(f"• Data {dt_str}: {obs_pres_val}")
 
-    for idx, linha in atendimentos_cliente.iterrows():
-        dt_str = linha["DATA"].strftime("%d/%m/%Y") if pd.notnull(linha["DATA"]) else ""
+                    resumao_geral_ac = "\n".join(lista_observacoes_gerais) if lista_observacoes_gerais else "Nenhuma observação técnica registrada."
 
-        desc_pres_val = str(linha.get("DESCRIÇÃO ATENDIMENTO", "")).strip()
-        obs_pres_val = str(linha.get("OBSERVAÇÃO", "")).strip()
-        modulo_val = str(linha.get("MÓDULO / ATIVIDADE", "")).strip()
+                    caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
+                    
+                    if not os.path.exists(caminho_modelo):
+                        st.error("⚠️ O modelo 'presencial.docx' não foi localizado.")
+                    else:
+                        doc = DocxTemplate(caminho_modelo)
+                        contexto = {
+                            "cliente": cliente_selecionado,
+                            "consultor": consultor_nome,
+                            "periodo_visita": periodo_visita_total,
+                            "solicitante": solicitante_nome,
+                            "data_extenso": data_extenso_str,
+                            "atendimentos": lista_atendimentos_word,
+                            "obs_geral_resumo": resumao_geral_ac
+                        }
+                        doc.render(contexto)
+                        
+                        nome_final = f"Termo_Treinamento_Presencial_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
+                        caminho_docx = os.path.join(PASTA_TREINAMENTO_P, f"{nome_final}.docx")
+                        doc.save(caminho_docx)
+                        
+                        subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TREINAMENTO_P}" "{caminho_docx}"', shell=True, check=True)
+                        st.success("✨ Relatório gerado com sucesso!")
+                        time.sleep(1)
+                        st.rerun()
+            except Exception as e:
+                st.error(f"Erro ao processar lote: {e}")
 
-        lista_atendimentos_word.append({
-            "modulos": modulo_val,
-            "data_dia": dt_str,
-            "hora_inicio": str(linha.get("ENTRADA", "08:00")),
-            "hora_fim": str(linha.get("SAÍDA", "17:00")),
-            "desc_pres": desc_pres_val
-        })
-
-        if obs_pres_val and obs_pres_val.lower() != "nan":
-            lista_observacoes_gerais.append(f"• Data {dt_str}: {obs_pres_val}")
-
-    resumao_geral_ac = "\n".join(lista_observacoes_gerais) if lista_observacoes_gerais else \
-                       "Nenhuma observação técnica registrada no período."
-
-    caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
-    if not os.path.exists(caminho_modelo):
-        st.error("⚠️ O modelo físico 'presencial.docx' não foi encontrado na pasta 'modelos'.")
-    else:
-        doc = DocxTemplate(caminho_modelo)
-
-        contexto = {
-            "cliente": cliente_selecionado,
-            "consultor": consultor_nome,
-            "periodo_visita": periodo_visita_total,
-            "solicitante": solicitante_nome,
-            "data_extenso": data_extenso_str,
-            "atendimentos": lista_atendimentos_word,
-            "obs_geral_resumo": resumao_geral_ac
-        }
-
-        doc.render(contexto)
-
-        nome_final = f"Termo_Treinamento_Presencial_{cliente_selecionado}".replace(" ", "_").replace("/", "-")
-        caminho_docx = os.path.join(PASTA_TREINAMENTO_P, f"{nome_final}.docx")
-        doc.save(caminho_docx)
-
-        subprocess.run(
-            f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TREINAMENTO_P}" "{caminho_docx}"',
-            shell=True,
-            check=True
-        )
-
-        st.success("✨ Relatório gerado com sucesso!")
-        time.sleep(1)
-        st.rerun()
-
-except Exception as e:
-    st.error(f"Erro ao processar planilha e gerar lote: {e}")
-
-# --- PAINEL VISUAL DE DOWNLOADS E ZIP COMPACTADO ---
-arquivos_gerados_p = glob.glob(os.path.join(PASTA_TREINAMENTO_P, ".pdf")) + \
-                     glob.glob(os.path.join(PASTA_TREINAMENTO_P, ".docx"))
+# --- 7. PAINEL VISUAL DE DOWNLOADS E ZIP ---
+arquivos_gerados_p = glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.pdf")) + glob.glob(os.path.join(PASTA_TREINAMENTO_P, "*.docx"))
 
 if arquivos_gerados_p:
     st.markdown("---")
     st.subheader("📥 Download do Histórico de Visitas Gerado")
-
+    
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for arq_caminho in arquivos_gerados_p:
             zip_file.write(arq_caminho, os.path.basename(arq_caminho))
-
     zip_buffer.seek(0)
-    st.download_button(
-        label="🎁 BAIXAR HISTÓRICO DE ATENDIMENTOS COMPLETO (ZIP)",
-        data=zip_buffer,
-        file_name=f"Lote_Treinamento_Presencial_{cliente_selecionado}.zip",
-        mime="application/zip",
-        use_container_width=True
-    )
-
+    
+    st.download_button(label="🎁 **BAIXAR PACOTE COMPLETO (ZIP)**", data=zip_buffer, file_name=f"Lote_Presencial_{cliente_selecionado}.zip", mime="application/zip", use_container_width=True)
+    
     with st.expander("📄 Ver e baixar arquivos individuais...", expanded=True):
         col_grade = st.columns(2)
         for idx, arq_caminho in enumerate(sorted(arquivos_gerados_p)):
             nome_real = os.path.basename(arq_caminho).replace("_", " ")
-            with open(arq_caminho, "rb") as f_leitura:
-                conteudo_bytes = f_leitura.read()
-
+            with open(arq_caminho, "rb") as f_leitura: conteudo_bytes = f_leitura.read()
             col_alvo = col_grade[idx % 2]
             extensao_label = "PDF" if arq_caminho.endswith(".pdf") else "Word"
-            mime_tipo = "application/pdf" if arq_caminho.endswith(".pdf") else \
-                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-
-            col_alvo.download_button(
-                label=f"📥 Baixar {extensao_label}: {nome_real}",
-                data=conteudo_bytes,
-                file_name=nome_real,
-                mime=mime_tipo,
-                use_container_width=True,
-                key=f"btn_dl_pres_v3_{idx}"
-            )
+            mime_tipo = "application/pdf" if arq_caminho.endswith(".pdf") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            col_alvo.download_button(label=f"📥 Baixar {extensao_label}: {nome_real}", data=conteudo_bytes, file_name=nome_real, mime=mime_tipo, use_container_width=True, key=f"btn_dl_pres_v3_{idx}")
 
 # =========================================================================
 # Pop-up de Confirmação
@@ -321,37 +278,26 @@ if arquivos_gerados_p:
 @st.dialog(" Confirmação de Disparo de Termos")
 def confirmar_envio_presencial_popup(email, arquivos_lote):
     st.write("Você tem certeza que deseja disparar o termo de treinamento presencial gerado por e-mail?")
-    st.write(f"• Destinatários: {email}")
-    st.write("• Arquivos em anexo: Lote contendo o Word e PDF com os blocos de visitas")
+    st.write(f"• **Destinatários:** `{email}`")
+    st.write(f"• **Arquivos em anexo:** Lote contendo o Word e PDF com os blocos de visitas")
     st.markdown("---")
-
+    
     col_p1, col_p2 = st.columns(2)
-
     with col_p1:
         if st.button("Sim, Disparar Histórico", use_container_width=True):
             with st.spinner("Compilando anexos e enviando..."):
-                ok, r_msg = enviar_email_treinamento_presencial(
-                    email,
-                    cliente_selecionado,
-                    arquivos_lote,
-                    solicitante_nome
-                )
+                ok, r_msg = enviar_email_treinamento_presencial(email, cliente_selecionado, arquivos_lote, solicitante_nome)
                 if ok:
-                    st.success(f"{r_msg}")
+                    st.success(f" {r_msg}")
                     st.balloons()
                     time.sleep(4)
                 else:
                     st.error(r_msg)
                     time.sleep(4)
                 st.rerun()
-
     with col_p2:
-        if st.button("Não, Cancelar", use_container_width=True):
-            st.rerun()
+        if st.button("Não, Cancelar", use_container_width=True): st.rerun()
 
-# --- GATILHO DA SIDEBAR QUE CHAMA O POP-UP ---
 if btn_enviar_emails:
-    if not arquivos_gerados_p:
-        st.sidebar.warning("⚠️ Mapeie os dados na tela primeiro antes de disparar.")
-    else:
-        confirmar_envio_presencial_popup(email_destinatario, arquivos_gerados_p)
+    if not arquivos_gerados_p: st.sidebar.warning("⚠️ Mapeie os dados na tela primeiro antes de disparar.")
+    else: confirmar_envio_presencial_popup(email_destinatario, arquivos_gerados_p)
