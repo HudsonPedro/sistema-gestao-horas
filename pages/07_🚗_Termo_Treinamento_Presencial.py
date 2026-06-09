@@ -58,7 +58,7 @@ def enviar_email_treinamento_presencial(string_destinatarios, cliente_nome, arqu
     <html>
     <body>
         <p>Prezados(as), espero que se encontre bem.</p>
-        <p>Segue em anexo o <b>Termo de Confirmação de Treinamento Presencial</b>Em {periodo_visita_total}, referente às visitas e consultorias realizadas no cliente <b>{cliente_nome}</b>.</p>
+        <p>Segue em anexo o <b>Termo de Confirmação de Treinamento Presencial</b>, referente às visitas e consultorias realizadas no cliente <b>{cliente_nome}</b>.</p>
         <p>O documento detalha o histórico completo de visitas por atendimentos.</p>
         <p>Favor colher a assinatura institucional do Sr(a). {gerente_cliente_nome}.</p>
         <br>
@@ -189,7 +189,7 @@ except:
 st.markdown("---")
 
 cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Nome do Cliente:")
-aba_mes_selecionada = st.selectbox("Selecione o Mês do Atendimento (Aba da Planilha):", lista_abas_meses) if lista_abas_meses else st.text_input("Aba do Mês:")
+aba_mes_selecionada = st.selectbox("Selecione o Mês do Atendimento:", lista_abas_meses) if lista_abas_meses else st.text_input("Aba do Mês:")
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
