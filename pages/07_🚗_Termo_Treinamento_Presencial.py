@@ -183,6 +183,7 @@ data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 # --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
+# --- 6. PROCESSAMENTO E FILTRAGEM REGRAS DE NEGÓCIO ---
 if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -195,20 +196,18 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                 
                 # Reseta o índice de linhas eliminando duplicidades operacionais
                 df_dados = df_dados.reset_index(drop=True)
-                
-                # Remove espaços em branco das pontas das colunas mantendo a acentuação original para o mapeamento
                 df_dados.columns = df_dados.columns.str.strip()
                 
-                # Identifica as colunas chaves independente de pequenas variações de maiúsculas/minúsculas
+                # Mapeamento estável de cabeçalhos institucionais
                 col_cliente = next((c for c in df_dados.columns if c.upper() == "CLIENTE"), "CLIENTE")
-                col_situacao = next((c for c in df_dados.columns if c.upper() == "SITUACAO_RA"), "SITUACAO_RA")
+                col_situacao = "SITUACAO_RA" if "SITUACAO_RA" in df_dados.columns else next((c for c in df_dados.columns if "SITUACAO" in c or "SITUAÇÃO" in c), None)
                 col_ra = next((c for c in df_dados.columns if c.upper() == "RA"), "RA")
                 col_data = next((c for c in df_dados.columns if c.upper() == "DATA"), "DATA")
                 
-                if col_situacao in df_dados.columns:
+                if col_situacao and col_situacao in df_dados.columns:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                 
-                # Filtra estritamente pelas regras de negócio validadas
+                # Filtra apenas os lançamentos "Em Elaboração" com RA preenchido
                 atendimentos_cliente = df_dados[
                     (df_dados[col_cliente] == cliente_selecionado) & 
                     (df_dados[col_situacao] == "Em Elaboração") & 
@@ -232,32 +231,30 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
 
                     lista_atendimentos_word = []
                     lista_observacoes_gerais = []
-                    lista_participantes_coletados = []
                     
-                    # MAPEAMENTO PRECISO DAS COLUNAS REAIS DA SUA PLANILHA
-                    col_desc = next((c for c in df_dados.columns if c.upper() in ["DESCRIÇÃO ATENDIMENTO", "DESCRICAO ATENDIMENTO"]), "DESCRIÇÃO ATENDIMENTO")
-                    col_obs = next((c for c in df_dados.columns if c.upper() in ["OBSERVAÇÃO", "OBSERVACAO"]), "OBSERVAÇÃO")
-                    col_modulo = next((c for c in df_dados.columns if c.upper() in ["MÓDULO / ATIVIDADE", "MODULO / ATIVIDADE", "MODULO"]), "MÓDULO / ATIVIDADE")
+                    # ALINHAMENTO COM AS SUAS COLUNAS DA PLANILHA (INDICAÇÃO DA IMAGEM)
+                    col_part = next((c for c in df_dados.columns if c.upper() in ["PARTICIPANTE", "PARTICIPANTES"]), "PARTICIPANTE")  # Coluna P
+                    col_desc = next((c for c in df_dados.columns if c.upper() in ["DESC_PRES", "DESCRIÇÃO ATENDIMENTO", "DESCRICAO ATENDIMENTO"]), "DESC_PRES")  # Coluna AB
+                    col_obs = next((c for c in df_dados.columns if c.upper() in ["OBS_PRES", "OBSERVAÇÃO", "OBSERVACAO"]), "OBS_PRES")    # Coluna AC
+                    
                     col_entrada = next((c for c in df_dados.columns if c.upper() == "ENTRADA"), "ENTRADA")
                     col_saida = next((c for c in df_dados.columns if c.upper() in ["SAÍDA", "SAIDA"]), "SAÍDA")
-                    col_part = next((c for c in df_dados.columns if c.upper() in ["PARTICIPANTES", "PARTICIPANTE", "SOLICITANTE"]), None)
+                    col_modulo = next((c for c in df_dados.columns if c.upper() in ["MÓDULO / ATIVIDADE", "MODULO / ATIVIDADE", "MODULO"]), "MÓDULO / ATIVIDADE")
                     
                     for idx, linha in atendimentos_cliente.iterrows():
                         dt_str = linha[col_data].strftime("%d/%m/%Y") if pd.notnull(linha[col_data]) else ""
+                        part_val = str(linha.get(col_part, "")).strip()
                         desc_pres_val = str(linha.get(col_desc, "")).strip()
                         obs_pres_val = str(linha.get(col_obs, "")).strip()
                         modulo_val = str(linha.get(col_modulo, "")).strip()
+                        
                         hora_ini_val = str(linha.get(col_entrada, "08:00")).strip()
                         hora_fim_val = str(linha.get(col_saida, "12:00")).strip()
                         
-                        if col_part:
-                            p_nome = str(linha.get(col_part, "")).strip()
-                            if p_nome and p_nome.lower() != "nan" and p_nome not in lista_participantes_coletados:
-                                lista_participantes_coletados.append(p_nome)
-                        
-                        # Alimenta o dicionário com os dados dinâmicos reais da linha
+                        # Injeta no laço vertical 'atendimentos' do Word
                         lista_atendimentos_word.append({
                             "modulos": modulo_val,
+                            "participantes": part_val if part_val and part_val.lower() != "nan" else solicitante_nome,
                             "data_dia": dt_str,
                             "hora_inicio": hora_ini_val,
                             "hora_fim": hora_fim_val,
@@ -268,7 +265,6 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                             lista_observacoes_gerais.append(f"• Data {dt_str}: {obs_pres_val}")
 
                     resumao_geral_ac = "\n".join(lista_observacoes_gerais) if lista_observacoes_gerais else "Nenhuma observação técnica registrada."
-                    participantes_final_txt = ", ".join(lista_participantes_coletados) if lista_participantes_coletados else solicitante_nome
 
                     caminho_modelo = os.path.join(BASE_DIR, "modelos", "presencial.docx")
                     
@@ -281,7 +277,6 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                             "consultor": consultor_nome,
                             "periodo_visita": periodo_visita_total,
                             "solicitante": solicitante_nome,
-                            "participantes": participantes_final_txt,
                             "data_extenso": data_extenso_str,
                             "atendimentos": lista_atendimentos_word,
                             "obs_geral_resumo": resumao_geral_ac
@@ -293,7 +288,7 @@ if st.button("Gerar Relatório de Atendimentos Presenciais", type="primary", use
                         doc.save(caminho_docx)
                         
                         subprocess.run(f'libreoffice --headless --convert-to pdf --outdir "{PASTA_TREINAMENTO_P}" "{caminho_docx}"', shell=True, check=True)
-                        st.success("✨ Relatório gerado com sucesso com os dados integrados da planilha!")
+                        st.success("✨ Relatório gerado com sucesso!")
                         time.sleep(1)
                         st.rerun()
             except Exception as e:
@@ -336,9 +331,7 @@ def confirmar_envio_presencial_popup(email, arquivos_lote):
     with col_p1:
         if st.button("Sim, Disparar Histórico", use_container_width=True):
             with st.spinner("Compilando anexos e enviando..."):
-                ok, r_msg = enviar_email_treinamento_presencial(
-                    email, cliente_selecionado, arquivos_lote, solicitante_nome
-                )
+                ok, r_msg = enviar_email_treinamento_presencial(email, cliente_selecionado, arquivos_lote, solicitante_nome)
                 if ok:
                     st.success(f" {r_msg}")
                     st.balloons()
@@ -347,10 +340,8 @@ def confirmar_envio_presencial_popup(email, arquivos_lote):
                     st.error(r_msg)
                     time.sleep(4)
                 st.rerun()
-                
     with col_p2:
-        if st.button("Não, Cancelar", use_container_width=True): 
-            st.rerun()
+        if st.button("Não, Cancelar", use_container_width=True): st.rerun()
 
 if btn_enviar_emails:
     if not arquivos_gerados_p: 
