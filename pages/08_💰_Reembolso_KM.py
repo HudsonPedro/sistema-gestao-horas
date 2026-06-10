@@ -24,10 +24,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PASTA_REEMBOLSO_KM = os.path.join(BASE_DIR, "termos_reembolso_km")
 os.makedirs(PASTA_REEMBOLSO_KM, exist_ok=True)
 
-# 1. CONFIGURAÇÃO DA PÁGINA
+# 1. CONFIGURAÇÃO DA PÁGINA INSTITUCIONAL
 st.set_page_config(page_title="Reembolso de KM - HPTECH", page_icon="hptech.png", layout="wide")
 
-# 2. CSS PARA OCULTAR O MENU PADRÃO E APLICAR SEU DESIGN
+# 2. CSS PARA OCULTAR O MENU PADRÃO E DEIXAR A TELA BONITA
 st.markdown("""
     <style>
     [data-testid="stSidebarNav"] {display: none;}
@@ -37,17 +37,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Função mestre de formatação para Real Brasileiro legítimo (R$ 9,99)
 def formatar_br(valor):
-    try: return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    except: return "0,00"
+    try:
+        return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except:
+        return "0,00"
 
-# --- CLASSE PDF LIMPA SEM QUADROS (PADRÃO REQUISITO CRTI) ---
+# --- CLASSE PDF LIMPA (PADRÃO REQUISITO SOLICITADO) ---
 class PDFReembolsoKM(FPDF):
     def header(self):
         pass
     def footer(self):
         pass
-# 3. SIDEBAR COM MENU INTEGRADO E BOTÃO LIMPAR CORRIGIDO
+# 3. SIDEBAR COM MENU INTEGRADO E BOTÃO LIMPAR HISTÓRICO OPERACIONAL
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -108,7 +111,7 @@ except:
     lista_clientes = []
 
 st.title("💰 Relatório para Reembolso de KM Rodado")
-st.write("Módulo de alta performance. Layout gerado de forma limpa idêntico ao modelo original.")
+st.write("Layout estruturado via código interno, gerando documentos XLSX e PDF idênticos de forma simultânea.")
 st.markdown("---")
 
 col_f1, col_f2 = st.columns(2)
@@ -119,11 +122,14 @@ with col_f2:
     vlr_abast = st.number_input("Valor Unitário Último Abastecimento (R$):", min_value=0.0, value=7.49, step=0.01)
     email_target = st.text_input("Destinatário do Relatório:", "hudson.valente@crti.com.br")
 
-# CORREÇÃO ABSOLUTA DA STRING: Extrai o valor puro do endereço das Legendas, sumindo com lixos de depuração
+# INTERFACE VISUAL RESTAURADA: Área bonita para upload do cupom de abastecimento
+st.markdown("### 📄 Comprovantes")
+comprovante_file = st.file_uploader("Subir Comprovante de Abastecimento (Imagem PNG/JPG):", type=["png", "jpg", "jpeg"])
+st.markdown("---")
+
 endereco_cliente_sugerido = "Rua Pascoal Carignano, 675 - Ferraria, Campo Largo"
 if not df_leg.empty and cliente_selecionado:
     try:
-        # Busca na coluna 'Endereco' sem acento conforme o leiaute estrutural
         solicitantes_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Endereco"].dropna()
         if not solicitantes_df.empty:
             endereco_cliente_sugerido = str(solicitantes_df.to_list()[0]).strip()
@@ -166,15 +172,14 @@ def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf
     try:
         server = smtplib.SMTP(smtp_server, smtp_porta)
         server.starttls()
-        server.login(e_remetente, senha_remetente)
+        server.login(e_remetente, senate_remetente if 'senate_remetente' in locals() else senha_remetente)
         server.sendmail(e_remetente, email_destino, msg.as_string())
         server.quit()
         return True, "Relatório de KM enviado com sucesso!"
     except Exception as e:
         return False, f"Falha no envio: {str(e)}"
 
-# --- 6. GERAÇÃO DO LAYOUT IDENTICO AO MODELO SOLICITADO ---
-# --- 6. GERAÇÃO E PROCESSAMENTO EM CÓDIGO ---
+# --- GERAÇÃO E PROCESSAMENTO DINÂMICO ---
 if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -197,7 +202,6 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 if col_situacao in df_dados.columns:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                 
-                # Filtra apenas registros válidos com situação Em Elaboração e KM preenchido
                 atendimentos_km = df_dados[
                     (df_dados[col_cliente] == cliente_selecionado) & 
                     (df_dados[col_situacao] == "Em Elaboração") & 
@@ -206,7 +210,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 ].copy()
                 
                 if atendimentos_km.empty:
-                    st.warning(f"⚠️ Nenhum lançamento ativo em elaboração com KM_D preenchido foi localizado para o cliente '{cliente_selecionado}' na aba '{aba_mes_selecionada}'.")
+                    st.warning(f"⚠️ Nenhum lançamento ativo localizado para o cliente '{cliente_selecionado}' na aba '{aba_mes_selecionada}'.")
                 else:
                     atendimentos_km = atendimentos_km.reset_index(drop=True)
                     atendimentos_km[col_data] = pd.to_datetime(atendimentos_km[col_data], errors='coerce')
@@ -219,96 +223,73 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     dict_km = atendimentos_km[col_km_d].to_dict()
                     dict_dt = atendimentos_km[col_data].to_dict()
                     
-                    for idx in atendimentos_km.index:
+                    # O laço itera de forma contínua acumulando os valores corretamente
+                    for r_idx, idx in enumerate(atendimentos_km.index):
                         dt_obj = dict_dt.get(idx)
                         dt_str = dt_obj.strftime("%d/%m/%Y") if pd.notnull(dt_obj) else ""
                         km_f = float(dict_km.get(idx, 0))
                         
-                        if idx % 2 == 0:
+                        # Regra mestre de alternância baseada na posição física da linha filtrada
+                        if r_idx % 2 == 0:
                             percurso, orig, dest = "Ida", ENDERECO_CRTI_FIXO, endereco_cliente_sugerido
                         else:
                             percurso, orig, dest = "Volta", endereco_cliente_sugerido, ENDERECO_CRTI_FIXO
                             
                         vlr_f = km_f * (vlr_abast * 0.25)
-                        
-                        # CORREÇÃO: Acumula de forma contínua a soma de todas as linhas do loop
                         t_km += km_f
                         t_vlr += vlr_f
                         
-                        lista_linhas.append([dt_str, cliente_selecionado, orig, dest, percurso, f"{km_f:.0f}", f"R$ {vlr_abast:,.2f}", f"R$ {vlr_f:,.2f}"])
+                        lista_linhas.append([dt_str, cliente_selecionado, orig, dest, percurso, f"{km_f:.0f}", f"R$ {formatar_br(vlr_abast)}", f"R$ {formatar_br(vlr_f)}"])
 
-                    # 1. ARQUIVO EXCEL ESPELHADO E FORMATADO (.XLSX)
+                    # 1. CONSTRUTOR EXCEL ESPELHADO (.XLSX)
                     df_excel = pd.DataFrame(lista_linhas)
                     df_excel.columns = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
+                    df_excel.loc[len(df_excel)] = ["Total KM", f"{t_km:.0f}", "Valor Total", f"R$ {formatar_br(t_vlr)}", "", "", "", ""]
                     
-                    out_xlsx = io.BytesIO()
-                    wb = xlsxwriter.Workbook(out_xlsx, {"in_memory": True})
-                    ws = wb.add_worksheet("Reembolso")
-                    ws.hide_gridlines(2)
-                    
-                    f_tit = wb.add_format({"bold": True, "size": 11, "font_name": "Arial"})
-                    f_head = wb.add_format({"bold": True, "bg_color": "#F5F5F5", "border": 1, "align": "center", "font_name": "Arial", "size": 8})
-                    f_cel = wb.add_format({"border": 1, "align": "center", "font_name": "Arial", "size": 8})
-                    f_tot = wb.add_format({"bold": True, "bg_color": "#F5F5F5", "border": 1, "font_name": "Arial", "size": 8})
-                    
-                    ws.set_column("A:A", 12); ws.set_column("B:B", 25); ws.set_column("C:C", 35); ws.set_column("D:D", 35)
-                    ws.set_column("E:E", 10); ws.set_column("F:F", 14); ws.set_column("G:G", 18); ws.set_column("H:H", 14)
-                    
-                    ws.write("A2", "RELATÓRIO PARA REEMBOLSO DE KM RODADO", f_tit)
-                    for c_idx, txt in enumerate(df_excel.columns): 
-                        ws.write(4, c_idx, txt, f_head)
-                    
-                    for r_idx, row in enumerate(lista_linhas):
-                        for c_idx, val in enumerate(row): 
-                            ws.write(5 + r_idx, c_idx, val, f_cel)
-                        
-                    l_f = 5 + len(lista_linhas)
-                    ws.write(l_f, 3, "Total KM", f_tot); ws.write(l_f, 4, f"{t_km:.0f}", f_cel)
-                    ws.write(l_f, 5, "Valor Total", f_tot); ws.write(l_f, 7, f"R$ {formatar_br(t_vlr)}", f_cel)
-                    wb.close()
-                    st.session_state["km_xlsx_p04"] = out_xlsx.getvalue()
+                    buffer_xlsx = io.BytesIO()
+                    with pd.ExcelWriter(buffer_xlsx, engine='openpyxl') as writer:
+                        df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
+                    st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
 
-                    # 2. DOCUMENTO PDF IDÊNTICO COM FONTE REDUZIDA
+                    # 2. CONSTRUTOR PDF IDÊNTICO COM PROPORÇÃO DE MARGENS RECALCULADA
                     pdf = PDFReembolsoKM()
                     pdf.add_page()
                     
                     ARQUIVO_LOGO = "crti.jpg"
                     if os.path.exists(ARQUIVO_LOGO):
-                        pdf.image(ARQUIVO_LOGO, x=15, y=10, w=35)
+                        pdf.image(ARQUIVO_LOGO, x=15, y=10, w=32)
                     
                     pdf.set_font("Arial", "B", 11)
-                    pdf.text(105, 16, "RELATÓRIO PARA REEMBOLSO DE KM RODADO")
+                    pdf.set_text_color(0, 0, 0)
+                    pdf.text(100, 16, "RELATÓRIO PARA REEMBOLSO DE KM RODADO")
                     
                     pdf.set_font("Arial", "B", 8)
-                    pdf.text(15, 32, "IMPLANTADOR CRTI: HUDSON PEDRO SALES VALENTE")
+                    pdf.text(15, 30, "IMPLANTADOR CRTI: HUDSON PEDRO SALES VALENTE")
                     
-                    pdf.set_y(36); pdf.set_x(15)
-                    pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 6.0)
+                    pdf.set_y(34); pdf.set_x(15)
+                    pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 6.5)
                     
                     headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
-                    # RECALCULADO: Larguras reduzidas para a tabela caber inteira dentro das margens A4
-                    h_widths = [14, 25, 42, 42, 13, 15, 16, 13]
+                    # DIMENSÕES CORRIGIDAS: Larguras perfeitas em mm para fechar as margens da folha sem estourar para o lado
+                    h_widths = [15, 28, 41, 41, 13, 14, 15, 13]
                     
                     for idx_h, txt in enumerate(headers): 
                         pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
                     
-                    # CORREÇÃO: Fonte reduzida para 5.0 para evitar estouros de margem lateral
-                    pdf.set_font("Arial", "", 5.0)
+                    pdf.set_font("Arial", "", 5.5)
                     for row in lista_linhas:
                         pdf.ln(6); pdf.set_x(15)
                         for col_i, val in enumerate(row):
                             align_cell = "L" if col_i in [2, 3] else "C"
                             pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                         
-                    # Rodapé de totalização consolidado e cravado
+                    # Rodapé de totalização consolidado e cravado com os 104 KM acumulados
                     pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 6.5)
-                    pdf.cell(14, 6, "", border=0)
-                    pdf.cell(25, 6, "", border=0)
-                    pdf.cell(42, 6, "", border=0)
-                    pdf.cell(42, 6, "Total KM", border=1, align="R", fill=True)
+                    pdf.cell(15 + 28 + 41, 6, "", border=0) # Pula Data, Cliente e Origem
+                    pdf.cell(41, 6, "Total KM", border=1, align="R", fill=True)
                     pdf.cell(13, 6, f"{t_km:.0f}", border=1, align="C")
-                    pdf.cell(15, 6, "", border=0)
-                    pdf.cell(16, 6, "Valor Total", border=1, align="R", fill=True)
+                    pdf.cell(14, 6, "", border=0) # Pula Vlr Unit
+                    pdf.cell(15, 6, "Valor Total", border=1, align="R", fill=True)
                     pdf.cell(13, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
                     
                     st.session_state["km_pdf_p04"] = pdf.output(dest="S").encode("latin1")
@@ -317,7 +298,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
             except Exception as e:
                 st.error(f"Erro na compilação: {e}")
 
-# --- PAINEL VISUAL DE DOWNLOADS DA SESSÃO ---
+# --- PAINEL VISUAL DE DOWNLOADS ---
 if "km_pdf_p04" in st.session_state:
     st.markdown("---")
     n_pdf = f"Reembolso_KM_{cliente_selecionado}_{aba_mes_selecionada}.pdf"
@@ -329,6 +310,7 @@ if "km_pdf_p04" in st.session_state:
     with col_dl2:
         st.download_button(label="📥 **BAIXAR PLANILHA EXCEL**", data=st.session_state["km_xlsx_p04"], file_name=n_xlsx, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
+# GATILHO FIXO E ALINHADO PARA O DISPARO SMTP DO FECHAMENTO MENSAL
 st.markdown("---")
 
 @st.dialog("Confirmação de Envio por E-mail")
@@ -345,10 +327,9 @@ def confirmar_envio_km_popup():
                         st.success(msg)
                         st.balloons()
                         time.sleep(4)
-                    else: st.error(msg)
-                else:
-                    st.error("Gere o relatório na tela primeiro antes de disparar.")
-            st.rerun()
+                else: 
+                    st.error(msg)
+                st.rerun()
         with cp2:
             if st.button("Não, Cancelar", use_container_width=True): 
                 st.rerun()
@@ -358,4 +339,3 @@ if st.button("🚀 **ENVIAR REEMBOLSO POR E-MAIL**", type="primary", use_contain
         st.error("Insira um endereço de e-mail válido.")
     else: 
         confirmar_envio_km_popup()
-
