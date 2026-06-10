@@ -369,7 +369,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.add_page()
                     pdf.set_font("Arial", "B", 11)
                     pdf.text(15, 15, "COMPROVANTE DE ABASTECIMENTO ANEXADO")
-                    pdf.image(caminho_imagem_disco, x=15, y=22, w=110)
+                    pdf.image(caminho_imagem_disco, x=20, y=27, w=115) #x=15, y=22, w=110)
                 
                 st.session_state["km_pdf_p04"] = pdf.output(dest="S").encode("latin1")
                 
