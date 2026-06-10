@@ -141,7 +141,7 @@ if not df_leg.empty and cliente_selecionado:
 if not endereco_cliente_map or endereco_cliente_map.lower() == "nan":
     endereco_cliente_map = "Endereço não localizado na aba Legendas"
 
-# REQUISITOS SEU LEIAUTE: Exibe as caixas de texto com os endereços dinâmicos na interface
+# EXIBE AS CAIXAS DE TEXTO COM OS ENDEREÇOS DINÂMICOS NA INTERFACE
 st.markdown("### 🗺️ Configuração de Rota e Percurso")
 col_end1, col_end2 = st.columns(2)
 with col_end1:
@@ -211,7 +211,7 @@ if cliente_selecionado and aba_mes_selecionada:
         col_situacao = "SITUACAO_RA"
         col_km_d = "KM_D"
         col_data = "DATA"
-        col_local_p = "LOCAL"
+        col_idavolta_planilha = "IDA_VOLTA" # REQUISITO ATUALIZADO: Coluna AD mestre do Sheets
         
         if col_situacao in df_dados.columns:
             df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
@@ -232,13 +232,13 @@ if cliente_selecionado and aba_mes_selecionada:
                 dt_str = dt_obj.strftime("%d/%m/%Y") if pd.notnull(dt_obj) else ""
                 km_f = float(atendimentos_filtrados.loc[idx, col_km_d])
                 
-                # CORREÇÃO ABSOLUTA: Extrai o valor puro, limpa espaços e passa para caixa alta total
-                loc_celula = str(atendimentos_filtrados.loc[idx, col_local_p]).strip().upper() if col_local_p in atendimentos_filtrados.columns else ""
+                # CORREÇÃO DINÂMICA TOTAL: Lê a coluna AD (IDA_VOLTA) de cada linha, limpa espaços e joga para maiúsculo
+                celula_ad = str(atendimentos_filtrados.loc[idx, col_idavolta_planilha]).strip().upper() if col_idavolta_planilha in atendimentos_filtrados.columns else ""
                 
-                # REQUISITO EXATO SOLICITADO NA SETA VERMELHA:
-                # Se contiver 'CLIENTE' -> Ida (Origem = CRTI, Destino = Cliente)
-                # Se contiver 'CRTI' ou outra palavra -> Volta (Origem = Cliente, Destino = CRTI)
-                if "CLIENTE" in loc_celula:
+                # REQUISITO EXATO SOLICITADO NO SEU RASCUNHO VISUAL:
+                # Se na coluna AD estiver escrito 'IDA' -> Rota Ida (Origem = CRTI, Destino = Cliente)
+                # Se na coluna AD estiver escrito 'VOLTA' -> Rota Volta (Origem = Cliente, Destino = CRTI)
+                if "IDA" in celula_ad:
                     percurso_linha = "Ida"
                     origem_linha = end_crti_input
                     destino_linha = end_ida_input
@@ -307,7 +307,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
                 
                 # Definição das larguras exatas fixadas (Soma total: 258mm)
-                h_widths = [16, 28, 63, 63, 16, 22, 31, 19]
+                h_widths = [16, 28, 63, 63, 14, 21, 34, 19]
                 
                 for idx_h, txt in enumerate(headers): 
                     pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
@@ -316,15 +316,16 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 for row in lista_linhas_preview:
                     pdf.ln(6); pdf.set_x(15)
                     for col_i, val in enumerate(row):
-                        align_cell = "L" if col_i in [2, 3] else "C"
+                        # Alinha os locais (2 e 3) e o cliente (1) à esquerda, o resto centraliza
+                        align_cell = "L" if col_i in [1, 2, 3] else "C"
                         pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                     
                 # Rodapé de totalização consolidado e cravado
                 pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
                 pdf.cell(16 + 28 + 63 + 63, 6, "", border=0)
-                pdf.cell(16, 6, "Total KM", border=1, align="R", fill=True)
-                pdf.cell(22, 6, f"{t_km_acumulado:.0f}", border=1, align="C")
-                pdf.cell(31, 6, "Valor Total", border=1, align="R", fill=True)
+                pdf.cell(14, 6, "Total KM", border=1, align="R", fill=True)
+                pdf.cell(21, 6, f"{t_km_acumulado:.0f}", border=1, align="C")
+                pdf.cell(34, 6, "Valor Total", border=1, align="R", fill=True)
                 pdf.cell(19, 6, f"R$ {formatar_br(t_vlr_acumulado)}", border=1, align="C")
                 
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
