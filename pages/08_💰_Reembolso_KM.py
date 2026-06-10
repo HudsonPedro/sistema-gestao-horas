@@ -231,7 +231,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         km_f = float(dict_km.get(r_idx, 0))
                         loc_f = str(dict_loc.get(r_idx, "")).strip().lower()
                         
-                        # LOGICA DEDUZIDA: Inverte e cruza dados dinâmicos baseando-se na coluna LOCAL do Sheets
+                        # LOGICA DINÂMICA: Inverte e cruza dados dinâmicos baseando-se na coluna LOCAL do Sheets
                         if "cliente" in loc_f:
                             percurso, orig, dest = "Ida", ENDERECO_CRTI_FIXO, endereco_cliente_dinamico
                         else:
@@ -278,8 +278,8 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.set_y(36); pdf.set_x(15)
                     pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
                     
-                    # CORREÇÃO ABSOLUTA: Matrizes numéricas 100% preenchidas sem lacunas de texto
-                    h_widths = [16, 28, 63, 63, 14, 21, 23, 19]
+                    # CORREÇÃO ABSOLUTA: Matrizes numéricas 100% preenchidas com as dimensões calibradas em mm
+                    h_widths = [16, 32, 58, 58, 16, 22, 34, 22]
                     
                     for idx_h, txt in enumerate(headers): 
                         pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
@@ -293,11 +293,11 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         
                     # Rodapé de totalização consolidado acoplado abaixo das colunas numéricas (104 KM)
                     pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
-                    pdf.cell(16 + 28 + 63 + 63, 6, "", border=0)
-                    pdf.cell(14, 6, "Total KM", border=1, align="R", fill=True)
-                    pdf.cell(21, 6, f"{t_km:.0f}", border=1, align="C")
-                    pdf.cell(23, 6, "Valor Total", border=1, align="R", fill=True)
-                    pdf.cell(19, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
+                    pdf.cell(16 + 32 + 58 + 58, 6, "", border=0)
+                    pdf.cell(16, 6, "Total KM", border=1, align="R", fill=True)
+                    pdf.cell(22, 6, f"{t_km:.0f}", border=1, align="C")
+                    pdf.cell(34, 6, "Valor Total", border=1, align="R", fill=True)
+                    pdf.cell(22, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
                     
                     # Página de Anexo exclusiva no PDF
                     if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
