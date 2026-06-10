@@ -199,6 +199,8 @@ with st.sidebar:
        st.switch_page("pages/05_📋_Termos.py")
     if st.button("🚗 Termo Presencial", use_container_width=True): 
         st.switch_page("pages/07_🚗_Termo_Treinamento_Presencial.py")
+    if st.button("💰 Reembolso de KM", use_container_width=True): 
+        st.switch_page("pages/08_💰_Reembolso_KM.py")
         
     # INTERFACE DE DISPARO DA SIDEBAR
     st.markdown("---")
