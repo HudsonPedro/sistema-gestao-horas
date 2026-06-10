@@ -91,7 +91,7 @@ with st.sidebar:
 
 # URL mestre da planilha publicada
 URL_PLANILHA_MUDANCA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
-ENDERECO_CRTI_FIXO = "Rua Padre Anchieta, 2050 - Bigorrilho"
+ENDERECO_CRTI_PADRAO = "Rua Padre Anchieta, 2050 - Bigorrilho"
 
 @st.cache_data(ttl=300)
 def carregar_estrutura_abas_km():
@@ -110,6 +110,9 @@ except:
     lista_abas_meses = []
     lista_clientes = []
 
+st.title("💰 Relatório para Reembolso de KM Rodado")
+st.markdown("---")
+
 col_f1, col_f2 = st.columns(2)
 with col_f1:
     cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Cliente:")
@@ -118,30 +121,46 @@ with col_f2:
     vlr_abast = st.number_input("Valor Unitário Último Abastecimento (R$):", min_value=0.0, value=7.49, step=0.01)
     email_target = st.text_input("Destinatário do Relatório:", "suellen@crti.com.br")
 
-st.markdown("### 📄 Comprovantes")
-comprovante_file = st.file_uploader("Subir Comprovante de Abastecimento (Imagem PNG/JPG):", type=["png", "jpg", "jpeg"])
-st.markdown("---")
+# CAPTURA DINÂMICA DE ENDEREÇOS DA PLANILHA LEGENDAS
+endereco_cliente_map = ""
+endereco_crti_erp_map = ENDERECO_CRTI_PADRAO
 
-# BUSCA DE ENDEREÇO 100% DINÂMICA DA PLANILHA LEGENDAS (FIM DO ENDEREÇO FIXO NO CÓDIGO)
-endereco_cliente_dinamico = ""
 if not df_leg.empty and cliente_selecionado:
     try:
-        linha_cliente = df_leg[df_leg["Clientes"] == cliente_selecionado]
-        if not linha_cliente.empty and "Endereco" in df_leg.columns:
-            endereco_cliente_dinamico = str(linha_cliente["Endereco"].values[0]).strip()
+        linha_c = df_leg[df_leg["Clientes"] == cliente_selecionado]
+        if not linha_c.empty and "Endereco" in df_leg.columns:
+            endereco_cliente_map = str(linha_c["Endereco"].values[0]).strip()
+        
+        linha_crti = df_leg[df_leg["Clientes"].astype(str).str.contains("CRTI", case=False, na=False)]
+        if not linha_crti.empty and "Endereco" in df_leg.columns:
+            endereco_crti_erp_map = str(linha_crti["Endereco"].values[0]).strip()
     except:
         pass
 
-if not endereco_cliente_dinamico or endereco_cliente_dinamico.lower() == "nan":
-    endereco_cliente_dinamico = "Endereço não cadastrado na aba Legendas"
+if not endereco_cliente_map or endereco_cliente_map.lower() == "nan":
+    endereco_cliente_map = "Rua Pascoal Carignano, 675 - Ferraria, Campo Largo"
+
+# REQUISITOS ANEXO: Exibe as caixas de texto com os endereços dinâmicos na interface
+st.markdown("### 🗺️ Configuração de Rota e Percurso")
+col_end1, col_end2 = st.columns(2)
+with col_end1:
+    end_ida_input = st.text_input("CAMPO: Endereço Ida (Empresa Cliente):", value=endereco_cliente_map)
+with col_end2:
+    end_crti_input = st.text_input("CAMPO: Endereço da CRTI ERP (Cadastrada na Planilha):", value=endereco_crti_erp_map)
+
+# REQUISITO ANEXO: Campo seletor de Percurso na tela
+percurso_seletor = st.selectbox("CAMPO: Percurso Selecionado para o Filtro:", ["Ida e Volta", "Ida", "Volta"])
+
+st.markdown("### 📄 Comprovantes")
+comprovante_file = st.file_uploader("Subir Comprovante de Abastecimento (Imagem PNG/JPG):", type=["png", "jpg", "jpeg"])
+st.markdown("---")
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     try:
         if "Solicitante1" in df_leg.columns:
             sol_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
-            if not sol_df.empty: 
-                gerente_cliente_sugerido = str(sol_df.values[0]).strip()
+            if not sol_df.empty: gerente_cliente_sugerido = str(sol_df.values[0]).strip()
     except: pass
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
@@ -183,7 +202,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
     else:
-        with st.spinner("⏳ Compilando dados de percurso..."):
+        with st.spinner("⏳ Compilando dados de percurso dinâmico..."):
             try:
                 res_dados = requests.get(URL_PLANILHA_MUDANCA, timeout=45, stream=True)
                 xl_dados = pd.ExcelFile(io.BytesIO(res_dados.content))
@@ -202,7 +221,6 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 if col_situacao in df_dados.columns:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                 
-                # Filtra apenas registros válidos com situação Em Elaboração e KM preenchido
                 atendimentos_km = df_dados[
                     (df_dados[col_cliente] == cliente_selecionado) & 
                     (df_dados[col_situacao] == "Em Elaboração") & 
@@ -225,107 +243,115 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     dict_dt = atendimentos_km[col_data].to_dict()
                     dict_loc = atendimentos_km[col_local].to_dict() if col_local in atendimentos_km.columns else {}
                     
-                    # Usa o loop numérico real e contínuo baseado no comprimento dos atendimentos filtrados
-                    for r_idx in range(len(atendimentos_km)):
+                    for r_idx in atendimentos_km.index:
                         dt_obj = dict_dt.get(r_idx)
                         dt_str = dt_obj.strftime("%d/%m/%Y") if pd.notnull(dt_obj) else ""
                         km_f = float(dict_km.get(r_idx, 0))
                         loc_f = str(dict_loc.get(r_idx, "")).strip().lower()
                         
-                        # REQUISITO EXATO: Se na coluna LOCAL estiver escrito cliente é Ida, senão é Volta
+                        # Define a rota com base na coluna LOCAL da planilha e inverte conforme o requisito mestre
                         if "cliente" in loc_f:
-                            percurso = "Ida"
-                            orig = ENDERECO_CRTI_FIXO
-                            dest = endereco_cliente_dinamico
+                            p_linha = "Ida"
+                            orig = end_crti_input
+                            dest = end_ida_input
                         else:
-                            percurso = "Volta"
-                            orig = endereco_cliente_dinamico
-                            dest = ENDERECO_CRTI_FIXO
+                            p_linha = "Volta"
+                            orig = end_ida_input
+                            dest = end_crti_input
+                            
+                        # Filtro dinâmico do seletor da tela
+                        if percurso_seletor != "Ida e Volta" and percurso_seletor != p_linha:
+                            continue
                             
                         vlr_f = km_f * (vlr_abast * 0.25)
                         t_km += km_f
                         t_vlr += vlr_f
                         
-                        lista_linhas.append([dt_str, cliente_selecionado, orig, dest, percurso, f"{km_f:.0f}", f"R$ {formatar_br(vlr_abast)}", f"R$ {formatar_br(vlr_f)}"])
+                        lista_linhas.append([dt_str, cliente_selecionado, orig, dest, p_linha, f"{km_f:.0f}", f"R$ {formatar_br(vlr_abast)}", f"R$ {formatar_br(vlr_f)}"])
 
-                    caminho_imagem_disco = ""
-                    if comprovante_file:
-                        caminho_imagem_disco = os.path.join(PASTA_REEMBOLSO_KM, "comprovante_km_final.jpg")
-                        img_pil_conv = PILImage.open(io.BytesIO(comprovante_file.read()))
-                        img_pil_conv.convert("RGB").save(caminho_imagem_disco, "JPEG")
+                    if not lista_linhas:
+                        st.warning("Nenhum registro correspondeu ao filtro de percurso selecionado.")
+                    else:
+                        caminho_imagem_disco = ""
+                        if comprovante_file:
+                            caminho_imagem_disco = os.path.join(PASTA_REEMBOLSO_KM, "comprovante_km_final.jpg")
+                            img_pil_conv = PILImage.open(io.BytesIO(comprovante_file.read()))
+                            img_pil_conv.convert("RGB").save(caminho_imagem_disco, "JPEG")
 
-                    headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
+                        headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
 
-                    # 1. ARQUIVO EXCEL ESPELHADO (.XLSX) - EXATAMENTE IGUAL AO PDF
-                    df_excel = pd.DataFrame(lista_linhas)
-                    df_excel.columns = headers
-                    df_excel.loc[len(df_excel)] = ["Total KM", f"{t_km:.0f}", "Valor Total", f"R$ {formatar_br(t_vlr)}", "", "", "", ""]
-                    
-                    buffer_xlsx = io.BytesIO()
-                    with pd.ExcelWriter(buffer_xlsx, engine='openpyxl') as writer:
-                        df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
-                    st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
+                        # REQUISITO ANEXO: Armazena e exibe a tabela em linha na tela antes de enviar
+                        df_preview = pd.DataFrame(lista_linhas, columns=headers)
+                        st.markdown("### 📊 Pré-visualização do Relatório Gerado")
+                        st.dataframe(df_preview, use_container_width=True)
 
-                    # 2. DOCUMENTO PDF IDÊNTICO (MODO PAISAGEM SEM DISTORÇÃO)
-                    pdf = PDFReembolsoKM(orientation='L', unit='mm', format='A4')
-                    pdf.add_page()
-                    
-                    ARQUIVO_LOGO = "crti.jpg"
-                    if os.path.exists(ARQUIVO_LOGO):
-                        pdf.image(ARQUIVO_LOGO, x=15, y=10, w=35)
-                    
-                    pdf.set_font("Arial", "B", 12)
-                    pdf.text(120, 16, "RELATÓRIO PARA REEMBOLSO DE KM RODADO")
-                    
-                    pdf.set_font("Arial", "B", 9)
-                    pdf.text(15, 32, "IMPLANTADOR CRTI: HUDSON PEDRO SALES VALENTE")
-                    
-                    pdf.set_y(36); pdf.set_x(15)
-                    pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
-                    
-                    # LARGURAS CORRIGIDAS: Valores numéricos preenchidos na lista para fechar as margens da folha Paisagem
-                    h_widths = [16, 28, 63, 63, 14, 22, 30, 22]
-                    
-                    for idx_h, txt in enumerate(headers): 
-                        pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
-                    
-                    pdf.set_font("Arial", "", 6.5)
-                    for row in lista_linhas:
-                        pdf.ln(6); pdf.set_x(15)
-                        for col_i, val in enumerate(row):
-                            align_cell = "L" if col_i in [2, 3] else "C"
-                            pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
+                        # 1. ARQUIVO EXCEL ESPELHADO (.XLSX) - EXATAMENTE IGUAL AO PDF
+                        df_excel = df_preview.copy()
+                        df_excel.loc[len(df_excel)] = ["Total KM", f"{t_km:.0f}", "Valor Total", f"R$ {formatar_br(t_vlr)}", "", "", "", ""]
                         
-                    # Rodapé de totalização consolidado acoplado abaixo das colunas numéricas (Acomoda perfeitamente os 104 KM)
-                    pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
-                    pdf.cell(16 + 28 + 63 + 63, 6, "", border=0)
-                    pdf.cell(14, 6, "Total KM", border=1, align="R", fill=True)
-                    pdf.cell(21, 6, f"{t_km:.0f}", border=1, align="C")
-                    pdf.cell(30, 6, "Valor Total", border=1, align="R", fill=True)
-                    pdf.cell(22, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
-                    
-                    # Página de Anexo exclusiva no PDF caso tenha comprovante enviado
-                    if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
+                        buffer_xlsx = io.BytesIO()
+                        with pd.ExcelWriter(buffer_xlsx, engine='openpyxl') as writer:
+                            df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
+                        st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
+
+                        # 2. DOCUMENTO PDF IDÊNTICO (MODO PAISAGEM SEM DISTORÇÃO)
+                        pdf = PDFReembolsoKM(orientation='L', unit='mm', format='A4')
                         pdf.add_page()
-                        pdf.set_font("Arial", "B", 11)
-                        pdf.text(15, 15, "COMPROVANTE DE ABASTECIMENTO ANEXADO")
-                        pdf.image(caminho_imagem_disco, x=15, y=22, w=110)
-                    
-                    st.session_state["km_pdf_p04"] = pdf.output(dest="S").encode("latin1")
-                    
-                    if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
-                        try: os.remove(caminho_imagem_disco)
-                        except: pass
                         
-                    st.success("✨ Relatórios gerados com sucesso!")
-                    st.rerun()
+                        ARQUIVO_LOGO = "crti.jpg"
+                        if os.path.exists(ARQUIVO_LOGO):
+                            pdf.image(ARQUIVO_LOGO, x=15, y=10, w=35)
+                        
+                        pdf.set_font("Arial", "B", 12)
+                        pdf.text(120, 16, "RELATÓRIO PARA REEMBOLSO DE KM RODADO")
+                        
+                        pdf.set_font("Arial", "B", 9)
+                        pdf.text(15, 32, f"IMPLANTADOR CRTI: HUDSON PEDRO SALES VALENTE")
+                        
+                        pdf.set_y(36); pdf.set_x(15)
+                        pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
+                        
+                        h_widths = [16, 42, 58, 58, 14, 21, 32, 21]
+                        
+                        for idx_h, txt in enumerate(headers): 
+                            pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
+                        
+                        pdf.set_font("Arial", "", 6.5)
+                        for row in lista_linhas:
+                            pdf.ln(6); pdf.set_x(15)
+                            for col_i, val in enumerate(row):
+                                align_cell = "L" if col_i in [2, 3] else "C"
+                                pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
+                            
+                        # Rodapé de totalização consolidado e cravado com os KM acumulados
+                        pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
+                        pdf.cell(16 + 42 + 58 + 58, 6, "", border=0)
+                        pdf.cell(14, 6, "Total KM", border=1, align="R", fill=True)
+                        pdf.cell(21, 6, f"{t_km:.0f}", border=1, align="C")
+                        pdf.cell(32, 6, "Valor Total", border=1, align="R", fill=True)
+                        pdf.cell(21, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
+                        
+                        if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
+                            pdf.add_page()
+                            pdf.set_font("Arial", "B", 11)
+                            pdf.text(15, 15, "COMPROVANTE DE ABASTECIMENTO ANEXADO")
+                            pdf.image(caminho_imagem_disco, x=15, y=22, w=110)
+                        
+                        st.session_state["km_pdf_p04"] = pdf.output(dest="S").encode("latin1")
+                        
+                        if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
+                            try: os.remove(caminho_imagem_disco)
+                            except: pass
+                            
+                        st.success("✨ Relatórios gerados com sucesso!")
+                        st.rerun()
             except Exception as e:
                 st.error(f"Erro na compilação: {e}")
 # --- PAINEL VISUAL DE DOWNLOADS ---
 if "km_pdf_p04" in st.session_state:
     st.markdown("---")
-    n_pdf = f"Reembolso_KM_{cliente_selecionado}_{aba_mes_selecionada}.pdf"
-    n_xlsx = f"Reembolso_KM_{cliente_selecionado}_{aba_mes_selecionada}.xlsx"
+    n_pdf = f"Relatorio_Reembolso_KM_{cliente_selecionado}.pdf"
+    n_xlsx = f"Relatorio_Reembolso_KM_{cliente_selecionado}.xlsx"
     
     col_dl1, col_dl2 = st.columns(2)
     with col_dl1:
