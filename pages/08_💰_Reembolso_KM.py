@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PASTA_REEMBOLSO_KM = os.path.join(BASE_DIR, "termos_reembolso_km")
 os.makedirs(PASTA_REEMBOLSO_KM, exist_ok=True)
 
-# 1. CONFIGURAÇÃO DA PÁGINA INSTITUCIONAL
+# 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(page_title="Reembolso de KM - HPTECH", page_icon="hptech.png", layout="wide")
 
 # 2. CSS PARA DESIGN AVANÇADO DA INTERFACE
@@ -43,7 +43,7 @@ def formatar_br(valor):
     except: 
         return "0,00"
 
-# --- CLASSE PDF LIMPA SEM QUADROS (MOTO PAISAGEM / LANDSCAPE) ---
+# --- CLASSE PDF LIMPA SEM QUADROS (MODO PAISAGEM) ---
 class PDFReembolsoKM(FPDF):
     def header(self):
         pass
@@ -108,10 +108,6 @@ except:
     df_leg = pd.DataFrame()
     lista_abas_meses = []
     lista_clientes = []
-
-st.title("💰 Relatório para Reembolso de KM Rodado")
-st.write("Layout estruturado via código interno para PDF e Excel síncronos, com suporte a anexo de abastecimento.")
-st.markdown("---")
 
 col_f1, col_f2 = st.columns(2)
 with col_f1:
@@ -202,7 +198,6 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 if col_situacao in df_dados.columns:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                 
-                # Filtra apenas registros válidos com situação Em Elaboração e KM preenchido
                 atendimentos_km = df_dados[
                     (df_dados[col_cliente] == cliente_selecionado) & 
                     (df_dados[col_situacao] == "Em Elaboração") & 
@@ -231,7 +226,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         km_f = float(dict_km.get(r_idx, 0))
                         loc_f = str(dict_loc.get(r_idx, "")).strip().lower()
                         
-                        # Decisão inteligente de percurso baseada na coluna LOCAL da sua planilha
+                        # Decisão com base na coluna LOCAL da planilha mestre
                         if "cliente" in loc_f:
                             percurso, orig, dest = "Ida", ENDERECO_CRTI_FIXO, endereco_cliente_sugerido
                         else:
@@ -259,7 +254,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
                     st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
 
-                    # 2. DOCUMENTO PDF IDÊNTICO (MODO PAISAGEM COM MOLDURA EXPANDIDA)
+                    # 2. DOCUMENTO PDF IDÊNTICO (MODO PAISAGEM EXPANDIDO)
                     pdf = PDFReembolsoKM(orientation='L', unit='mm', format='A4')
                     pdf.add_page()
                     
@@ -277,7 +272,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
                     
                     headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
-                    h_widths = [16, 28, 63, 63, 16, 22, 30, 22] # Distribuição perfeita de largura fechando os 260mm
+                    h_widths = [16, 28, 63, 63, 14, 21, 23, 19]
                     
                     for idx_h, txt in enumerate(headers): 
                         pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
@@ -289,15 +284,15 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                             align_cell = "L" if col_i in [2, 3] else "C"
                             pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                         
-                    # Rodapé de totalização consolidado acoplado abaixo das colunas numéricas (104 KM)
+                    # Rodapé de totalização alinhado e cravado
                     pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
                     pdf.cell(16 + 28 + 63 + 63, 6, "", border=0)
-                    pdf.cell(16, 6, "Total KM", border=1, align="R", fill=True)
-                    pdf.cell(22, 6, f"{t_km:.0f}", border=1, align="C")
-                    pdf.cell(30, 6, "Valor Total", border=1, align="R", fill=True)
-                    pdf.cell(22, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
+                    pdf.cell(14, 6, "Total KM", border=1, align="R", fill=True)
+                    pdf.cell(21, 6, f"{t_km:.0f}", border=1, align="C")
+                    pdf.cell(23, 6, "Valor Total", border=1, align="R", fill=True)
+                    pdf.cell(19, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
                     
-                    # Página de Anexo exclusiva no PDF caso tenha comprovante enviado
+                    # Página de Anexo exclusiva no PDF
                     if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                         pdf.add_page()
                         pdf.set_font("Arial", "B", 11)
@@ -325,13 +320,7 @@ if "km_pdf_p04" in st.session_state:
     with col_dl1:
         st.download_button(label="📥 **BAIXAR RELATÓRIO PDF**", data=st.session_state["km_pdf_p04"], file_name=n_pdf, mime="application/pdf", use_container_width=True)
     with col_dl2:
-st.download_button(
-    label="📥 BAIXAR PLANILHA EXCEL",
-    data=st.session_state("km_xlsx_p04"),
-    file_name=n_xlsx,
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    use_container_width=True
-)
+        st.download_button(label="📥 **BAIXAR PLANILHA EXCEL**", data=st.session_state["km_xlsx_p04"], file_name=n_xlsx, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
 st.markdown("---")
 
