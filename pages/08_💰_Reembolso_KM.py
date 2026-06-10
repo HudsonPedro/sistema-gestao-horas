@@ -326,7 +326,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 ws.write(l_f, 6, "Valor Total", f_tot)
                 ws.write(l_f, 7, f"R$ {formatar_br(t_vlr_acumulado)}", f_cel)
 
-                 ws.write("A4", "COMPROVANTE DE ABASTECIMENTO ANEXADO", f_sub_c)
+                 ws.write("A4", "COMPROVANTE DE ABASTECIMENTO ANEXADO", f_subc)
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                     ws.insert_image(l_f + 3, 2, caminho_imagem_disco, {"x_scale": 1.0, "y_scale": 1.0}) #{"x_scale": 0.42, "y_scale": 0.42})
                     
