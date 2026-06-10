@@ -88,7 +88,6 @@ with st.sidebar:
     
     st.markdown("---")
     st.header("🗑️ Gerenciamento")
-    # CORREÇÃO: Alinhado para limpar a pasta física exata do Reembolso de KM
     if st.button("🗑️ Limpar Histórico de KM", use_container_width=True):
         arquivos_limpeza = glob.glob(os.path.join(PASTA_REEMBOLSO_KM, "*.*"))
         for arq in arquivos_limpeza:
@@ -135,14 +134,12 @@ with col_f2:
     vlr_abast = st.number_input("Valor Unitário Último Abastecimento (R$):", min_value=0.0, value=7.49, step=0.01)
     email_target = st.text_input("Destinatário do Relatório:", "hudson.valente@crti.com.br")
 
-# CORREÇÃO ABSOLUTA: Remove aspas, colchetes e extrai a string crua e limpa do endereço da empresa
 endereco_cliente_sugerido = "Rua Pascoal Carignano, 675, Ferraria - Campo Largo"
 if not df_leg.empty and cliente_selecionado:
     try:
         solicitantes_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Endereco"].dropna()
         if not solicitantes_df.empty:
-            texto_cru = str(solicitantes_df.iloc[0]).strip()
-            # Limpa qualquer resíduo de objeto ArrowString do Google Planilhas
+            texto_cru = str(solicitantes_df.iloc).strip()
             endereco_cliente_sugerido = texto_cru.replace("['", "").replace("']", "").replace("[", "").replace("]", "")
     except: pass
 
@@ -150,7 +147,7 @@ gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     try:
         sol_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
-        if not sol_df.empty: gerente_cliente_sugerido = str(sol_df.iloc[0]).strip().replace("['", "").replace("']", "")
+        if not sol_df.empty: gerente_cliente_sugerido = str(sol_df.iloc).strip().replace("['", "").replace("']", "")
     except: pass
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
@@ -221,8 +218,9 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 ].copy()
                 
                 if atendimentos_km.empty:
-                    st.warning(f"⚠️ Nenhum lançamento ativo em elaboração com KM_D preenchido foi localizado para o cliente '{cliente_selecionado}'.")
+                    st.warning(f"⚠️ Nenhum lançamento ativo em elaboração com KM_D preenchido foi localizado para o cliente '{cliente_selecionado}' na aba '{aba_mes_selecionada}'.")
                 else:
+                    atendimentos_km = atendimentos_km.reset_index(drop=True)
                     atendimentos_km[col_data] = pd.to_datetime(atendimentos_km[col_data], errors='coerce')
                     atendimentos_km = atendimentos_km.sort_values(by=col_data).reset_index(drop=True)
                     
@@ -250,31 +248,14 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         lista_linhas.append([dt_str, cliente_selecionado, orig, dest, percurso, f"{km_f:.0f}", f"R$ {vlr_abast:,.2f}", f"R$ {vlr_f:,.2f}"])
 
                     # 1. ARQUIVO EXCEL MESTRE (.XLSX)
-                    out_xlsx = io.BytesIO()
-                    wb = xlsxwriter.Workbook(out_xlsx, {"in_memory": True})
-                    ws = wb.add_worksheet("Reembolso")
-                    ws.hide_gridlines(2)
+                    df_excel = pd.DataFrame(lista_linhas)
+                    df_excel.columns = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
+                    df_excel.loc[len(df_excel)] = ["Total KM", f"{t_km:.0f}", "Valor Total", f"R$ {formatar_br(t_vlr)}", "", "", "", ""]
                     
-                    f_tit = wb.add_format({"bold": True, "size": 13, "font_name": "Arial"})
-                    f_head = wb.add_format({"bold": True, "bg_color": "#F5F5F5", "border": 1, "align": "center", "font_name": "Arial", "size": 9})
-                    f_cel = wb.add_format({"border": 1, "align": "center", "font_name": "Arial", "size": 9})
-                    f_tot = wb.add_format({"bold": True, "bg_color": "#F5F5F5", "border": 1, "font_name": "Arial", "size": 9})
-                    
-                    ws.set_column("A:A", 12); ws.set_column("B:B", 25); ws.set_column("C:C", 38); ws.set_column("D:D", 38)
-                    ws.set_column("E:E", 10); ws.set_column("F:F", 10); ws.set_column("G:G", 14); ws.set_column("H:H", 14)
-                    
-                    ws.write("A2", "Relatório de Reembolso de KM Rodado", f_tit)
-                    headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
-                    for c_idx, txt in enumerate(headers): ws.write(3, c_idx, txt, f_head)
-                    
-                    for r_idx, row in enumerate(lista_linhas):
-                        for c_idx, val in enumerate(row): ws.write(4 + r_idx, c_idx, val, f_cel)
-                        
-                    l_f = 4 + len(lista_linhas)
-                    ws.write(l_f, 0, "Total KM", f_tot); ws.write(l_f, 1, f"{t_km:.0f}", f_cel)
-                    ws.write(l_f, 2, "Valor Total", f_tot); ws.write(l_f, 3, f"R$ {formatar_br(t_vlr)}", f_cel)
-                    wb.close()
-                    st.session_state["km_xlsx_p04"] = out_xlsx.getvalue()
+                    buffer_xlsx = io.BytesIO()
+                    with pd.ExcelWriter(buffer_xlsx, engine='openpyxl') as writer:
+                        df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
+                    st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
 
                     # 2. DOCUMENTO PDF MESTRE (FPDF - TOTALMENTE ALINHADO)
                     pdf = PDFReembolsoKM()
@@ -286,8 +267,8 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.set_y(58); pdf.set_x(15)
                     pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 6.5)
                     
-                    # Definição milimétrica perfeita das células para caber na página A4 sem esmagar
-                    h_widths = [16, 26, 43, 43, 14, 15, 23, 18]
+                    headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
+                    h_widths = [14, 26, 42, 42, 12, 16, 22, 16]
                     for idx_h, txt in enumerate(headers): pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
                     
                     pdf.set_font("Arial", "", 5.5)
@@ -297,12 +278,11 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                             align_cell = "L" if col_i in [2, 3] else "C"
                             pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                         
-                    # Linha final de totalização idêntica ao seu grid
                     pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7)
-                    pdf.cell(16, 6, "TOTAL KM", border=1, align="C", fill=True)
+                    pdf.cell(14, 6, "TOTAL KM", border=1, align="C", fill=True)
                     pdf.cell(26, 6, f"{t_km:.0f} KM", border=1, align="C")
-                    pdf.cell(43, 6, "VALOR TOTAL", border=1, align="C", fill=True)
-                    pdf.cell(43, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
+                    pdf.cell(42, 6, "VALOR TOTAL", border=1, align="C", fill=True)
+                    pdf.cell(42, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
                     
                     st.session_state["km_pdf_p04"] = pdf.output(dest="S").encode("latin1")
                     st.success("✨ Documentos estruturados com sucesso!")
@@ -310,7 +290,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
             except Exception as e:
                 st.error(f"Erro na compilação: {e}")
 
-# --- PAINEL VISUAL DE ATIVAÇÃO DOS DOWNLOADS ---
+# --- PAINEL VISUAL DE DOWNLOADS DA SESSÃO ---
 if "km_pdf_p04" in st.session_state:
     st.markdown("---")
     n_pdf = f"Reembolso_KM_{cliente_selecionado}_{aba_mes_selecionada}.pdf"
@@ -334,27 +314,19 @@ def confirmar_envio_km_popup():
         if st.button("Sim, Enviar", use_container_width=True):
             with st.spinner("Disparando e-mail corporativo..."):
                 if "km_pdf_p04" in st.session_state:
-                # Executa o envio com os arquivos da sessão
-                ok, msg = enviar_email_reembolso_km(
-                    email_target, 
-                    cliente_selecionado, 
-                    st.session_state["km_pdf_p04"], 
-                    st.session_state["km_xlsx_p04"], 
-                    f"Reembolso_KM_{cliente_selecionado}.pdf", 
-                    f"Reembolso_KM_{cliente_selecionado}.xlsx"
-                )
-                if ok:
-                    st.success(msg)
-                    st.balloons()
-                    time.sleep(4)
-                else: 
-                    st.error(msg)
-        with cp2:
-            if st.button("Não, Cancelar", use_container_width=True): 
-                st.rerun()
+                    ok, msg = enviar_email_reembolso_km(email_target, cliente_selecionado, st.session_state["km_pdf_p04"], st.session_state["km_xlsx_p04"], f"Reembolso_KM_{cliente_selecionado}.pdf", f"Reembolso_KM_{cliente_selecionado}.xlsx")
+                    if ok:
+                        st.success(msg)
+                        st.balloons()
+                        time.sleep(4)
+                    else: st.error(msg)
+                else:
+                    st.error("Gere o relatório na tela primeiro antes de disparar.")
+            st.rerun()
+    with cp2:
+        if st.button("Não, Cancelar", use_container_width=True): 
+            st.rerun()
 
 if st.button("🚀 **ENVIAR REEMBOLSO POR E-MAIL**", type="primary", use_container_width=True):
-    if not email_target: 
-        st.error("Insira um endereço de e-mail válido.")
-    else: 
-        confirmar_envio_km_popup()
+    if not email_target: st.error("Insira um endereço de e-mail válido.")
+    else: confirmar_envio_km_popup()
