@@ -210,6 +210,7 @@ with st.form("form_lancamento", clear_on_submit=True):
         descricao_p = st.text_input("DESCRICAO(Pendência)")
         responsavel_p = st.selectbox("RESPONSÁVEL(Pendência)", [" ","Cliente", "CRTI"])
         status_p = st.selectbox("STATUS(Pendência)", [" ", "Pendente", "Realizado"])
+        ida_volta = st.selectbox("IDA/VOLTA", [" ", "Ida", "Volta"])
            
     st.markdown("---")
     observacoes = st.text_area("OBSERVAÇÕES")
@@ -292,7 +293,8 @@ if btn_enviar:
                 {'range': f'Z{linha_destino}', 'values': [[responsavel_p]]},
                 {'range': f'AA{linha_destino}', 'values': [[status_p]]},
                 {'range': f'AB{linha_destino}', 'values': [[desc_pres]]},
-                {'range': f'AC{linha_destino}', 'values': [[obs_pres]]}
+                {'range': f'AC{linha_destino}', 'values': [[obs_pres]]},
+                {'range': f'AD{linha_destino}', 'values': [[ida_volta]]},
             ]
 
             aba.batch_update(valores_atualizacao, value_input_option='USER_ENTERED')
