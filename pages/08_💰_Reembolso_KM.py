@@ -376,9 +376,11 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                     try: os.remove(caminho_imagem_disco)
                     except: pass
+                        
                 st.success("✨ Relatórios gêmeos gerados com sucesso!")
                 st.rerun()
-                except Exception as e:st.error(f"Erro na compilação: {e}")
+            except Exception as e:
+                st.error(f"Erro na compilação: {e}")
     # --- PAINEL VISUAL DE DOWNLOADS ---
 if "km_pdf_p04" in st.session_state:
     st.markdown("---")
