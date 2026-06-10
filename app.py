@@ -99,6 +99,8 @@ with st.sidebar:
         st.switch_page("pages/06_📑_Termo_Encerramento.py")
     if st.button("🚗 Termo Presencial", use_container_width=True): 
         st.switch_page("pages/07_🚗_Termo_Treinamento_Presencial.py")
+    if st.button("💰 Reembolso de KM", use_container_width=True): 
+        st.switch_page("pages/08_💰_Reembolso_KM.py")
              
     st.divider()
     st.caption("v1.0 - 11052026")
@@ -128,7 +130,7 @@ except:
     st.title("Bem-vindo ao Sistema de Gestão HPTECH")
 st.markdown("---")
 
-col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
 with col1:
     st.subheader("📈 Dashboard")
@@ -171,6 +173,12 @@ with col7:
     st.write("Gere o Termo Presencial.")
     if st.button("Novo Termo Presencial", key="btn_termo_presencial"):
         st.switch_page("pages/07_🚗_Termo_Treinamento_Presencial.py")
+
+with col8:
+    st.subheader("💰 Reembolso de KM")
+    st.write("Gere o Reembolso KM.")
+    if st.button("Novo Reembolso KM", key="btn_reembolso_km"):
+        st.switch_page("pages/08_💰_Reembolso_KM.py")
 
 st.divider()
 st.info("Sistema integrado HPtech Informática ME.")
