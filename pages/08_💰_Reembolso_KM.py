@@ -362,7 +362,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 pdf.cell(16 + 32 + 58 + 58, 6, "", border=0)
                 pdf.cell(18, 6, "Total KM", border=1, align="R", fill=True)#16
                 pdf.cell(22, 6, f"{t_km_acumulado:.0f}", border=1, align="C")
-                pdf.cell(30, 6, "Valor Total", border=1, align="R", fill=True) #34
+                pdf.cell(32, 6, "Valor Total", border=1, align="R", fill=True) #34
                 pdf.cell(22, 6, f"R$ {formatar_br(t_vlr_acumulado)}", border=1, align="C")
                 
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
