@@ -187,6 +187,7 @@ def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf
         return False, f"Falha no envio: {str(e)}"
 
 # --- 6. GERAÇÃO DO LAYOUT IDENTICO AO MODELO SOLICITADO ---
+# --- 6. GERAÇÃO E PROCESSAMENTO EM CÓDIGO ---
 if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -247,7 +248,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         
                         lista_linhas.append([dt_str, cliente_selecionado, orig, dest, percurso, f"{km_f:.0f}", f"R$ {vlr_abast:,.2f}", f"R$ {vlr_f:,.2f}"])
 
-                    # 1. ARQUIVO EXCEL MESTRE (.XLSX)
+                    # 1. ARQUIVO EXCEL (.XLSX)
                     df_excel = pd.DataFrame(lista_linhas)
                     df_excel.columns = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
                     df_excel.loc[len(df_excel)] = ["Total KM", f"{t_km:.0f}", "Valor Total", f"R$ {formatar_br(t_vlr)}", "", "", "", ""]
@@ -257,19 +258,32 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
                     st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
 
-                    # 2. DOCUMENTO PDF MESTRE (FPDF - TOTALMENTE ALINHADO)
+                    # 2. PDF IDÊNTICO (FIM DOS QUADROS - COMEÇA DIRETO NA LOGO E TABELA)
                     pdf = PDFReembolsoKM()
                     pdf.add_page()
-                    pdf.set_font("Arial", "B", 14)
-                    pdf.text(15, 18, "Relatório Reembolso de KM Rodado")
-                    pdf.moldura_topo(15, 24, 180, 28, cliente_selecionado, t_km, t_vlr)
                     
-                    pdf.set_y(58); pdf.set_x(15)
-                    pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 6.5)
+                    # Desenha a Logo CRTI no canto superior esquerdo absoluto
+                    ARQUIVO_LOGO = "crti.jpg"
+                    if os.path.exists(ARQUIVO_LOGO):
+                        pdf.image(ARQUIVO_LOGO, x=15, y=10, w=35)
+                    
+                    # Título Principal do seu Relatório
+                    pdf.set_font("Arial", "B", 11)
+                    pdf.set_text_color(0, 0, 0)
+                    pdf.text(105, 16, "RELATÓRIO PARA REEMBOLSO DE KM RODADO")
+                    
+                    pdf.set_font("Arial", "B", 8)
+                    pdf.text(15, 32, "IMPLANTADOR CRTI: HUDSON PEDRO SALES VALENTE")
+                    
+                    # Posiciona o topo da tabela expandida logo abaixo do cabeçalho limpo
+                    pdf.set_y(36); pdf.set_x(15)
+                    pdf.set_fill_color(245, 245, 245)
                     
                     headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
-                    h_widths = [14, 26, 42, 42, 12, 16, 22, 16]
-                    for idx_h, txt in enumerate(headers): pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
+                    h_widths = [16, 28, 48, 48, 14, 20, 24, 16]
+                    
+                    for idx_h, txt in enumerate(headers): 
+                        pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
                     
                     pdf.set_font("Arial", "", 5.5)
                     for row in lista_linhas:
@@ -278,19 +292,19 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                             align_cell = "L" if col_i in [2, 3] else "C"
                             pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                         
+                    # Linha final de totalização idêntica acoplada abaixo da tabela
                     pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7)
-                    pdf.cell(14, 6, "TOTAL KM", border=1, align="C", fill=True)
-                    pdf.cell(26, 6, f"{t_km:.0f} KM", border=1, align="C")
-                    pdf.cell(42, 6, "VALOR TOTAL", border=1, align="C", fill=True)
-                    pdf.cell(42, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
+                    pdf.cell(16, 6, "Total KM", border=1, align="C", fill=True)
+                    pdf.cell(28, 6, f"{t_km:.0f}", border=1, align="C")
+                    pdf.cell(48, 6, "Valor Total", border=1, align="C", fill=True)
+                    pdf.cell(48, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
                     
                     st.session_state["km_pdf_p04"] = pdf.output(dest="S").encode("latin1")
-                    st.success("✨ Documentos estruturados com sucesso!")
+                    st.success("✨ Relatório gerado identico com sucesso!")
                     st.rerun()
             except Exception as e:
                 st.error(f"Erro na compilação: {e}")
-
-# --- PAINEL VISUAL DE DOWNLOADS DA SESSÃO ---
+# --- DOWNLOADS E POP-UP MESTRE DE DISPARO ---
 if "km_pdf_p04" in st.session_state:
     st.markdown("---")
     n_pdf = f"Reembolso_KM_{cliente_selecionado}_{aba_mes_selecionada}.pdf"
@@ -300,9 +314,8 @@ if "km_pdf_p04" in st.session_state:
     with col_dl1:
         st.download_button(label="📥 **BAIXAR RELATÓRIO PDF**", data=st.session_state["km_pdf_p04"], file_name=n_pdf, mime="application/pdf", use_container_width=True)
     with col_dl2:
-        st.download_button(label="📥 **BAIXAR PLANILHA EXCEL**", data=st.session_state["km_xlsx_p04"], file_name=n_xlsx, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+        st.download_button(label="📥 **BAIXAR PLANILHA EM EXCEL**", data=st.session_state["km_xlsx_p04"], file_name=n_xlsx, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
-# GATILHO FIXO E ALINHADO PARA O DISPARO SMTP DO FECHAMENTO MENSAL
 st.markdown("---")
 
 @st.dialog("Confirmação de Envio por E-mail")
