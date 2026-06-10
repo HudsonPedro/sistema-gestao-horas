@@ -305,7 +305,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 
                 # Insere a logo física na célula A2 para matar o texto provisório
                 if os.path.exists(ARQUIVO_LOGO):
-                    ws.insert_image("A2", ARQUIVO_LOGO, {"x_scale": 0.48, "y_scale": 0.48})
+                    ws.insert_image("A2", ARQUIVO_LOGO, {"x_scale": 1.2, "y_scale": 1.2}) #0.48
                 
                 ws.write("D2", "RELATÓRIO PARA REEMBOLSO DE KM RODADO", f_tit)
                 ws.write("A4", f"IMPLANTADOR CRTI: HUDSON VALENTE", f_sub)
