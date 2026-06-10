@@ -288,6 +288,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 
                 f_tit = wb.add_format({"bold": True, "size": 11, "font_name": "Arial"})
                 f_sub = wb.add_format({"bold": True, "size": 9, "font_name": "Arial"})
+                f_subc = wb.add_format({"bold": True, "size": 30, "font_name": "Arial"}) #NOVO SUBTIT COMPROVANTE XLSX 
                 f_head = wb.add_format({"bold": True, "bg_color": "#E2EFDA", "border": 1, "align": "center", "font_name": "Arial", "size": 8.5})
                 f_cel = wb.add_format({"border": 1, "align": "center", "font_name": "Arial", "size": 8})
                 f_cel_l = wb.add_format({"border": 1, "align": "left", "font_name": "Arial", "size": 8})
@@ -325,9 +326,8 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 ws.write(l_f, 6, "Valor Total", f_tot)
                 ws.write(l_f, 7, f"R$ {formatar_br(t_vlr_acumulado)}", f_cel)
 
-                
+                 ws.write("A4", "COMPROVANTE DE ABASTECIMENTO ANEXADO", f_sub_c)
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
-                    ws.write("A4", "COMPROVANTE DE ABASTECIMENTO ANEXADO", f_sub)
                     ws.insert_image(l_f + 3, 2, caminho_imagem_disco, {"x_scale": 1.0, "y_scale": 1.0}) #{"x_scale": 0.42, "y_scale": 0.42})
                     
                 wb.close()
