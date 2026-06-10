@@ -171,6 +171,7 @@ def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf
 
 # --- 6. GERAÇÃO E PROCESSAMENTO EM CÓDIGO ---
 # --- 6. GERAÇÃO E PROCESSAMENTO EM CÓDIGO ---
+# --- 6. GERAÇÃO E PROCESSAMENTO EM CÓDIGO ---
 if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -184,7 +185,6 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 df_dados = df_dados.reset_index(drop=True)
                 df_dados.columns = df_dados.columns.str.strip()
                 
-                # MAPEAMENTO CIRÚRGICO CONFORME AS SUAS COLUNAS REAIS
                 col_cliente = "CLIENTE"
                 col_situacao = "SITUACAO_RA"
                 col_ra = "RA"
@@ -205,6 +205,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 if atendimentos_km.empty:
                     st.warning(f"⚠️ Nenhum lançamento ativo em elaboração com KM_D preenchido foi localizado para '{cliente_selecionado}' na aba '{aba_mes_selecionada}'.")
                 else:
+                    atendimentos_km = atendimentos_km.reset_index(drop=True)
                     atendimentos_km[col_data] = pd.to_datetime(atendimentos_km[col_data], errors='coerce')
                     atendimentos_km = atendimentos_km.sort_values(by=col_data).reset_index(drop=True)
                     
@@ -243,10 +244,10 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     f_tot = wb.add_format({"bold": True, "bg_color": "#F5F5F5", "border": 1, "font_name": "Arial", "size": 9})
                     
                     ws.set_column("A:A", 12); ws.set_column("B:B", 25); ws.set_column("C:C", 35); ws.set_column("D:D", 35)
-                    ws.set_column("E:E", 10); ws.set_column("F:F", 10); ws.set_column("G:G", 14); ws.set_column("H:H", 14)
+                    ws.set_column("E:E", 12); ws.set_column("F:F", 14); ws.set_column("G:G", 18); ws.set_column("H:H", 14)
                     
                     ws.write("A2", "Relatório de Reembolso de KM Rodado", f_tit)
-                    headers = ["data_dia", "cliente", "local_origem", "local_destino", "percurso", "km", "vlr_unit", "total"]
+                    headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
                     for c_idx, txt in enumerate(headers): ws.write(3, c_idx, txt, f_head)
                     
                     for r_idx, row in enumerate(lista_linhas):
@@ -258,7 +259,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     wb.close()
                     st.session_state["km_xlsx_p04"] = out_xlsx.getvalue()
 
-                    # 2. MOTOR DO PDF (FPDF - ALINHADO COM A PÁGINA 04)
+                    # 2. MOTOR DO PDF (FPDF - ALINHADO IDENTICO AO SEU LEIAUTE EXCEL)
                     pdf = PDFReembolsoKM()
                     pdf.add_page()
                     pdf.set_font("Arial", "B", 14)
@@ -266,20 +267,21 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.moldura_topo(15, 24, 180, 28, cliente_selecionado, t_km, t_vlr)
                     
                     pdf.set_y(58); pdf.set_x(15)
-                    pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 7)
+                    pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 6.5)
                     
-                    # CORREÇÃO: Larguras proporcionais exatas das colunas para fechar a largura da página A4
-                    h_widths = [16, 22, 38, 38, 14, 12, 18, 22]
+                    # CORREÇÃO ABSOLUTA: Distribuição milimétrica das colunas em mm para caber no A4 sem encavalar
+                    h_widths = [14, 25, 43, 43, 13, 14, 16, 12]
                     for idx_h, txt in enumerate(headers): pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
                     
-                    pdf.set_font("Arial", "", 6.5)
+                    pdf.set_font("Arial", "", 5.5)
                     for row in lista_linhas:
-                        pdf.set_x(15)
+                        pdf.ln(6); pdf.set_x(15)
                         for col_i, val in enumerate(row):
-                            pdf.cell(h_widths[col_i], 6, str(val), border=1, align="C")
-                        pdf.ln(6)
+                            # Alinha a esquerda os textos longos e centraliza os valores numéricos
+                            align_cell = "L" if col_i in [2, 3] else "C"
+                            pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                         
-                    pdf.set_y(pdf.get_y() + 2); pdf.set_x(15); pdf.set_font("Arial", "B", 7)
+                    pdf.ln(8); pdf.set_x(15); pdf.set_font("Arial", "B", 7)
                     pdf.cell(16, 6, "TOTAL KM", border=1, align="C", fill=True)
                     pdf.cell(22, 6, f"{t_km:.0f} KM", border=1, align="C")
                     pdf.cell(38, 6, "VALOR TOTAL", border=1, align="C", fill=True)
