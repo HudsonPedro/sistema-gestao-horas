@@ -328,8 +328,8 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
 
                 
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
-                    ws.write("C14", f"COMPROVANTE DE ABASTECIMENTO ANEXADO", f_subc)
-                    ws.insert_image(l_f + 3, 2, caminho_imagem_disco, {"x_scale": 1.0, "y_scale": 1.0}) #{"x_scale": 0.42, "y_scale": 0.42})
+                    ws.write("A14", f"COMPROVANTE DE ABASTECIMENTO ANEXADO", f_subc)
+                    ws.insert_image(l_f + 1, 2, caminho_imagem_disco, {"x_scale": 1.0, "y_scale": 1.0}) #{"x_scale": 0.42, "y_scale": 0.42})
                     
                 wb.close()
                 st.session_state["km_xlsx_p04"] = out_xlsx.getvalue()
