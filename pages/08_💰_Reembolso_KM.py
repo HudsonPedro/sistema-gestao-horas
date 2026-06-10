@@ -41,27 +41,12 @@ def formatar_br(valor):
     try: return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except: return "0,00"
 
-# --- MOTOR CLASSE PDF REVISADA (MOLDURA EXATA IGUAL MODELO) ---
+# --- CLASSE PDF LIMPA SEM QUADROS (PADRÃO REQUISITO CRTI) ---
 class PDFReembolsoKM(FPDF):
-    def moldura_topo(self, x, y, w, h, cliente, total_km, total_vlr):
-        self.set_draw_color(180, 180, 180) 
-        self.set_line_width(0.4)
-        self.rect(x, y, w, h)
-        self.set_font("Arial", "", 9)
-        self.set_text_color(0, 0, 0)
-        
-        self.text(x + 4, y + 6, "Parceiro: CR Tecnologia da Informação Ltda")
-        self.text(x + 4, y + 12, "Implantador CRTI: HUDSON PEDRO SALES VALENTE")
-        self.text(x + 4, y + 18, f"Empresa Cliente: {cliente}")
-        self.text(x + 4, y + 24, f"Data de Emissão: {datetime.now().strftime('%d/%m/%Y')}")
-        
-        self.line(x + 110, y, x + 110, y + h)
-        self.set_font("Arial", "B", 10)
-        self.text(x + 114, y + 8, "Resumo do Reembolso:")
-        self.set_font("Arial", "", 9)
-        self.text(x + 114, y + 16, f"Total Geral de KM: {total_km:.0f} KM")
-        self.set_font("Arial", "B", 10)
-        self.text(x + 114, y + 24, f"Valor do Reembolso: R$ {formatar_br(total_vlr)}")
+    def header(self):
+        pass
+    def footer(self):
+        pass
 # 3. SIDEBAR COM MENU INTEGRADO E BOTÃO LIMPAR CORRIGIDO
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
@@ -123,7 +108,7 @@ except:
     lista_clientes = []
 
 st.title("💰 Relatório para Reembolso de KM Rodado")
-st.write("Layout estruturado via código interno, eliminando travamentos de eixos ou lixos de formatação.")
+st.write("Módulo de alta performance. Layout gerado de forma limpa idêntico ao modelo original.")
 st.markdown("---")
 
 col_f1, col_f2 = st.columns(2)
@@ -134,20 +119,22 @@ with col_f2:
     vlr_abast = st.number_input("Valor Unitário Último Abastecimento (R$):", min_value=0.0, value=7.49, step=0.01)
     email_target = st.text_input("Destinatário do Relatório:", "hudson.valente@crti.com.br")
 
-endereco_cliente_sugerido = "Rua Pascoal Carignano, 675, Ferraria - Campo Largo"
+# CORREÇÃO ABSOLUTA DA STRING: Extrai o valor puro do endereço das Legendas, sumindo com lixos de depuração
+endereco_cliente_sugerido = "Rua Pascoal Carignano, 675 - Ferraria, Campo Largo"
 if not df_leg.empty and cliente_selecionado:
     try:
+        # Busca na coluna 'Endereco' sem acento conforme o leiaute estrutural
         solicitantes_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Endereco"].dropna()
         if not solicitantes_df.empty:
-            texto_cru = str(solicitantes_df.iloc).strip()
-            endereco_cliente_sugerido = texto_cru.replace("['", "").replace("']", "").replace("[", "").replace("]", "")
+            endereco_cliente_sugerido = str(solicitantes_df.to_list()[0]).strip()
     except: pass
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     try:
         sol_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
-        if not sol_df.empty: gerente_cliente_sugerido = str(sol_df.iloc).strip().replace("['", "").replace("']", "")
+        if not sol_df.empty: 
+            gerente_cliente_sugerido = str(sol_df.to_list()[0]).strip()
     except: pass
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
@@ -187,7 +174,6 @@ def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf
         return False, f"Falha no envio: {str(e)}"
 
 # --- 6. GERAÇÃO DO LAYOUT IDENTICO AO MODELO SOLICITADO ---
-# --- 6. GERAÇÃO E PROCESSAMENTO EM CÓDIGO ---
 if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -248,7 +234,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         
                         lista_linhas.append([dt_str, cliente_selecionado, orig, dest, percurso, f"{km_f:.0f}", f"R$ {vlr_abast:,.2f}", f"R$ {vlr_f:,.2f}"])
 
-                    # 1. ARQUIVO EXCEL (.XLSX)
+                    # 1. ARQUIVO EXCEL MESTRE (.XLSX)
                     df_excel = pd.DataFrame(lista_linhas)
                     df_excel.columns = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
                     df_excel.loc[len(df_excel)] = ["Total KM", f"{t_km:.0f}", "Valor Total", f"R$ {formatar_br(t_vlr)}", "", "", "", ""]
@@ -258,11 +244,11 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
                     st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
 
-                    # 2. PDF IDÊNTICO (FIM DOS QUADROS - COMEÇA DIRETO NA LOGO E TABELA)
+                    # 2. DOCUMENTO PDF IDÊNTICO (SEM MOLDURA DE TOPO - COMEÇA DIRETO NA LOGO)
                     pdf = PDFReembolsoKM()
                     pdf.add_page()
                     
-                    # Desenha a Logo CRTI no canto superior esquerdo absoluto
+                    # Desenha a Logo CRTI no topo esquerdo absoluto
                     ARQUIVO_LOGO = "crti.jpg"
                     if os.path.exists(ARQUIVO_LOGO):
                         pdf.image(ARQUIVO_LOGO, x=15, y=10, w=35)
@@ -277,10 +263,10 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     
                     # Posiciona o topo da tabela expandida logo abaixo do cabeçalho limpo
                     pdf.set_y(36); pdf.set_x(15)
-                    pdf.set_fill_color(245, 245, 245)
+                    pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 6.5)
                     
                     headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
-                    h_widths = [16, 28, 48, 48, 14, 20, 24, 16]
+                    h_widths = [14, 25, 45, 45, 14, 16, 22, 19] # Distribuição exata das larguras em mm para fechar os 180mm da folha
                     
                     for idx_h, txt in enumerate(headers): 
                         pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
@@ -292,19 +278,24 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                             align_cell = "L" if col_i in [2, 3] else "C"
                             pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                         
-                    # Linha final de totalização idêntica acoplada abaixo da tabela
+                    # Linha final de totalização idêntica acoplada abaixo da tabela (Cravando os 104 KM)
                     pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7)
-                    pdf.cell(16, 6, "Total KM", border=1, align="C", fill=True)
-                    pdf.cell(28, 6, f"{t_km:.0f}", border=1, align="C")
-                    pdf.cell(48, 6, "Valor Total", border=1, align="C", fill=True)
-                    pdf.cell(48, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
+                    pdf.cell(14, 6, "", border=0) # Pula Data
+                    pdf.cell(25, 6, "", border=0) # Pula Cliente
+                    pdf.cell(45, 6, "", border=0) # Pula Origem
+                    pdf.cell(45, 6, "Total KM", border=1, align="R", fill=True)
+                    pdf.cell(14, 6, f"{t_km:.0f}", border=1, align="C")
+                    pdf.cell(16, 6, "", border=0) # Pula Distancia
+                    pdf.cell(22, 6, "Valor Total", border=1, align="R", fill=True)
+                    pdf.cell(19, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
                     
                     st.session_state["km_pdf_p04"] = pdf.output(dest="S").encode("latin1")
-                    st.success("✨ Relatório gerado identico com sucesso!")
+                    st.success("✨ Relatório gerado com sucesso!")
                     st.rerun()
             except Exception as e:
                 st.error(f"Erro na compilação: {e}")
-# --- DOWNLOADS E POP-UP MESTRE DE DISPARO ---
+
+# --- PAINEL VISUAL DE DOWNLOADS DA SESSÃO ---
 if "km_pdf_p04" in st.session_state:
     st.markdown("---")
     n_pdf = f"Reembolso_KM_{cliente_selecionado}_{aba_mes_selecionada}.pdf"
@@ -314,8 +305,9 @@ if "km_pdf_p04" in st.session_state:
     with col_dl1:
         st.download_button(label="📥 **BAIXAR RELATÓRIO PDF**", data=st.session_state["km_pdf_p04"], file_name=n_pdf, mime="application/pdf", use_container_width=True)
     with col_dl2:
-        st.download_button(label="📥 **BAIXAR PLANILHA EM EXCEL**", data=st.session_state["km_xlsx_p04"], file_name=n_xlsx, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+        st.download_button(label="📥 **BAIXAR PLANILHA EXCEL**", data=st.session_state["km_xlsx_p04"], file_name=n_xlsx, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
+# GATILHO FIXO E ALINHADO PARA O DISPARO SMTP DO FECHAMENTO MENSAL
 st.markdown("---")
 
 @st.dialog("Confirmação de Envio por E-mail")
@@ -328,18 +320,19 @@ def confirmar_envio_km_popup():
             with st.spinner("Disparando e-mail corporativo..."):
                 if "km_pdf_p04" in st.session_state:
                     ok, msg = enviar_email_reembolso_km(email_target, cliente_selecionado, st.session_state["km_pdf_p04"], st.session_state["km_xlsx_p04"], f"Reembolso_KM_{cliente_selecionado}.pdf", f"Reembolso_KM_{cliente_selecionado}.xlsx")
-                    if ok:
-                        st.success(msg)
-                        st.balloons()
-                        time.sleep(4)
-                    else: st.error(msg)
-                else:
-                    st.error("Gere o relatório na tela primeiro antes de disparar.")
-            st.rerun()
-    with cp2:
-        if st.button("Não, Cancelar", use_container_width=True): 
-            st.rerun()
+                if ok:
+                    st.success(msg)
+                    st.balloons()
+                    time.sleep(4)
+                else: 
+                    st.error(msg)
+                st.rerun()
+        with cp2:
+            if st.button("Não, Cancelar", use_container_width=True): 
+                st.rerun()
 
 if st.button("🚀 **ENVIAR REEMBOLSO POR E-MAIL**", type="primary", use_container_width=True):
-    if not email_target: st.error("Insira um endereço de e-mail válido.")
-    else: confirmar_envio_km_popup()
+    if not email_target: 
+        st.error("Insira um endereço de e-mail válido.")
+    else: 
+        confirmar_envio_km_popup()
