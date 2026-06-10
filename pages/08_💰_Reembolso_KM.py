@@ -170,6 +170,7 @@ def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf
         return False, f"Falha no envio: {str(e)}"
 
 # --- 6. GERAÇÃO E PROCESSAMENTO EM CÓDIGO ---
+# --- 6. GERAÇÃO E PROCESSAMENTO EM CÓDIGO ---
 if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -183,9 +184,9 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 df_dados = df_dados.reset_index(drop=True)
                 df_dados.columns = df_dados.columns.str.strip()
                 
-                # CORREÇÃO CRUCIAL: Aponta para o nome correto da coluna mestre com acentuação
+                # MAPEAMENTO CIRÚRGICO CONFORME AS SUAS COLUNAS REAIS
                 col_cliente = "CLIENTE"
-                col_situacao = "SITUAÇÃO"
+                col_situacao = "SITUACAO_RA"
                 col_ra = "RA"
                 col_km_d = "KM_D"
                 col_data = "DATA"
@@ -197,11 +198,12 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 atendimentos_km = df_dados[
                     (df_dados[col_cliente] == cliente_selecionado) & 
                     (df_dados[col_situacao] == "Em Elaboração") & 
+                    (df_dados[col_ra].notna()) & 
                     (df_dados[col_km_d].notna()) & (df_dados[col_km_d] > 0)
                 ].copy()
                 
                 if atendimentos_km.empty:
-                    st.warning(f"⚠️ Nenhum lançamento ativo localizado para '{cliente_selecionado}' nesta aba.")
+                    st.warning(f"⚠️ Nenhum lançamento ativo em elaboração com KM_D preenchido foi localizado para '{cliente_selecionado}' na aba '{aba_mes_selecionada}'.")
                 else:
                     atendimentos_km[col_data] = pd.to_datetime(atendimentos_km[col_data], errors='coerce')
                     atendimentos_km = atendimentos_km.sort_values(by=col_data).reset_index(drop=True)
@@ -266,7 +268,8 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.set_y(58); pdf.set_x(15)
                     pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 7)
                     
-                    h_widths = [15, 25, 43, 43, 14, 12, 14, 14]
+                    # CORREÇÃO: Larguras proporcionais exatas das colunas para fechar a largura da página A4
+                    h_widths = [16, 22, 38, 38, 14, 12, 18, 22]
                     for idx_h, txt in enumerate(headers): pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
                     
                     pdf.set_font("Arial", "", 6.5)
@@ -276,11 +279,11 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                             pdf.cell(h_widths[col_i], 6, str(val), border=1, align="C")
                         pdf.ln(6)
                         
-                    pdf.set_x(15); pdf.set_font("Arial", "B", 7)
-                    pdf.cell(15, 6, "TOTAL KM", border=1, align="C", fill=True)
-                    pdf.cell(25, 6, f"{t_km:.0f}", border=1, align="C")
-                    pdf.cell(43, 6, "VALOR TOTAL", border=1, align="C", fill=True)
-                    pdf.cell(43, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
+                    pdf.set_y(pdf.get_y() + 2); pdf.set_x(15); pdf.set_font("Arial", "B", 7)
+                    pdf.cell(16, 6, "TOTAL KM", border=1, align="C", fill=True)
+                    pdf.cell(22, 6, f"{t_km:.0f} KM", border=1, align="C")
+                    pdf.cell(38, 6, "VALOR TOTAL", border=1, align="C", fill=True)
+                    pdf.cell(38, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
                     
                     st.session_state["km_pdf_p04"] = pdf.output(dest="S").encode("latin1")
                     st.success("✨ Documentos estruturados com sucesso!")
@@ -299,7 +302,6 @@ if "km_pdf_p04" in st.session_state:
     with col_dl2:
         st.download_button(label="📥 **BAIXAR PLANILHA EXCEL**", data=st.session_state["km_xlsx_p04"], file_name=n_xlsx, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
-# CORREÇÃO CRUCIAL: Isola e deixa a caixa de disparo de e-mail fixa e visível na interface principal
 st.markdown("---")
 
 @st.dialog("Confirmação de Envio por E-mail")
