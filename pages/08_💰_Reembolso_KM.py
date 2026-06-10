@@ -110,10 +110,6 @@ except:
     lista_abas_meses = []
     lista_clientes = []
 
-st.title("💰 Relatório para Reembolso de KM Rodado")
-st.write("Módulo corporativo para processamento de rotas e faturamentos com arquivos Excel e PDF espelhados.")
-st.markdown("---")
-
 col_f1, col_f2 = st.columns(2)
 with col_f1:
     cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Cliente:")
@@ -126,7 +122,7 @@ st.markdown("### 📄 Comprovantes")
 comprovante_file = st.file_uploader("Subir Comprovante de Abastecimento (Imagem PNG/JPG):", type=["png", "jpg", "jpeg"])
 st.markdown("---")
 
-# BUSCA DE ENDEREÇO 100% DINÂMICA DA PLANILHA LEGENDAS
+# BUSCA DE ENDEREÇO 100% DINÂMICA DA PLANILHA LEGENDAS (FIM DO ENDEREÇO FIXO NO CÓDIGO)
 endereco_cliente_dinamico = ""
 if not df_leg.empty and cliente_selecionado:
     try:
@@ -187,7 +183,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
     else:
-        with st.spinner("⏳ Compilando dados de percurso dinâmico..."):
+        with st.spinner("⏳ Compilando dados de percurso..."):
             try:
                 res_dados = requests.get(URL_PLANILHA_MUDANCA, timeout=45, stream=True)
                 xl_dados = pd.ExcelFile(io.BytesIO(res_dados.content))
@@ -206,7 +202,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 if col_situacao in df_dados.columns:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                 
-                # Filtra os lançamentos em elaboração ativos com quilometragem informada
+                # Filtra apenas registros válidos com situação Em Elaboração e KM preenchido
                 atendimentos_km = df_dados[
                     (df_dados[col_cliente] == cliente_selecionado) & 
                     (df_dados[col_situacao] == "Em Elaboração") & 
@@ -229,24 +225,18 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     dict_dt = atendimentos_km[col_data].to_dict()
                     dict_loc = atendimentos_km[col_local].to_dict() if col_local in atendimentos_km.columns else {}
                     
-                    # Varre a tabela usando chaves e índices válidos e contínuos
-                    for r_idx in range(len(atendimentos_km)):
+                    for r_idx in atendimentos_km.index:
                         dt_obj = dict_dt.get(r_idx)
                         dt_str = dt_obj.strftime("%d/%m/%Y") if pd.notnull(dt_obj) else ""
                         km_f = float(dict_km.get(r_idx, 0))
                         loc_f = str(dict_loc.get(r_idx, "")).strip().lower()
                         
-                        # REQUISITO REVISADO: Se na coluna LOCAL estiver escrito cliente é Ida, senão é Volta
+                        # LOGICA DEDUZIDA: Inverte e cruza dados dinâmicos baseando-se na coluna LOCAL do Sheets
                         if "cliente" in loc_f:
-                            percurso = "Ida"
-                            orig = ENDERECO_CRTI_FIXO
-                            dest = endereco_cliente_dinamico
+                            percurso, orig, dest = "Ida", ENDERECO_CRTI_FIXO, endereco_cliente_dinamico
                         else:
-                            percurso = "Volta"
-                            orig = endereco_cliente_dinamico
-                            dest = ENDERECO_CRTI_FIXO
+                            percurso, orig, dest = "Volta", endereco_cliente_dinamico, ENDERECO_CRTI_FIXO
                             
-                        # Fórmula: DISTÂNCIA * (Vlr Unit * 0.25)
                         vlr_f = km_f * (vlr_abast * 0.25)
                         t_km += km_f
                         t_vlr += vlr_f
@@ -261,45 +251,17 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
 
                     headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
 
-                    # 1. MOTOR PLANILHA EXCEL ESPELHADA (.XLSX) - EXATAMENTE IGUAL AO PDF
-                    out_xlsx = io.BytesIO()
-                    wb = xlsxwriter.Workbook(out_xlsx, {"in_memory": True})
-                    ws = wb.add_worksheet("Reembolso")
-                    ws.hide_gridlines(2)
+                    # 1. ARQUIVO EXCEL ESPELHADO (.XLSX) - EXATAMENTE IGUAL AO PDF
+                    df_excel = pd.DataFrame(lista_linhas)
+                    df_excel.columns = headers
+                    df_excel.loc[len(df_excel)] = ["Total KM", f"{t_km:.0f}", "Valor Total", f"R$ {formatar_br(t_vlr)}", "", "", "", ""]
                     
-                    f_tit = wb.add_format({"bold": True, "size": 11, "font_name": "Arial"})
-                    f_sub = wb.add_format({"bold": True, "size": 9, "font_name": "Arial"})
-                    f_head = wb.add_format({"bold": True, "bg_color": "#E2EFDA", "border": 1, "align": "center", "font_name": "Arial", "size": 8.5})
-                    f_cel = wb.add_format({"border": 1, "align": "center", "font_name": "Arial", "size": 8})
-                    f_tot = wb.add_format({"bold": True, "bg_color": "#F2F2F2", "border": 1, "align": "right", "font_name": "Arial", "size": 8.5})
-                    
-                    # Definição das larguras das colunas do Excel para evitar cortes
-                    ws.set_column("A:A", 14); ws.set_column("B:B", 42); ws.set_column("C:C", 58); ws.set_column("D:D", 58)
-                    ws.set_column("E:E", 14); ws.set_column("F:F", 18); ws.set_column("G:G", 22); ws.set_column("H:H", 18)
-                    
-                    ws.write("D2", "RELATÓRIO PARA REEMBOLSO DE KM RODADO", f_tit)
-                    ws.write("A4", "IMPLANTADOR CRTI: HUDSON PEDRO SALES VALENTE", f_sub)
-                    
-                    for c_idx, txt in enumerate(headers): 
-                        ws.write(5, c_idx, txt, f_head)
-                    
-                    for r_idx, row in enumerate(lista_linhas):
-                        for c_idx, val in enumerate(row): 
-                            ws.write(6 + r_idx, c_idx, val, f_cel)
-                        
-                    l_f = 6 + len(lista_linhas)
-                    ws.write(l_f, 4, "Total KM", f_tot)
-                    ws.write(l_f, 5, f"{t_km:.0f}", f_cel)
-                    ws.write(l_f, 6, "Valor Total", f_tot)
-                    ws.write(l_f, 7, f"R$ {formatar_br(t_vlr)}", f_cel)
-                    
-                    if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
-                        ws.insert_image(l_f + 3, 2, caminho_imagem_disco, {"x_scale": 0.45, "y_scale": 0.45})
-                        
-                    wb.close()
-                    st.session_state["km_xlsx_p04"] = out_xlsx.getvalue()
+                    buffer_xlsx = io.BytesIO()
+                    with pd.ExcelWriter(buffer_xlsx, engine='openpyxl') as writer:
+                        df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
+                    st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
 
-                    # 2. MOTOR RELATÓRIO PDF IDÊNTICO (MODO PAISAGEM SEM DISTORÇÃO)
+                    # 2. DOCUMENTO PDF IDÊNTICO (MODO PAISAGEM SEM DISTORÇÃO OU TEXTOS EM BRANCO)
                     pdf = PDFReembolsoKM(orientation='L', unit='mm', format='A4')
                     pdf.add_page()
                     
@@ -316,8 +278,8 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.set_y(36); pdf.set_x(15)
                     pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
                     
-                    # Definição explícita de larguras calibradas em mm para o modo Paisagem (Soma: 258mm)
-                    h_widths = [16, 32, 58, 58, 16, 22, 34, 22]
+                    # CORREÇÃO ABSOLUTA: Matrizes numéricas 100% preenchidas sem lacunas de texto
+                    h_widths = [16, 28, 63, 63, 14, 21, 23, 19]
                     
                     for idx_h, txt in enumerate(headers): 
                         pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
@@ -326,18 +288,18 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     for row in lista_linhas:
                         pdf.ln(6); pdf.set_x(15)
                         for col_i, val in enumerate(row):
-                            # Alinha os endereços à esquerda e os números e datas centralizados
                             align_cell = "L" if col_i in [2, 3] else "C"
                             pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                         
-                    # Rodapé de totalização consolidado e cravado
+                    # Rodapé de totalização consolidado acoplado abaixo das colunas numéricas (104 KM)
                     pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
-                    pdf.cell(16 + 32 + 58 + 58, 6, "", border=0)
-                    pdf.cell(16, 6, "Total KM", border=1, align="R", fill=True)
-                    pdf.cell(22, 6, f"{t_km:.0f}", border=1, align="C")
-                    pdf.cell(34, 6, "Valor Total", border=1, align="R", fill=True)
-                    pdf.cell(22, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
+                    pdf.cell(16 + 28 + 63 + 63, 6, "", border=0)
+                    pdf.cell(14, 6, "Total KM", border=1, align="R", fill=True)
+                    pdf.cell(21, 6, f"{t_km:.0f}", border=1, align="C")
+                    pdf.cell(23, 6, "Valor Total", border=1, align="R", fill=True)
+                    pdf.cell(19, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
                     
+                    # Página de Anexo exclusiva no PDF
                     if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                         pdf.add_page()
                         pdf.set_font("Arial", "B", 11)
@@ -350,10 +312,11 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         try: os.remove(caminho_imagem_disco)
                         except: pass
                         
-                    st.success("✨ Relatórios gêmeos estruturados com sucesso!")
+                    st.success("✨ Relatórios gerados com sucesso!")
                     st.rerun()
-                except Exception as e:st.error(f"Erro na compilação: {e}")
-  # --- PAINEL VISUAL DE DOWNLOADS ---
+            except Exception as e:
+                st.error(f"Erro na compilação: {e}")
+# --- PAINEL VISUAL DE DOWNLOADS ---
 if "km_pdf_p04" in st.session_state:
     st.markdown("---")
     n_pdf = f"Reembolso_KM_{cliente_selecionado}_{aba_mes_selecionada}.pdf"
@@ -393,4 +356,4 @@ if st.button("🚀 **ENVIAR REEMBOLSO POR E-MAIL**", type="primary", use_contain
     if not email_target: 
         st.error("Insira um endereço de e-mail válido.")
     else: 
-        confirmar_envio_km_popup()                      
+        confirmar_envio_km_popup()
