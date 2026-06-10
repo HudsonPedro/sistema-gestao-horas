@@ -110,6 +110,7 @@ except:
     lista_abas_meses = []
     lista_clientes = []
 
+st.markdown("### ⚙️ Seletores de Referência")
 col_f1, col_f2 = st.columns(2)
 with col_f1:
     cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Cliente:")
@@ -122,27 +123,36 @@ st.markdown("### 📄 Comprovantes")
 comprovante_file = st.file_uploader("Subir Comprovante de Abastecimento (Imagem PNG/JPG):", type=["png", "jpg", "jpeg"])
 st.markdown("---")
 
-endereco_cliente_sugerido = "Rua Pascoal Carignano, 675 - Ferraria, Campo Largo"
+# CORREÇÃO ABSOLUTA: Puxa o endereço dinâmico real e remove a string fixa que travava o Campo Largo
+endereco_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     try:
-        solicitantes_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Endereco"].dropna()
-        if not solicitantes_df.empty:
-            texto_cru = str(solicitantes_df.to_list()).strip()
-            endereco_cliente_sugerido = texto_cru.replace("['", "").replace("']", "").replace("[", "").replace("]", "")
-    except: pass
+        # Filtra a aba Legendas buscando a coluna 'Endereco' exata do cliente selecionado
+        dados_cliente = df_leg[df_leg["Clientes"] == cliente_selecionado]
+        if not dados_cliente.empty and "Endereco" in df_leg.columns:
+            # Captura o primeiro valor do vetor e converte em string crua limpa
+            endereco_cliente_sugerido = str(dados_cliente["Endereco"].values[0]).strip()
+    except Exception as e:
+        endereco_cliente_sugerido = f"Erro ao carregar endereço: {str(e)}"
+
+# Fallback de segurança caso a célula da planilha mestre esteja em branco
+if not endereco_cliente_sugerido or endereco_cliente_sugerido.lower() == "nan":
+    endereco_cliente_sugerido = "Endereço não cadastrado na aba Legendas"
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     try:
-        sol_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
-        if not sol_df.empty: 
-            gerente_cliente_sugerido = str(sol_df.to_list()).strip().replace("['", "").replace("']", "").replace("[", "").replace("]", "")
+        if "Solicitante1" in df_leg.columns:
+            sol_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
+            if not sol_df.empty: 
+                gerente_cliente_sugerido = str(sol_df.values[0]).strip()
     except: pass
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
 data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
 meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de {data_emissao.year}"
+
 # --- FUNÇÃO DE DISPARO SMTP PADRÃO DA PRODUÇÃO ---
 def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf, n_xlsx):
     e_remetente = st.secrets["smtp"]["usuario"]
@@ -177,11 +187,12 @@ def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf
 
 # --- 6. GERAÇÃO DO LAYOUT IDENTICO AO MODELO SOLICITADO ---
 # --- 6. GERAÇÃO E PROCESSAMENTO EM CÓDIGO ---
+# --- 6. GERAÇÃO E PROCESSAMENTO DINÂMICO ---
 if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
     else:
-        with st.spinner("⏳ Compilando dados de percurso dinâmico..."):
+        with st.spinner("⏳ Processando dados de percurso dinâmico..."):
             try:
                 res_dados = requests.get(URL_PLANILHA_MUDANCA, timeout=45, stream=True)
                 xl_dados = pd.ExcelFile(io.BytesIO(res_dados.content))
@@ -200,7 +211,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 if col_situacao in df_dados.columns:
                     df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
                 
-                # Filtra os lançamentos válidos com KM_D maior que zero e situação em Elaboração
+                # Filtra apenas registros válidos com situação Em Elaboração e KM ativo
                 atendimentos_km = df_dados[
                     (df_dados[col_cliente] == cliente_selecionado) & 
                     (df_dados[col_situacao] == "Em Elaboração") & 
@@ -209,8 +220,9 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 ].copy()
                 
                 if atendimentos_km.empty:
-                    st.warning(f"⚠️ Nenhum lançamento ativo em elaboração com KM_D preenchido foi localizado para o cliente '{cliente_selecionado}'.")
+                    st.warning(f"⚠️ Nenhum lançamento ativo em elaboração com KM_D preenchido foi localizado para o cliente '{cliente_selecionado}' na aba '{aba_mes_selecionada}'.")
                 else:
+                    atendimentos_km = atendimentos_km.reset_index(drop=True)
                     atendimentos_km[col_data] = pd.to_datetime(atendimentos_km[col_data], errors='coerce')
                     atendimentos_km = atendimentos_km.sort_values(by=col_data).reset_index(drop=True)
                     
@@ -226,10 +238,10 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         dt_obj = dict_dt.get(idx)
                         dt_str = dt_obj.strftime("%d/%m/%Y") if pd.notnull(dt_obj) else ""
                         km_f = float(dict_km.get(idx, 0))
-                        loc_celula = str(dict_loc.get(idx, "")).strip().lower()
+                        loc_f = str(dict_loc.get(idx, "")).strip().lower()
                         
-                        # REQUISITO EXATO: Decide e inverte a rota com base na coluna LOCAL da planilha mestre
-                        if "cliente" in loc_celula:
+                        # LOGICA DINÂMICA: Descobre se é Ida ou Volta analisando a coluna LOCAL de cada linha da planilha
+                        if "cliente" in loc_f:
                             percurso = "Ida"
                             orig = ENDERECO_CRTI_FIXO
                             dest = endereco_cliente_sugerido
@@ -254,7 +266,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
                     st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
 
-                    # 2. DOCUMENTO PDF IDÊNTICO (MODO PAISAGEM / LANDSCAPE)
+                    # 2. DOCUMENTO PDF IDÊNTICO EM MODO PAISAGEM
                     pdf = PDFReembolsoKM(orientation='L', unit='mm', format='A4')
                     pdf.add_page()
                     
@@ -272,7 +284,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
                     
                     headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
-                    h_widths = [16, 28, 63, 63, 14, 21, 23, 19]
+                    h_widths = [16, 28, 63, 63, 14, 21, 23, 19] # Distribuição exata que fecha os 247mm úteis da folha deitada
                     
                     for idx_h, txt in enumerate(headers): 
                         pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
@@ -284,7 +296,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                             align_cell = "L" if col_i in [2, 3] else "C"
                             pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                         
-                    # Rodapé de totalização consolidado deslocado para as posições corretas
+                    # Rodapé de totalização consolidado acoplado abaixo das colunas numéricas (Acomoda os 104 KM)
                     pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
                     pdf.cell(16 + 28 + 63 + 63, 6, "", border=0)
                     pdf.cell(14, 6, "Total KM", border=1, align="R", fill=True)
@@ -309,11 +321,10 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         try: os.remove(caminho_imagem_disco)
                         except: pass
                         
-                    st.success("✨ Relatórios gerados idênticos com sucesso!")
+                    st.success("✨ Relatórios gerados com sucesso!")
                     st.rerun()
             except Exception as e:
                 st.error(f"Erro na compilação: {e}")
-
 # --- PAINEL VISUAL DE DOWNLOADS DA SESSÃO ---
 if "km_pdf_p04" in st.session_state:
     st.markdown("---")
