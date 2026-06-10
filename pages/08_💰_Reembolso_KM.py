@@ -110,7 +110,7 @@ except:
     lista_abas_meses = []
     lista_clientes = []
 
-# TÍTULO FIXADO NO TOPO ABSOLUTO DA TELA
+# TÍTULO FIXADO NO TOPO ABSOLUTO DA INTERFACE
 st.title("💰 Relatório para Reembolso de KM Rodado")
 st.markdown("---")
 
@@ -130,11 +130,11 @@ if not df_leg.empty and cliente_selecionado:
     try:
         linha_c = df_leg[df_leg["Clientes"] == cliente_selecionado]
         if not linha_c.empty and "Endereco" in df_leg.columns:
-            endereco_cliente_map = str(linha_c["Endereco"].values[0]).strip().replace("['", "").replace("']", "")
+            endereco_cliente_map = str(linha_c["Endereco"].values[0]).strip()
         
         linha_crti = df_leg[df_leg["Clientes"].astype(str).str.contains("CRTI", case=False, na=False)]
         if not linha_crti.empty and "Endereco" in df_leg.columns:
-            endereco_crti_erp_map = str(linha_crti["Endereco"].values[0]).strip().replace("['", "").replace("']", "")
+            endereco_crti_erp_map = str(linha_crti["Endereco"].values[0]).strip()
     except:
         pass
 
@@ -158,7 +158,7 @@ if not df_leg.empty and cliente_selecionado:
     try:
         if "Solicitante1" in df_leg.columns:
             sol_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
-            if not sol_df.empty: gerente_cliente_sugerido = str(sol_df.values[0]).strip().replace("['", "").replace("']", "")
+            if not sol_df.empty: gerente_cliente_sugerido = str(sol_df.values[0]).strip()
     except: pass
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
@@ -211,7 +211,7 @@ if cliente_selecionado and aba_mes_selecionada:
         col_situacao = "SITUACAO_RA"
         col_km_d = "KM_D"
         col_data = "DATA"
-        col_idavolta_planilha = "IDA_VOLTA" # REQUISITO ATUALIZADO: Coluna AD mestre do Sheets
+        col_idavolta_planilha = "IDA_VOLTA"
         
         if col_situacao in df_dados.columns:
             df_dados[col_situacao] = df_dados[col_situacao].astype(str).str.strip()
@@ -226,18 +226,12 @@ if cliente_selecionado and aba_mes_selecionada:
             atendimentos_filtrados[col_data] = pd.to_datetime(atendimentos_filtrados[col_data], errors='coerce')
             atendimentos_filtrados = atendimentos_filtrados.sort_values(by=col_data)
             
-            # Varre usando os índices físicos originais da filtragem para evitar saltos na tabela
             for idx in atendimentos_filtrados.index:
                 dt_obj = atendimentos_filtrados.loc[idx, col_data]
                 dt_str = dt_obj.strftime("%d/%m/%Y") if pd.notnull(dt_obj) else ""
                 km_f = float(atendimentos_filtrados.loc[idx, col_km_d])
-                
-                # CORREÇÃO DINÂMICA TOTAL: Lê a coluna AD (IDA_VOLTA) de cada linha, limpa espaços e joga para maiúsculo
                 celula_ad = str(atendimentos_filtrados.loc[idx, col_idavolta_planilha]).strip().upper() if col_idavolta_planilha in atendimentos_filtrados.columns else ""
                 
-                # REQUISITO EXATO SOLICITADO NO SEU RASCUNHO VISUAL:
-                # Se na coluna AD estiver escrito 'IDA' -> Rota Ida (Origem = CRTI, Destino = Cliente)
-                # Se na coluna AD estiver escrito 'VOLTA' -> Rota Volta (Origem = Cliente, Destino = CRTI)
                 if "IDA" in celula_ad:
                     percurso_linha = "Ida"
                     origem_linha = end_crti_input
@@ -280,16 +274,54 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
 
                 headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
 
-                # 1. PLANILHA EXCEL ESPELHADA (.XLSX) - EXATAMENTE IGUAL AO PDF
-                df_excel = pd.DataFrame(lista_linhas_preview, columns=headers)
-                df_excel.loc[len(df_excel)] = ["Total KM", f"{t_km_acumulado:.0f}", "Valor Total", f"R$ {formatar_br(t_vlr_acumulado)}", "", "", "", ""]
+                # 1. PLANILHA EXCEL ESPELHADA (.XLSX) - DESIGN RECONSTRUÍDO IDÊNTICO AO PDF
+                out_xlsx = io.BytesIO()
+                wb = xlsxwriter.Workbook(out_xlsx, {"in_memory": True})
+                ws = wb.add_worksheet("Reembolso")
+                ws.hide_gridlines(2) # Remove as linhas cinzas nativas para ficar limpo igual ao PDF
                 
-                buffer_xlsx = io.BytesIO()
-                with pd.ExcelWriter(buffer_xlsx, engine='openpyxl') as writer:
-                    df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
-                st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
+                f_tit = wb.add_format({"bold": True, "size": 11, "font_name": "Arial"})
+                f_sub = wb.add_format({"bold": True, "size": 9, "font_name": "Arial"})
+                f_head = wb.add_format({"bold": True, "bg_color": "#E2EFDA", "border": 1, "align": "center", "font_name": "Arial", "size": 8.5})
+                f_cel = wb.add_format({"border": 1, "align": "center", "font_name": "Arial", "size": 8})
+                f_cel_l = wb.add_format({"border": 1, "align": "left", "font_name": "Arial", "size": 8})
+                f_tot = wb.add_format({"bold": True, "bg_color": "#F2F2F2", "border": 1, "align": "right", "font_name": "Arial", "size": 8.5})
+                
+                # REQUISITO EXATO: Colunas com larguras responsivas que se adaptam sozinhas ao nome do cliente
+                ws.set_column("A:A", 14)
+                ws.set_column("B:B", max(35, len(cliente_selecionado) + 5))
+                ws.set_column("C:C", 52)
+                ws.set_column("D:D", 52)
+                ws.set_column("E:E", 14)
+                ws.set_column("F:F", 18)
+                ws.set_column("G:G", 22)
+                ws.set_column("H:H", 18)
+                
+                ws.write("D2", "RELATÓRIO PARA REEMBOLSO DE KM RODADO", f_tit)
+                ws.write("A4", f"IMPLANTADOR CRTI: HUDSON PEDRO SALES VALENTE", f_sub)
+                
+                for c_idx, txt in enumerate(headers): 
+                    ws.write(5, c_idx, txt, f_head)
+                
+                for r_idx, row in enumerate(lista_linhas_preview):
+                    for c_idx, val in enumerate(row):
+                        fmt_c = f_cel_l if c_idx in [1, 2, 3] else f_cel
+                        ws.write(6 + r_idx, c_idx, val, fmt_c)
+                    
+                # REQUISITO EXATO: Totalizadores acoplados e cravados abaixo das colunas numéricas corretas no Excel
+                l_f = 6 + len(lista_linhas_preview)
+                ws.write(l_f, 4, "Total KM", f_tot)
+                ws.write(l_f, 5, f"{t_km_acumulado:.0f}", f_cel)
+                ws.write(l_f, 6, "Valor Total", f_tot)
+                ws.write(l_f, 7, f"R$ {formatar_br(t_vlr_acumulado)}", f_cel)
+                
+                if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
+                    ws.insert_image(l_f + 3, 2, caminho_imagem_disco, {"x_scale": 0.45, "y_scale": 0.45})
+                    
+                wb.close()
+                st.session_state["km_xlsx_p04"] = out_xlsx.getvalue()
 
-                # 2. RELATÓRIO PDF IDÊNTICO EM MODO PAISAGEM
+                # 2. RELATÓRIO PDF IDÊNTICO EM MODO PAISAGEM (DINÂMICO)
                 pdf = PDFReembolsoKM(orientation='L', unit='mm', format='A4')
                 pdf.add_page()
                 
@@ -306,8 +338,8 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 pdf.set_y(36); pdf.set_x(15)
                 pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
                 
-                # Definição das larguras exatas fixadas (Soma total: 258mm)
-                h_widths = [16, 28, 63, 63, 14, 21, 34, 19]
+                # Definição das larguras exatas fixadas para o PDF fechar os 258mm
+                h_widths = [16, 32, 58, 58, 16, 22, 34, 22]
                 
                 for idx_h, txt in enumerate(headers): 
                     pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
@@ -316,17 +348,16 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 for row in lista_linhas_preview:
                     pdf.ln(6); pdf.set_x(15)
                     for col_i, val in enumerate(row):
-                        # Alinha os locais (2 e 3) e o cliente (1) à esquerda, o resto centraliza
                         align_cell = "L" if col_i in [1, 2, 3] else "C"
                         pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                     
-                # Rodapé de totalização consolidado e cravado
+                # Rodapé de totalização consolidado e cravado no PDF
                 pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
-                pdf.cell(16 + 28 + 63 + 63, 6, "", border=0)
-                pdf.cell(14, 6, "Total KM", border=1, align="R", fill=True)
-                pdf.cell(21, 6, f"{t_km_acumulado:.0f}", border=1, align="C")
+                pdf.cell(16 + 32 + 58 + 58, 6, "", border=0)
+                pdf.cell(16, 6, "Total KM", border=1, align="R", fill=True)
+                pdf.cell(22, 6, f"{t_km_acumulado:.0f}", border=1, align="C")
                 pdf.cell(34, 6, "Valor Total", border=1, align="R", fill=True)
-                pdf.cell(19, 6, f"R$ {formatar_br(t_vlr_acumulado)}", border=1, align="C")
+                pdf.cell(22, 6, f"R$ {formatar_br(t_vlr_acumulado)}", border=1, align="C")
                 
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                     pdf.add_page()
