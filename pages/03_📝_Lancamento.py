@@ -210,7 +210,7 @@ with st.form("form_lancamento", clear_on_submit=True):
         descricao_p = st.text_input("DESCRICAO(Pendência)")
         responsavel_p = st.selectbox("RESPONSÁVEL(Pendência)", [" ","Cliente", "CRTI"])
         status_p = st.selectbox("STATUS(Pendência)", [" ", "Pendente", "Realizado"])
-        ida_volta = st.selectbox("IDA/VOLTA", [" ", "Ida", "Volta"])
+        ida_volta = st.selectbox("IDA/VOLTA(Reemb. KM)", [" ", "Ida", "Volta"])
            
     st.markdown("---")
     observacoes = st.text_area("OBSERVAÇÕES")
