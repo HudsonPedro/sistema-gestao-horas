@@ -180,6 +180,7 @@ def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf
         return False, f"Falha no envio: {str(e)}"
 
 # --- GERAÇÃO E PROCESSAMENTO DINÂMICO ---
+# --- 6. GERAÇÃO E PROCESSAMENTO DINÂMICO ---
 if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_container_width=True):
     if not cliente_selecionado:
         st.warning("Selecione um cliente válido.")
@@ -223,13 +224,12 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     dict_km = atendimentos_km[col_km_d].to_dict()
                     dict_dt = atendimentos_km[col_data].to_dict()
                     
-                    # O laço itera de forma contínua acumulando os valores corretamente
+                    # Percorre o dataframe acumulando o KM real de todas as linhas de forma contínua
                     for r_idx, idx in enumerate(atendimentos_km.index):
                         dt_obj = dict_dt.get(idx)
                         dt_str = dt_obj.strftime("%d/%m/%Y") if pd.notnull(dt_obj) else ""
                         km_f = float(dict_km.get(idx, 0))
                         
-                        # Regra mestre de alternância baseada na posição física da linha filtrada
                         if r_idx % 2 == 0:
                             percurso, orig, dest = "Ida", ENDERECO_CRTI_FIXO, endereco_cliente_sugerido
                         else:
@@ -241,7 +241,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         
                         lista_linhas.append([dt_str, cliente_selecionado, orig, dest, percurso, f"{km_f:.0f}", f"R$ {formatar_br(vlr_abast)}", f"R$ {formatar_br(vlr_f)}"])
 
-                    # 1. CONSTRUTOR EXCEL ESPELHADO (.XLSX)
+                    # 1. CONSTRUTOR EXCEL (.XLSX) ESPELHADO COM MESMO PADRÃO
                     df_excel = pd.DataFrame(lista_linhas)
                     df_excel.columns = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
                     df_excel.loc[len(df_excel)] = ["Total KM", f"{t_km:.0f}", "Valor Total", f"R$ {formatar_br(t_vlr)}", "", "", "", ""]
@@ -251,54 +251,52 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
                     st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
 
-                    # 2. CONSTRUTOR PDF IDÊNTICO COM PROPORÇÃO DE MARGENS RECALCULADA
-                    pdf = PDFReembolsoKM()
+                    # 2. CONSTRUTOR PDF (MUDANÇA CRUCIAL: 'L' ATIVA A ORIENTAÇÃO PAISAGEM / LANDSCAPE)
+                    pdf = PDFReembolsoKM(orientation='L', unit='mm', format='A4')
                     pdf.add_page()
                     
                     ARQUIVO_LOGO = "crti.jpg"
                     if os.path.exists(ARQUIVO_LOGO):
-                        pdf.image(ARQUIVO_LOGO, x=15, y=10, w=32)
+                        pdf.image(ARQUIVO_LOGO, x=15, y=10, w=35)
                     
-                    pdf.set_font("Arial", "B", 11)
+                    pdf.set_font("Arial", "B", 12)
                     pdf.set_text_color(0, 0, 0)
-                    pdf.text(100, 16, "RELATÓRIO PARA REEMBOLSO DE KM RODADO")
+                    pdf.text(120, 16, "RELATÓRIO PARA REEMBOLSO DE KM RODADO")
                     
-                    pdf.set_font("Arial", "B", 8)
-                    pdf.text(15, 30, "IMPLANTADOR CRTI: HUDSON PEDRO SALES VALENTE")
+                    pdf.set_font("Arial", "B", 9)
+                    pdf.text(15, 32, "IMPLANTADOR CRTI: HUDSON PEDRO SALES VALENTE")
                     
-                    pdf.set_y(34); pdf.set_x(15)
-                    pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 6.5)
+                    pdf.set_y(36); pdf.set_x(15)
+                    pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 7.5)
                     
                     headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
-                    # DIMENSÕES CORRIGIDAS: Larguras perfeitas em mm para fechar as margens da folha sem estourar para o lado
-                    h_widths = [15, 28, 41, 41, 13, 14, 15, 13]
+                    # LARGURAS EXPANDIDAS: Aproveita os 260mm do modo Paisagem para dar espaço de sobra aos endereços
+                    h_widths = [20, 35, 62, 62, 18, 21, 23, 19]
                     
                     for idx_h, txt in enumerate(headers): 
                         pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
                     
-                    pdf.set_font("Arial", "", 5.5)
+                    pdf.set_font("Arial", "", 7.0)
                     for row in lista_linhas:
                         pdf.ln(6); pdf.set_x(15)
                         for col_i, val in enumerate(row):
                             align_cell = "L" if col_i in [2, 3] else "C"
                             pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                         
-                    # Rodapé de totalização consolidado e cravado com os 104 KM acumulados
-                    pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 6.5)
-                    pdf.cell(15 + 28 + 41, 6, "", border=0) # Pula Data, Cliente e Origem
-                    pdf.cell(41, 6, "Total KM", border=1, align="R", fill=True)
-                    pdf.cell(13, 6, f"{t_km:.0f}", border=1, align="C")
-                    pdf.cell(14, 6, "", border=0) # Pula Vlr Unit
-                    pdf.cell(15, 6, "Valor Total", border=1, align="R", fill=True)
-                    pdf.cell(13, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
+                    # CORREÇÃO ABSOLUTA: Alinha os blocos de totais e crava os 104 KM acumulados reais
+                    pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
+                    pdf.cell(20 + 35 + 62 + 62, 6, "", border=0) # Pula Data, Cliente, Origem e Destino
+                    pdf.cell(18, 6, "Total KM", border=1, align="R", fill=True)
+                    pdf.cell(21, 6, f"{t_km:.0f}", border=1, align="C")
+                    pdf.cell(23, 6, "Valor Total", border=1, align="R", fill=True)
+                    pdf.cell(19, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
                     
                     st.session_state["km_pdf_p04"] = pdf.output(dest="S").encode("latin1")
-                    st.success("✨ Relatório gerado com sucesso!")
+                    st.success("✨ Relatório gerado em modo Paisagem com sucesso!")
                     st.rerun()
             except Exception as e:
                 st.error(f"Erro na compilação: {e}")
-
-# --- PAINEL VISUAL DE DOWNLOADS ---
+# --- PAINEL VISUAL DE DOWNLOADS DA SESSÃO ---
 if "km_pdf_p04" in st.session_state:
     st.markdown("---")
     n_pdf = f"Reembolso_KM_{cliente_selecionado}_{aba_mes_selecionada}.pdf"
@@ -310,7 +308,6 @@ if "km_pdf_p04" in st.session_state:
     with col_dl2:
         st.download_button(label="📥 **BAIXAR PLANILHA EXCEL**", data=st.session_state["km_xlsx_p04"], file_name=n_xlsx, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
-# GATILHO FIXO E ALINHADO PARA O DISPARO SMTP DO FECHAMENTO MENSAL
 st.markdown("---")
 
 @st.dialog("Confirmação de Envio por E-mail")
@@ -327,9 +324,11 @@ def confirmar_envio_km_popup():
                         st.success(msg)
                         st.balloons()
                         time.sleep(4)
-                else: 
-                    st.error(msg)
-                st.rerun()
+                    else: 
+                        st.error(msg)
+                else:
+                    st.error("Gere o relatório na tela primeiro antes de disparar.")
+            st.rerun()
         with cp2:
             if st.button("Não, Cancelar", use_container_width=True): 
                 st.rerun()
@@ -339,3 +338,4 @@ if st.button("🚀 **ENVIAR REEMBOLSO POR E-MAIL**", type="primary", use_contain
         st.error("Insira um endereço de e-mail válido.")
     else: 
         confirmar_envio_km_popup()
+
