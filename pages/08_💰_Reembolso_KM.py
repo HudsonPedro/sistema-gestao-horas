@@ -110,9 +110,6 @@ except:
     lista_abas_meses = []
     lista_clientes = []
 
-st.title("💰 Relatório para Reembolso de KM Rodado")
-st.markdown("---")
-
 col_f1, col_f2 = st.columns(2)
 with col_f1:
     cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Cliente:")
@@ -121,7 +118,11 @@ with col_f2:
     vlr_abast = st.number_input("Valor Unitário Último Abastecimento (R$):", min_value=0.0, value=6.49, step=0.01)
     email_target = st.text_input("Destinatário do Relatório:", "suellen@crti.com.br")
 
-# CAPTURA DINÂMICA DE ENDEREÇOS DA PLANILHA LEGENDAS
+st.markdown("### 📄 Comprovantes")
+comprovante_file = st.file_uploader("Subir Comprovante de Abastecimento (Imagem PNG/JPG):", type=["png", "jpg", "jpeg"])
+st.markdown("---")
+
+# BUSCA DE ENDEREÇO 100% DINÂMICA DA PLANILHA LEGENDAS
 endereco_cliente_map = ""
 endereco_crti_erp_map = ENDERECO_CRTI_PADRAO
 
@@ -129,16 +130,16 @@ if not df_leg.empty and cliente_selecionado:
     try:
         linha_c = df_leg[df_leg["Clientes"] == cliente_selecionado]
         if not linha_c.empty and "Endereco" in df_leg.columns:
-            endereco_cliente_map = str(linha_c["Endereco"].values[0]).strip()
+            endereco_cliente_map = str(linha_c["Endereco"].values[0]).strip().replace("['", "").replace("']", "")
         
         linha_crti = df_leg[df_leg["Clientes"].astype(str).str.contains("CRTI", case=False, na=False)]
         if not linha_crti.empty and "Endereco" in df_leg.columns:
-            endereco_crti_erp_map = str(linha_crti["Endereco"].values[0]).strip()
+            endereco_crti_erp_map = str(linha_crti["Endereco"].values[0]).strip().replace("['", "").replace("']", "")
     except:
         pass
 
 if not endereco_cliente_map or endereco_cliente_map.lower() == "nan":
-    endereco_cliente_map = "Endereço não cadastrado na aba Legendas"
+    endereco_cliente_map = "Endereço não localizado na aba Legendas"
 
 # REQUISITOS ANEXO: Exibe as caixas de texto com os endereços dinâmicos na interface
 st.markdown("### 🗺️ Configuração de Rota e Percurso")
@@ -148,16 +149,12 @@ with col_end1:
 with col_end2:
     end_crti_input = st.text_input("CAMPO: Endereço da CRTI ERP (Cadastrada na Planilha):", value=endereco_crti_erp_map)
 
-st.markdown("### 📄 Comprovantes")
-comprovante_file = st.file_uploader("Subir Comprovante de Abastecimento (Imagem PNG/JPG):", type=["png", "jpg", "jpeg"])
-st.markdown("---")
-
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     try:
         if "Solicitante1" in df_leg.columns:
             sol_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
-            if not sol_df.empty: gerente_cliente_sugerido = str(sol_df.values[0]).strip()
+            if not sol_df.empty: gerente_cliente_sugerido = str(sol_df.values[0]).strip().replace("['", "").replace("']", "")
     except: pass
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
@@ -194,7 +191,7 @@ def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf
         return True, "Relatório de KM enviado com sucesso!"
     except Exception as e:
         return False, f"Falha no envio: {str(e)}"
-# --- REQUISITO ANEXO: ARMAZENAMENTO E PRÉ-VISUALIZAÇÃO EM TEMPO REAL ANTES DE ENVIAR ---
+# --- REQUISITO ANEXO: ARMAZENAMENTO E PRÉ-VISUALIZAÇÃO EM TEMPO REAL ---
 lista_linhas_preview = []
 t_km_acumulado = 0.0
 t_vlr_acumulado = 0.0
@@ -223,19 +220,16 @@ if cliente_selecionado and aba_mes_selecionada:
         
         if not atendimentos_filtrados.empty:
             atendimentos_filtrados[col_data] = pd.to_datetime(atendimentos_filtrados[col_data], errors='coerce')
-            atendimentos_filtrados = atendimentos_filtrados.sort_values(by=col_data).reset_index(drop=True)
+            atendimentos_filtrados = atendimentos_filtrados.sort_values(by=col_data)
             
-            d_km = atendimentos_filtrados[col_km_d].to_dict()
-            d_dt = atendimentos_filtrados[col_data].to_dict()
-            d_loc = atendimentos_filtrados[col_local_p].to_dict() if col_local_p in atendimentos_filtrados.columns else {}
-            
+            # CORREÇÃO ABSOLUTA MESTRE: Coleta os dados usando o índice físico original da tabela
             for idx in atendimentos_filtrados.index:
-                dt_obj = d_dt.get(idx)
+                dt_obj = atendimentos_filtrados.loc[idx, col_data]
                 dt_str = dt_obj.strftime("%d/%m/%Y") if pd.notnull(dt_obj) else ""
-                km_f = float(d_km.get(idx, 0))
-                loc_celula = str(d_loc.get(idx, "")).strip().lower()
+                km_f = float(atendimentos_filtrados.loc[idx, col_km_d])
+                loc_celula = str(atendimentos_filtrados.loc[idx, col_local_p]).strip().lower() if col_local_p in atendimentos_filtrados.columns else ""
                 
-                # REQUISITO EXATO ANEXO: Lógica dinâmica por linha baseada na coluna LOCAL da planilha mestre
+                # REQUISITO EXATO ANEXO: Lógica baseada estritamente na célula LOCAL de cada linha
                 if "cliente" in loc_celula:
                     percurso_linha = "Ida"
                     origem_linha = end_crti_input
@@ -254,16 +248,16 @@ if cliente_selecionado and aba_mes_selecionada:
                     percurso_linha, f"{km_f:.0f}", f"R$ {formatar_br(vlr_abast)}", f"R$ {formatar_br(vlr_f)}"
                 ])
                 
-            st.markdown("### 📊 Armazenamento Prévio (Lançamentos de Ida e Volta Localizados)")
+            st.markdown("### 📋 Armazenamento Prévio (Lançamentos de Ida e Volta Localizados)")
             headers_tabela = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
             df_preview_tela = pd.DataFrame(lista_linhas_preview, columns=headers_tabela)
             st.dataframe(df_preview_tela, use_container_width=True)
             
             st.info(f"📈 **Resumo Acumulado na Tela:** {t_km_acumulado:.0f} KM Rodados | Valor Total Reembolso: **R$ {formatar_br(t_vlr_acumulado)}**")
     except Exception as e:
-        st.error(f"Aguardando sincronização de rede: {e}")
+        st.error(f"Erro no processamento mestre: {e}")
 
-# --- MOTOR DE COMPILAÇÃO E CRIAÇÃO FÍSICA DOS ARQUIVOS GÊMEOS ---
+# --- MOTOR DE COMPILAÇÃO E EXPORTAÇÃO DOS ARQUIVOS ---
 if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_container_width=True):
     if not lista_linhas_preview:
         st.error("Gere os lançamentos na tela antes de exportar.")
@@ -278,7 +272,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
 
                 headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
 
-                # 1. PLANILHA EXCEL ESPELHADA (.XLSX)
+                # 1. PLANILHA EXCEL ESPELHADA (.XLSX) - EXATAMENTE IGUAL AO PDF
                 df_excel = pd.DataFrame(lista_linhas_preview, columns=headers)
                 df_excel.loc[len(df_excel)] = ["Total KM", f"{t_km_acumulado:.0f}", "Valor Total", f"R$ {formatar_br(t_vlr_acumulado)}", "", "", "", ""]
                 
@@ -305,7 +299,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
                 
                 # Definição estrita das larguras em mm (Soma perfeita: 260mm)
-                h_widths = [20, 35, 62, 62, 18, 21, 23, 19]
+                h_widths = [16, 42, 58, 58, 14, 22, 30, 20]
                 
                 for idx_h, txt in enumerate(headers): 
                     pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
@@ -317,13 +311,13 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         align_cell = "L" if col_i in [2, 3] else "C"
                         pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                     
-                # Rodapé de totalização consolidado e cravado
+                # Rodapé de totalização consolidado e cravado (Soma real bando 52 KM)
                 pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
-                pdf.cell(20 + 35 + 62 + 62, 6, "", border=0)
-                pdf.cell(18, 6, "Total KM", border=1, align="R", fill=True)
-                pdf.cell(21, 6, f"{t_km_acumulado:.0f}", border=1, align="C")
-                pdf.cell(23, 6, "Valor Total", border=1, align="R", fill=True)
-                pdf.cell(19, 6, f"R$ {formatar_br(t_vlr_acumulado)}", border=1, align="C")
+                pdf.cell(16 + 42 + 58 + 58, 6, "", border=0)
+                pdf.cell(14, 6, "Total KM", border=1, align="R", fill=True)
+                pdf.cell(22, 6, f"{t_km_acumulado:.0f}", border=1, align="C")
+                pdf.cell(30, 6, "Valor Total", border=1, align="R", fill=True)
+                pdf.cell(20, 6, f"R$ {formatar_br(t_vlr_acumulado)}", border=1, align="C")
                 
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                     pdf.add_page()
