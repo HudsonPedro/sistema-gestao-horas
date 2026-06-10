@@ -44,7 +44,7 @@ def formatar_br(valor):
     except: 
         return "0,00"
 
-# --- CLASSE PDF LIMPA SEM QUADROS (MODO PAISAGEM / LANDSCAPE) ---
+# --- CLASSE PDF LIMPA SEM QUADROS (ORIENTAÇÃO PAISAGEM JÁ VALIDADA) ---
 class PDFReembolsoKM(FPDF):
     def header(self):
         pass
@@ -110,17 +110,16 @@ except:
     lista_abas_meses = []
     lista_clientes = []
 
-# TÍTULO FIXADO NO TOPO ABSOLUTO DA INTERFACE
 st.title("💰 Relatório para Reembolso de KM Rodado")
 st.markdown("---")
 
 col_f1, col_f2 = st.columns(2)
 with col_f1:
     cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Cliente:")
-    aba_mes_selecionada = st.selectbox("Selecione o Mês de Referência (Aba):", lista_abas_meses) if lista_abas_meses else st.text_input("Mês:")
+    aba_mes_selecionada = st.selectbox("Selecione o Mês de Referência:", lista_abas_meses) if lista_abas_meses else st.text_input("Mês:")
 with col_f2:
     vlr_abast = st.number_input("Valor Unitário Último Abastecimento (R$):", min_value=0.0, value=6.49, step=0.01)
-    email_target = st.text_input("Destinatário do Relatório:", "suellen@crti.com.br")
+    email_target = st.text_input("Destinatário do Relatório:", "financeiro@crti.com.br")
 
 # CAPTURA DINÂMICA DE ENDEREÇOS DA PLANILHA LEGENDAS
 endereco_cliente_map = ""
@@ -145,9 +144,9 @@ if not endereco_cliente_map or endereco_cliente_map.lower() == "nan":
 st.markdown("### 🗺️ Configuração de Rota e Percurso")
 col_end1, col_end2 = st.columns(2)
 with col_end1:
-    end_ida_input = st.text_input("CAMPO: Endereço Ida (Empresa Cliente):", value=endereco_cliente_map)
+    end_ida_input = st.text_input("Endereço (Empresa Cliente):", value=endereco_cliente_map)
 with col_end2:
-    end_crti_input = st.text_input("CAMPO: Endereço da CRTI ERP (Cadastrada na Planilha):", value=endereco_crti_erp_map)
+    end_crti_input = st.text_input("Endereço (CRTI ERP):", value=endereco_crti_erp_map)
 
 st.markdown("### 📄 Comprovantes")
 comprovante_file = st.file_uploader("Subir Comprovante de Abastecimento (Imagem PNG/JPG):", type=["png", "jpg", "jpeg"])
@@ -162,7 +161,7 @@ if not df_leg.empty and cliente_selecionado:
     except: pass
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
-data_emissao = st.text_input("Data de Emissão do Termo:", value=datetime.now().strftime("%d/%m/%Y"))
+data_emissao = st.text_input("Data de Emissão:", value=datetime.now().strftime("%d/%m/%Y"))
 
 # --- FUNÇÃO DE DISPARO SMTP PADRÃO DA PRODUÇÃO ---
 def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf, n_xlsx):
@@ -176,7 +175,7 @@ def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf
     msg["To"] = email_destino
     msg["Subject"] = f"Relatorio Reembolso KM - {cliente}"
     
-    corpo = f"<html><body><p>Prezada Suellen,</p><p>Segue em anexo o relatório consolidado de reembolso de KM rodado e a planilha Excel referente ao cliente <b>{cliente}</b>.</p><br><p>Atenciosamente,<br>Hudson Valente</p></body></html>"
+    corpo = f"<html><body><p>Prezada Sra. Amanda, espero que se encontre bem,</p><p>Segue em anexo o relatório de reembolso de KM rodado e o comprovante de abastecimentos, referente ao atendimento presencial no cliente <b>{cliente} no dia: {data_emissao}.</b>.</p><br><p>Com Gratidão,<br>Hudson Valente</p></body></html>"
     msg.attach(MIMEText(corpo, "html"))
     
     for b_data, nome_arquivo in [(pdf_data, n_pdf), (xlsx_data, n_xlsx)]:
@@ -250,8 +249,8 @@ if cliente_selecionado and aba_mes_selecionada:
                     percurso_linha, f"{km_f:.0f}", f"R$ {formatar_br(vlr_abast)}", f"R$ {formatar_br(vlr_f)}"
                 ])
                 
-            st.markdown("### 📋 Armazenamento Prévio (Lançamentos de Ida e Volta Localizados)")
-            headers_tabela = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
+            st.markdown("### 📋 Lançamentos de Ida e Volta")
+            headers_tabela = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "PERCURSO", "DISTÂNCIA(KM)", "VLR. UNI. ABAST.", "TOTAL"]
             df_preview_tela = pd.DataFrame(lista_linhas_preview, columns=headers_tabela)
             st.dataframe(df_preview_tela, use_container_width=True)
             
@@ -259,7 +258,7 @@ if cliente_selecionado and aba_mes_selecionada:
     except Exception as e:
         st.error(f"Erro no processamento mestre: {e}")
 
-# --- MOTOR DE COMPILAÇÃO E EXPORTAÇÃO DOS ARQUIVOS ---
+# --- MOTOR DE COMPILAÇÃO E COMPOSIÇÃO DOS ARQUIVOS ---
 if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_container_width=True):
     if not lista_linhas_preview:
         st.error("Gere os lançamentos na tela antes de exportar.")
@@ -272,13 +271,20 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     img_pil_conv = PILImage.open(io.BytesIO(comprovante_file.read()))
                     img_pil_conv.convert("RGB").save(caminho_imagem_disco, "JPEG")
 
-                headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
+                headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "PERCURSO", "DISTÂNCIA(KM)", "VLR. UNI. ABAST.", "TOTAL"]
+                ARQUIVO_LOGO = "crti.jpg"
 
-                # 1. PLANILHA EXCEL ESPELHADA (.XLSX) - DESIGN RECONSTRUÍDO IDÊNTICO AO PDF
+                # 1. PLANILHA EXCEL ESPELHADA (.XLSX) - AJUSTADA EM FOLHA ÚNICA PAISAGEM COM LOGO
                 out_xlsx = io.BytesIO()
                 wb = xlsxwriter.Workbook(out_xlsx, {"in_memory": True})
                 ws = wb.add_worksheet("Reembolso")
-                ws.hide_gridlines(2) # Remove as linhas cinzas nativas para ficar limpo igual ao PDF
+                ws.hide_gridlines(2)
+                
+                # FORÇA PÁGINA ÚNICA HORIZONTAL NO EXCEL SEM QUEBRAS DE LINHA PONTILHADAS
+                ws.set_landscape()
+                ws.set_paper(9) # Papel A4
+                ws.set_margins(left=0.4, right=0.4, top=0.5, bottom=0.5)
+                ws.fit_to_pages(1, 0) # Trava em 1 página de largura máxima
                 
                 f_tit = wb.add_format({"bold": True, "size": 11, "font_name": "Arial"})
                 f_sub = wb.add_format({"bold": True, "size": 9, "font_name": "Arial"})
@@ -287,9 +293,9 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 f_cel_l = wb.add_format({"border": 1, "align": "left", "font_name": "Arial", "size": 8})
                 f_tot = wb.add_format({"bold": True, "bg_color": "#F2F2F2", "border": 1, "align": "right", "font_name": "Arial", "size": 8.5})
                 
-                # REQUISITO EXATO: Colunas com larguras responsivas que se adaptam sozinhas ao nome do cliente
+                # Dimensões exatas das colunas do Excel espelhadas com o PDF
                 ws.set_column("A:A", 14)
-                ws.set_column("B:B", max(35, len(cliente_selecionado) + 5))
+                ws.set_column("B:B", max(35, len(cliente_selecionado) + 4))
                 ws.set_column("C:C", 52)
                 ws.set_column("D:D", 52)
                 ws.set_column("E:E", 14)
@@ -297,18 +303,22 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 ws.set_column("G:G", 22)
                 ws.set_column("H:H", 18)
                 
+                # Insere a logo física na célula A2 para matar o texto provisório
+                if os.path.exists(ARQUIVO_LOGO):
+                    ws.insert_image("A2", ARQUIVO_LOGO, {"x_scale": 0.48, "y_scale": 0.48})
+                
                 ws.write("D2", "RELATÓRIO PARA REEMBOLSO DE KM RODADO", f_tit)
-                ws.write("A4", f"IMPLANTADOR CRTI: HUDSON PEDRO SALES VALENTE", f_sub)
+                ws.write("A4", f"IMPLANTADOR CRTI: HUDSON VALENTE", f_sub)
                 
                 for c_idx, txt in enumerate(headers): 
                     ws.write(5, c_idx, txt, f_head)
                 
                 for r_idx, row in enumerate(lista_linhas_preview):
                     for c_idx, val in enumerate(row):
+                        # Clientes e Endereços (índices 1, 2 e 3) alinhados à esquerda, o resto centralizado
                         fmt_c = f_cel_l if c_idx in [1, 2, 3] else f_cel
                         ws.write(6 + r_idx, c_idx, val, fmt_c)
                     
-                # REQUISITO EXATO: Totalizadores acoplados e cravados abaixo das colunas numéricas corretas no Excel
                 l_f = 6 + len(lista_linhas_preview)
                 ws.write(l_f, 4, "Total KM", f_tot)
                 ws.write(l_f, 5, f"{t_km_acumulado:.0f}", f_cel)
@@ -316,16 +326,15 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 ws.write(l_f, 7, f"R$ {formatar_br(t_vlr_acumulado)}", f_cel)
                 
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
-                    ws.insert_image(l_f + 3, 2, caminho_imagem_disco, {"x_scale": 0.45, "y_scale": 0.45})
+                    ws.insert_image(l_f + 3, 2, caminho_imagem_disco, {"x_scale": 0.42, "y_scale": 0.42})
                     
                 wb.close()
                 st.session_state["km_xlsx_p04"] = out_xlsx.getvalue()
 
-                # 2. RELATÓRIO PDF IDÊNTICO EM MODO PAISAGEM (DINÂMICO)
+                # 2. RELATÓRIO PDF IDÊNTICO EM MODO PAISAGEM (MANTIDO IMPECÁVEL)
                 pdf = PDFReembolsoKM(orientation='L', unit='mm', format='A4')
                 pdf.add_page()
                 
-                ARQUIVO_LOGO = "crti.jpg"
                 if os.path.exists(ARQUIVO_LOGO):
                     pdf.image(ARQUIVO_LOGO, x=15, y=10, w=35)
                 
@@ -333,14 +342,12 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 pdf.text(120, 16, "RELATÓRIO PARA REEMBOLSO DE KM RODADO")
                 
                 pdf.set_font("Arial", "B", 9)
-                pdf.text(15, 32, "IMPLANTADOR CRTI: HUDSON PEDRO SALES VALENTE")
+                pdf.text(15, 32, "IMPLANTADOR CRTI: HUDSON VALENTE")
                 
                 pdf.set_y(36); pdf.set_x(15)
                 pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
                 
-                # Definição das larguras exatas fixadas para o PDF fechar os 258mm
-                h_widths = [16, 32, 58, 58, 16, 22, 34, 22]
-                
+                h_widths = [16, 32, 58, 58, 18, 22, 31, 23]
                 for idx_h, txt in enumerate(headers): 
                     pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
                 
@@ -351,7 +358,6 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         align_cell = "L" if col_i in [1, 2, 3] else "C"
                         pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                     
-                # Rodapé de totalização consolidado e cravado no PDF
                 pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
                 pdf.cell(16 + 32 + 58 + 58, 6, "", border=0)
                 pdf.cell(16, 6, "Total KM", border=1, align="R", fill=True)
@@ -370,12 +376,10 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                     try: os.remove(caminho_imagem_disco)
                     except: pass
-                    
                 st.success("✨ Relatórios gêmeos gerados com sucesso!")
                 st.rerun()
-            except Exception as e:
-                st.error(f"Erro na compilação: {e}")
-# --- PAINEL VISUAL DE DOWNLOADS ---
+                except Exception as e:st.error(f"Erro na compilação: {e}")
+    # --- PAINEL VISUAL DE DOWNLOADS ---
 if "km_pdf_p04" in st.session_state:
     st.markdown("---")
     n_pdf = f"Relatorio_Reembolso_KM_{cliente_selecionado}.pdf"
