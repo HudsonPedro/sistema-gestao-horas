@@ -91,7 +91,7 @@ with st.sidebar:
 
 # URL mestre da planilha publicada
 URL_PLANILHA_MUDANCA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQABOlTPSx3-hKS7qPIXNl8jODyzQBF-_FVMR4JX3o0WNBmsl5OVPQUi0cNfZ1TMEShcH3hmHIL-kE/pub?output=xlsx"
-ENDERECO_CRTI_PADRAO = "Rua Padre Anchieta, 2050 - Bigorrilho - Curitiba/PR"
+ENDERECO_CRTI_PADRAO = "Rua Padre Anchieta, 2050, Bigorrilho - Curitiba/PR"
 
 @st.cache_data(ttl=300)
 def carregar_estrutura_abas_km():
@@ -110,6 +110,10 @@ except:
     lista_abas_meses = []
     lista_clientes = []
 
+# TÍTULO FIXADO NO TOPO ABSOLUTO DA TELA
+st.title("💰 Relatório para Reembolso de KM Rodado")
+st.markdown("---")
+
 col_f1, col_f2 = st.columns(2)
 with col_f1:
     cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Cliente:")
@@ -118,11 +122,7 @@ with col_f2:
     vlr_abast = st.number_input("Valor Unitário Último Abastecimento (R$):", min_value=0.0, value=6.49, step=0.01)
     email_target = st.text_input("Destinatário do Relatório:", "suellen@crti.com.br")
 
-st.markdown("### 📄 Comprovantes")
-comprovante_file = st.file_uploader("Subir Comprovante de Abastecimento (Imagem PNG/JPG):", type=["png", "jpg", "jpeg"])
-st.markdown("---")
-
-# BUSCA DE ENDEREÇO 100% DINÂMICA DA PLANILHA LEGENDAS
+# CAPTURA DINÂMICA DE ENDEREÇOS DA PLANILHA LEGENDAS
 endereco_cliente_map = ""
 endereco_crti_erp_map = ENDERECO_CRTI_PADRAO
 
@@ -141,13 +141,17 @@ if not df_leg.empty and cliente_selecionado:
 if not endereco_cliente_map or endereco_cliente_map.lower() == "nan":
     endereco_cliente_map = "Endereço não localizado na aba Legendas"
 
-# REQUISITOS ANEXO: Exibe as caixas de texto com os endereços dinâmicos na interface
+# REQUISITOS SEU LEIAUTE: Exibe as caixas de texto com os endereços dinâmicos na interface
 st.markdown("### 🗺️ Configuração de Rota e Percurso")
 col_end1, col_end2 = st.columns(2)
 with col_end1:
     end_ida_input = st.text_input("CAMPO: Endereço Ida (Empresa Cliente):", value=endereco_cliente_map)
 with col_end2:
     end_crti_input = st.text_input("CAMPO: Endereço da CRTI ERP (Cadastrada na Planilha):", value=endereco_crti_erp_map)
+
+st.markdown("### 📄 Comprovantes")
+comprovante_file = st.file_uploader("Subir Comprovante de Abastecimento (Imagem PNG/JPG):", type=["png", "jpg", "jpeg"])
+st.markdown("---")
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
@@ -222,15 +226,19 @@ if cliente_selecionado and aba_mes_selecionada:
             atendimentos_filtrados[col_data] = pd.to_datetime(atendimentos_filtrados[col_data], errors='coerce')
             atendimentos_filtrados = atendimentos_filtrados.sort_values(by=col_data)
             
-            # CORREÇÃO ABSOLUTA MESTRE: Coleta os dados usando o índice físico original da tabela
+            # Varre usando os índices físicos originais da filtragem para evitar saltos na tabela
             for idx in atendimentos_filtrados.index:
                 dt_obj = atendimentos_filtrados.loc[idx, col_data]
                 dt_str = dt_obj.strftime("%d/%m/%Y") if pd.notnull(dt_obj) else ""
                 km_f = float(atendimentos_filtrados.loc[idx, col_km_d])
-                loc_celula = str(atendimentos_filtrados.loc[idx, col_local_p]).strip().lower() if col_local_p in atendimentos_filtrados.columns else ""
                 
-                # REQUISITO EXATO ANEXO: Lógica baseada estritamente na célula LOCAL de cada linha
-                if "cliente" in loc_celula:
+                # CORREÇÃO ABSOLUTA: Extrai o valor puro, limpa espaços e passa para caixa alta total
+                loc_celula = str(atendimentos_filtrados.loc[idx, col_local_p]).strip().upper() if col_local_p in atendimentos_filtrados.columns else ""
+                
+                # REQUISITO EXATO SOLICITADO NA SETA VERMELHA:
+                # Se contiver 'CLIENTE' -> Ida (Origem = CRTI, Destino = Cliente)
+                # Se contiver 'CRTI' ou outra palavra -> Volta (Origem = Cliente, Destino = CRTI)
+                if "CLIENTE" in loc_celula:
                     percurso_linha = "Ida"
                     origem_linha = end_crti_input
                     destino_linha = end_ida_input
@@ -298,8 +306,8 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                 pdf.set_y(36); pdf.set_x(15)
                 pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
                 
-                # Definição estrita das larguras em mm (Soma perfeita: 260mm)
-                h_widths = [16, 42, 58, 58, 14, 22, 30, 20]
+                # Definição das larguras exatas fixadas (Soma total: 258mm)
+                h_widths = [16, 28, 63, 63, 16, 22, 31, 19]
                 
                 for idx_h, txt in enumerate(headers): 
                     pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
@@ -311,13 +319,13 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         align_cell = "L" if col_i in [2, 3] else "C"
                         pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                     
-                # Rodapé de totalização consolidado e cravado (Soma real bando 52 KM)
+                # Rodapé de totalização consolidado e cravado
                 pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
-                pdf.cell(16 + 42 + 58 + 58, 6, "", border=0)
-                pdf.cell(14, 6, "Total KM", border=1, align="R", fill=True)
+                pdf.cell(16 + 28 + 63 + 63, 6, "", border=0)
+                pdf.cell(16, 6, "Total KM", border=1, align="R", fill=True)
                 pdf.cell(22, 6, f"{t_km_acumulado:.0f}", border=1, align="C")
-                pdf.cell(30, 6, "Valor Total", border=1, align="R", fill=True)
-                pdf.cell(20, 6, f"R$ {formatar_br(t_vlr_acumulado)}", border=1, align="C")
+                pdf.cell(31, 6, "Valor Total", border=1, align="R", fill=True)
+                pdf.cell(19, 6, f"R$ {formatar_br(t_vlr_acumulado)}", border=1, align="C")
                 
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                     pdf.add_page()
