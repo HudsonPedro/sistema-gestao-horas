@@ -137,8 +137,9 @@ if not df_leg.empty and cliente_selecionado:
     except:
         pass
 
+# CORREÇÃO ABSOLUTA: Removido o endereço fixo do código para carregar em branco ou dinâmico
 if not endereco_cliente_map or endereco_cliente_map.lower() == "nan":
-    endereco_cliente_map = "Rua Pascoal Carignano, 675 - Ferraria, Campo Largo"
+    endereco_cliente_map = "Endereço não localizado na aba Legendas"
 
 # REQUISITOS ANEXO: Exibe as caixas de texto com os endereços dinâmicos na interface
 st.markdown("### 🗺️ Configuração de Rota e Percurso")
@@ -249,7 +250,6 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         km_f = float(dict_km.get(r_idx, 0))
                         loc_f = str(dict_loc.get(r_idx, "")).strip().lower()
                         
-                        # Define a rota com base na coluna LOCAL da planilha e inverte conforme o requisito mestre
                         if "cliente" in loc_f:
                             p_linha = "Ida"
                             orig = end_crti_input
@@ -259,7 +259,6 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                             orig = end_ida_input
                             dest = end_crti_input
                             
-                        # Filtro dinâmico do seletor da tela
                         if percurso_seletor != "Ida e Volta" and percurso_seletor != p_linha:
                             continue
                             
@@ -311,7 +310,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         pdf.set_y(36); pdf.set_x(15)
                         pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
                         
-                        h_widths = [16, 42, 58, 58, 14, 21, 32, 21]
+                        h_widths = [20, 35, 58, 58, 16, 24, 28, 20]
                         
                         for idx_h, txt in enumerate(headers): 
                             pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
