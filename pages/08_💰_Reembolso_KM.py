@@ -28,7 +28,7 @@ os.makedirs(PASTA_REEMBOLSO_KM, exist_ok=True)
 # 1. CONFIGURAÇÃO DA PÁGINA INSTITUCIONAL
 st.set_page_config(page_title="Reembolso de KM - HPTECH", page_icon="hptech.png", layout="wide")
 
-# 2. CSS PARA RECONSTRUIR O DESIGN ORIGINAL DA HPTECH
+# 2. CSS PARA DESIGN AVANÇADO DA INTERFACE
 st.markdown("""
     <style>
     [data-testid="stSidebarNav"] {display: none;}
@@ -44,13 +44,13 @@ def formatar_br(valor):
     except: 
         return "0,00"
 
-# --- CLASSE PDF LIMPA (ORIENTAÇÃO PAISAGEM CONFORME LEIAUTE SOLICITADO) ---
+# --- CLASSE PDF LIMPA SEM QUADROS (MODO PAISAGEM / LANDSCAPE) ---
 class PDFReembolsoKM(FPDF):
     def header(self):
         pass
     def footer(self):
         pass
-# 3. SIDEBAR COM MENU INTEGRADO E BOTÃO LIMPAR HISTÓRICO OPERACIONAL
+# 3. SIDEBAR COM MENU INTEGRADO E BOTÃO LIMPAR HISTÓRICO CORRIGIDO
 with st.sidebar:
     st.image("hptechNova.png", use_container_width=True)
     st.markdown("---")
@@ -110,10 +110,6 @@ except:
     lista_abas_meses = []
     lista_clientes = []
 
-st.title("💰 Relatório para Reembolso de KM Rodado")
-st.write("Layout estruturado via código interno para PDF e Excel sincronizados, com suporte a anexo de abastecimento.")
-st.markdown("---")
-
 col_f1, col_f2 = st.columns(2)
 with col_f1:
     cliente_selecionado = st.selectbox("Selecione o Cliente:", lista_clientes) if lista_clientes else st.text_input("Cliente:")
@@ -126,27 +122,31 @@ st.markdown("### 📄 Comprovantes")
 comprovante_file = st.file_uploader("Subir Comprovante de Abastecimento (Imagem PNG/JPG):", type=["png", "jpg", "jpeg"])
 st.markdown("---")
 
-endereco_cliente_sugerido = "Rua Pascoal Carignano, 675 - Ferraria, Campo Largo"
+# BUSCA DE ENDEREÇO 100% DINÂMICA DA PLANILHA LEGENDAS (FIM DO ENDEREÇO FIXO NO CÓDIGO)
+endereco_cliente_dinamico = ""
 if not df_leg.empty and cliente_selecionado:
     try:
-        solicitantes_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Endereco"].dropna()
-        if not solicitantes_df.empty:
-            texto_cru = str(solicitantes_df.to_list()[0]).strip()
-            endereco_cliente_sugerido = texto_cru.replace("['", "").replace("']", "").replace("[", "").replace("]", "")
-    except: pass
+        linha_cliente = df_leg[df_leg["Clientes"] == cliente_selecionado]
+        if not linha_cliente.empty and "Endereco" in df_leg.columns:
+            endereco_cliente_dinamico = str(linha_cliente["Endereco"].values[0]).strip()
+    except:
+        pass
+
+if not endereco_cliente_dinamico or endereco_cliente_dinamico.lower() == "nan":
+    endereco_cliente_dinamico = "Endereço não cadastrado na aba Legendas"
 
 gerente_cliente_sugerido = ""
 if not df_leg.empty and cliente_selecionado:
     try:
-        sol_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
-        if not sol_df.empty: 
-            gerente_cliente_sugerido = str(sol_df.to_list()[0]).strip().replace("['", "").replace("']", "").replace("[", "").replace("]", "")
+        if "Solicitante1" in df_leg.columns:
+            sol_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
+            if not sol_df.empty: 
+                gerente_cliente_sugerido = str(sol_df.values[0]).strip()
     except: pass
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
-data_emissao = st.date_input("Data de Emissão do Termo:", datetime.now())
-meses_br = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
-data_extenso_str = f"{data_emissao.day} de {meses_br[data_emissao.month - 1]} de {data_emissao.year}"
+data_emissao = st.text_input("Data de Emissão do Termo:", value=datetime.now().strftime("%d/%m/%Y"))
+
 # --- FUNÇÃO DE DISPARO SMTP PADRÃO DA PRODUÇÃO ---
 def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf, n_xlsx):
     e_remetente = st.secrets["smtp"]["usuario"]
@@ -178,7 +178,6 @@ def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf
         return True, "Relatório de KM enviado com sucesso!"
     except Exception as e:
         return False, f"Falha no envio: {str(e)}"
-
 # --- 6. GERAÇÃO DO LAYOUT IDENTICO AO MODELO SOLICITADO ---
 if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_container_width=True):
     if not cliente_selecionado:
@@ -226,7 +225,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     dict_dt = atendimentos_km[col_data].to_dict()
                     dict_loc = atendimentos_km[col_local].to_dict() if col_local in atendimentos_km.columns else {}
                     
-                    for r_idx in range(len(atendimentos_km)):
+                    for r_idx in atendimentos_km.index:
                         dt_obj = dict_dt.get(r_idx)
                         dt_str = dt_obj.strftime("%d/%m/%Y") if pd.notnull(dt_obj) else ""
                         km_f = float(dict_km.get(r_idx, 0))
@@ -234,9 +233,9 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         
                         # Decisão baseada na coluna LOCAL da planilha mestre
                         if "cliente" in loc_f:
-                            percurso, orig, dest = "Ida", ENDERECO_CRTI_FIXO, endereco_cliente_sugerido
+                            percurso, orig, dest = "Ida", ENDERECO_CRTI_FIXO, endereco_cliente_dinamico
                         else:
-                            percurso, orig, dest = "Volta", endereco_cliente_sugerido, ENDERECO_CRTI_FIXO
+                            percurso, orig, dest = "Volta", endereco_cliente_dinamico, ENDERECO_CRTI_FIXO
                             
                         vlr_f = km_f * (vlr_abast * 0.25)
                         t_km += km_f
@@ -247,12 +246,14 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     caminho_imagem_disco = ""
                     if comprovante_file:
                         caminho_imagem_disco = os.path.join(PASTA_REEMBOLSO_KM, "comprovante_km_final.jpg")
-                        with open(caminho_imagem_disco, "wb") as f_img:
-                            f_img.write(comprovante_file.getbuffer())
+                        img_pil_conv = PILImage.open(io.BytesIO(comprovante_file.read()))
+                        img_pil_conv.convert("RGB").save(caminho_imagem_disco, "JPEG")
+
+                    headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
 
                     # 1. ARQUIVO EXCEL ESPELHADO (.XLSX)
                     df_excel = pd.DataFrame(lista_linhas)
-                    df_excel.columns = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
+                    df_excel.columns = headers
                     df_excel.loc[len(df_excel)] = ["Total KM", f"{t_km:.0f}", "Valor Total", f"R$ {formatar_br(t_vlr)}", "", "", "", ""]
                     
                     buffer_xlsx = io.BytesIO()
@@ -260,7 +261,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
                     st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
 
-                    # 2. DOCUMENTO PDF IDÊNTICO (MODO PAISAGEM COM MOLDURA EXPANDIDA)
+                    # 2. DOCUMENTO PDF IDÊNTICO (MODO PAISAGEM COM MOLDURA COMPLETA)
                     pdf = PDFReembolsoKM(orientation='L', unit='mm', format='A4')
                     pdf.add_page()
                     
@@ -277,7 +278,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.set_y(36); pdf.set_x(15)
                     pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
                     
-                    headers = ["DATA", "CLIENTE", "LOCAL ORIGEM", "LOCAL DESTINO", "Percurso", "DISTÂNCIA (KM)", "Vlr Unit. Ultimo Abast.", "TOTAL"]
+                    # CORREÇÃO ABSOLUTA: Listas numéricas preenchidas com as dimensões calibradas em mm
                     h_widths = [16, 28, 63, 63, 14, 21, 23, 19]
                     
                     for idx_h, txt in enumerate(headers): 
@@ -315,7 +316,6 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     st.rerun()
             except Exception as e:
                 st.error(f"Erro na compilação: {e}")
-
 # --- PAINEL VISUAL DE DOWNLOADS ---
 if "km_pdf_p04" in st.session_state:
     st.markdown("---")
@@ -326,13 +326,7 @@ if "km_pdf_p04" in st.session_state:
     with col_dl1:
         st.download_button(label="📥 **BAIXAR RELATÓRIO PDF**", data=st.session_state["km_pdf_p04"], file_name=n_pdf, mime="application/pdf", use_container_width=True)
     with col_dl2:
-        st.download_button(
-            label="📥 **BAIXAR PLANILHA EXCEL**", 
-            data=st.session_state["km_xlsx_p04"], 
-            file_name=n_xlsx, 
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-            use_container_width=True
-        )
+        st.download_button(label="📥 **BAIXAR PLANILHA EXCEL**", data=st.session_state["km_xlsx_p04"], file_name=n_xlsx, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
 
 st.markdown("---")
 
@@ -345,20 +339,12 @@ def confirmar_envio_km_popup():
         if st.button("Sim, Enviar", use_container_width=True):
             with st.spinner("Disparando e-mail corporativo..."):
                 if "km_pdf_p04" in st.session_state:
-                    ok, msg = enviar_email_reembolso_km(
-                        email_target, 
-                        cliente_selecionado, 
-                        st.session_state["km_pdf_p04"], 
-                        st.session_state["km_xlsx_p04"], 
-                        f"Reembolso_KM_{cliente_selecionado}.pdf", 
-                        f"Reembolso_KM_{cliente_selecionado}.xlsx"
-                    )
+                    ok, msg = enviar_email_reembolso_km(email_target, cliente_selecionado, st.session_state["km_pdf_p04"], st.session_state["km_xlsx_p04"], f"Reembolso_KM_{cliente_selecionado}.pdf", f"Reembolso_KM_{cliente_selecionado}.xlsx")
                     if ok:
                         st.success(msg)
                         st.balloons()
                         time.sleep(4)
-                    else: 
-                        st.error(msg)
+                    else: st.error(msg)
                 else:
                     st.error("Gere o relatório na tela primeiro antes de disparar.")
             st.rerun()
@@ -371,4 +357,3 @@ if st.button("🚀 **ENVIAR REEMBOLSO POR E-MAIL**", type="primary", use_contain
         st.error("Insira um endereço de e-mail válido.")
     else: 
         confirmar_envio_km_popup()
-
