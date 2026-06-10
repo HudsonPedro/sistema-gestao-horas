@@ -128,7 +128,7 @@ if not df_leg.empty and cliente_selecionado:
     try:
         linha_cliente = df_leg[df_leg["Clientes"] == cliente_selecionado]
         if not linha_cliente.empty and "Endereco" in df_leg.columns:
-            endereco_cliente_dinamico = str(linha_cliente["Endereco"].to_list()[0]).strip()
+            endereco_cliente_dinamico = str(linha_cliente["Endereco"].values[0]).strip()
     except:
         pass
 
@@ -141,7 +141,7 @@ if not df_leg.empty and cliente_selecionado:
         if "Solicitante1" in df_leg.columns:
             sol_df = df_leg[df_leg["Clientes"] == cliente_selecionado]["Solicitante1"].dropna()
             if not sol_df.empty: 
-                gerente_cliente_sugerido = str(sol_df.to_list()[0]).strip()
+                gerente_cliente_sugerido = str(sol_df.values[0]).strip()
     except: pass
 
 solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:", value=gerente_cliente_sugerido)
@@ -225,17 +225,22 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     dict_dt = atendimentos_km[col_data].to_dict()
                     dict_loc = atendimentos_km[col_local].to_dict() if col_local in atendimentos_km.columns else {}
                     
-                    for r_idx in atendimentos_km.index:
+                    # Usa o loop numérico real e contínuo baseado no comprimento dos atendimentos filtrados
+                    for r_idx in range(len(atendimentos_km)):
                         dt_obj = dict_dt.get(r_idx)
                         dt_str = dt_obj.strftime("%d/%m/%Y") if pd.notnull(dt_obj) else ""
                         km_f = float(dict_km.get(r_idx, 0))
                         loc_f = str(dict_loc.get(r_idx, "")).strip().lower()
                         
-                        # LOGICA DINÂMICA: Inverte e cruza dados dinâmicos baseando-se na coluna LOCAL do Sheets
+                        # REQUISITO EXATO: Se na coluna LOCAL estiver escrito cliente é Ida, senão é Volta
                         if "cliente" in loc_f:
-                            percurso, orig, dest = "Ida", ENDERECO_CRTI_FIXO, endereco_cliente_dinamico
+                            percurso = "Ida"
+                            orig = ENDERECO_CRTI_FIXO
+                            dest = endereco_cliente_dinamico
                         else:
-                            percurso, orig, dest = "Volta", endereco_cliente_dinamico, ENDERECO_CRTI_FIXO
+                            percurso = "Volta"
+                            orig = endereco_cliente_dinamico
+                            dest = ENDERECO_CRTI_FIXO
                             
                         vlr_f = km_f * (vlr_abast * 0.25)
                         t_km += km_f
@@ -261,7 +266,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                         df_excel.to_excel(writer, sheet_name="Reembolso", index=False)
                     st.session_state["km_xlsx_p04"] = buffer_xlsx.getvalue()
 
-                    # 2. DOCUMENTO PDF IDÊNTICO (MODO PAISAGEM SEM DISTORÇÃO OU TEXTOS EM BRANCO)
+                    # 2. DOCUMENTO PDF IDÊNTICO (MODO PAISAGEM SEM DISTORÇÃO)
                     pdf = PDFReembolsoKM(orientation='L', unit='mm', format='A4')
                     pdf.add_page()
                     
@@ -278,8 +283,8 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.set_y(36); pdf.set_x(15)
                     pdf.set_fill_color(226, 239, 218); pdf.set_font("Arial", "B", 7.5)
                     
-                    # CORREÇÃO ABSOLUTA: Matrizes numéricas 100% preenchidas com as dimensões calibradas em mm
-                    h_widths = [16, 32, 58, 58, 16, 22, 34, 22]
+                    # LARGURAS CORRIGIDAS: Valores numéricos preenchidos na lista para fechar as margens da folha Paisagem
+                    h_widths = [16, 28, 63, 63, 14, 22, 30, 22]
                     
                     for idx_h, txt in enumerate(headers): 
                         pdf.cell(h_widths[idx_h], 6, txt, border=1, align="C", fill=True)
@@ -291,15 +296,15 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                             align_cell = "L" if col_i in [2, 3] else "C"
                             pdf.cell(h_widths[col_i], 6, str(val), border=1, align=align_cell)
                         
-                    # Rodapé de totalização consolidado acoplado abaixo das colunas numéricas (104 KM)
+                    # Rodapé de totalização consolidado acoplado abaixo das colunas numéricas (Acomoda perfeitamente os 104 KM)
                     pdf.ln(6); pdf.set_x(15); pdf.set_font("Arial", "B", 7.5)
-                    pdf.cell(16 + 32 + 58 + 58, 6, "", border=0)
-                    pdf.cell(16, 6, "Total KM", border=1, align="R", fill=True)
-                    pdf.cell(22, 6, f"{t_km:.0f}", border=1, align="C")
-                    pdf.cell(34, 6, "Valor Total", border=1, align="R", fill=True)
+                    pdf.cell(16 + 28 + 63 + 63, 6, "", border=0)
+                    pdf.cell(14, 6, "Total KM", border=1, align="R", fill=True)
+                    pdf.cell(21, 6, f"{t_km:.0f}", border=1, align="C")
+                    pdf.cell(30, 6, "Valor Total", border=1, align="R", fill=True)
                     pdf.cell(22, 6, f"R$ {formatar_br(t_vlr)}", border=1, align="C")
                     
-                    # Página de Anexo exclusiva no PDF
+                    # Página de Anexo exclusiva no PDF caso tenha comprovante enviado
                     if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                         pdf.add_page()
                         pdf.set_font("Arial", "B", 11)
