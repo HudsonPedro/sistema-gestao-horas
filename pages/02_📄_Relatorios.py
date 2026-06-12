@@ -832,14 +832,16 @@ if btn_gerar:
             row += 2
             ws.merge_range(f'A{row}:D{row}', f"Curitiba, {data_rodape}.", f_norm)
             row += 2
-            ws.merge_range(f'A{row}:H{row}', "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram prestados e confirmado como aceitos.")
+            ws.merge_range(f'A{row}:H{row}', "As horas referentes aos atendimentos e despesas de viagens serão faturadas conforme acerto prévio. Declaro que os serviços descritos neste relatório foram prestados e confirmado como aceitos.", f_red)
             ws.set_row(row - 1, 30)
             row += 5
             ws.merge_range(f'A{row}:C{row}', consultor, f_sign)
             ws.merge_range(f'F{row}:H{row}', solicitante, f_sign)
             row += 1
             ws.merge_range(f'A{row}:C{row}', "CRTI", f_center)
-            ws.write(f'F{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
+            ws.merge_range(f'F{row}:H{row}', cliente, f_center)
+            ws.write(f'A{row}:C{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
+            ws.write(f'F{row}:H{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
             
             ws.hide_gridlines(2)
             wb.close()
