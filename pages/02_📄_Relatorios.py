@@ -880,45 +880,45 @@ if btn_gerar:
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-        abas_normalizadas = {k.strip().upper(): v for k,v in dict_abas.items()}
-        nome_cliente = str(cliente).strip().upper()
-        
-        if nome_cliente in abas_normalizadas:
-            df_cliente = abas_normalizadas[nome_cliente].copy()
-        
-            # CRONOGRAMA
-            if "CRONOGRAMA_C" in df_cliente.columns:
-                valores = df_cliente["CRONOGRAMA_C"].dropna().tolist()
-                if len(valores) >= 4:
-                    ws.merge_range(f'A{row}:H{row}', "CRONOGRAMA", f_blue)
-                    ws.set_row(row - 1, 18); row += 1
-                    ws.write(f'A{row}', "Prazo de implantação (dias úteis):", f_TL)
-                    ws.write(f'C{row}', str(valores[0]), f_T); row += 1
-                    ws.write(f'A{row}', "Horas Estimadas:", f_TL)
-                    ws.write(f'C{row}', str(valores[1]), f_T); row += 1
-                    ws.write(f'A{row}', "Disponibilidade horário do cliente:", f_TL)
-                    ws.write(f'C{row}', str(valores[2]), f_T); row += 1
-                    ws.write(f'A{row}', "Disponibilidade dias da semana cliente:", f_TL)
-                    ws.write(f'C{row}', str(valores[3]), f_T); row += 1
-        
-            # ATIVIDADES
-            if {"DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"} <= set(df_cliente.columns):
-                grupo_atividades = df_cliente[["DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"]].dropna(how="all")
-                if not grupo_atividades.empty:
-                    ws.merge_range(f'A{row}:H{row}', "ATIVIDADES", f_blue)
-                    ws.set_row(row - 1, 18); row += 1
-                    ws.write(f'A{row}', "DATA", f_TL)
-                    ws.write(f'B{row}', "DIA DA SEMANA", f_T_b)
-                    ws.write(f'C{row}', "HORÁRIO", f_T_b)
-                    ws.merge_range(f'D{row}:H{row}', "ATIVIDADES", f_TR)
-                    row += 1
-                    for _, linha in grupo_atividades.iterrows():
-                        ws.write(f'A{row}', str(linha["DATA_C"]), f_T)
-                        ws.write(f'B{row}', str(linha["DIA_C"]), f_T)
-                        ws.write(f'C{row}', str(linha["HORARIO_C"]), f_T)
-                        ws.merge_range(f'D{row}:H{row}', str(linha["ATIVIDADES_C"]), f_T)
+            abas_normalizadas = {k.strip().upper(): v for k,v in dict_abas.items()}
+            nome_cliente = str(cliente).strip().upper()
+            
+            if nome_cliente in abas_normalizadas:
+                df_cliente = abas_normalizadas[nome_cliente].copy()
+            
+                # CRONOGRAMA
+                if "CRONOGRAMA_C" in df_cliente.columns:
+                    valores = df_cliente["CRONOGRAMA_C"].dropna().tolist()
+                    if len(valores) >= 4:
+                        ws.merge_range(f'A{row}:H{row}', "CRONOGRAMA", f_blue)
+                        ws.set_row(row - 1, 18); row += 1
+                        ws.write(f'A{row}', "Prazo de implantação (dias úteis):", f_TL)
+                        ws.write(f'C{row}', str(valores[0]), f_T); row += 1
+                        ws.write(f'A{row}', "Horas Estimadas:", f_TL)
+                        ws.write(f'C{row}', str(valores[1]), f_T); row += 1
+                        ws.write(f'A{row}', "Disponibilidade horário do cliente:", f_TL)
+                        ws.write(f'C{row}', str(valores[2]), f_T); row += 1
+                        ws.write(f'A{row}', "Disponibilidade dias da semana cliente:", f_TL)
+                        ws.write(f'C{row}', str(valores[3]), f_T); row += 1
+            
+                # ATIVIDADES
+                if {"DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"} <= set(df_cliente.columns):
+                    grupo_atividades = df_cliente[["DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"]].dropna(how="all")
+                    if not grupo_atividades.empty:
+                        ws.merge_range(f'A{row}:H{row}', "ATIVIDADES", f_blue)
+                        ws.set_row(row - 1, 18); row += 1
+                        ws.write(f'A{row}', "DATA", f_TL)
+                        ws.write(f'B{row}', "DIA DA SEMANA", f_T_b)
+                        ws.write(f'C{row}', "HORÁRIO", f_T_b)
+                        ws.merge_range(f'D{row}:H{row}', "ATIVIDADES", f_TR)
                         row += 1
-
+                        for _, linha in grupo_atividades.iterrows():
+                            ws.write(f'A{row}', str(linha["DATA_C"]), f_T)
+                            ws.write(f'B{row}', str(linha["DIA_C"]), f_T)
+                            ws.write(f'C{row}', str(linha["HORARIO_C"]), f_T)
+                            ws.merge_range(f'D{row}:H{row}', str(linha["ATIVIDADES_C"]), f_T)
+                            row += 1
+    
 
 
 
