@@ -632,6 +632,7 @@ if btn_gerar:
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
+            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
             abas_normalizadas = {k.strip().upper(): v for k,v in dict_abas.items()}
             nome_cliente = str(cliente).strip().upper()
             
@@ -642,34 +643,42 @@ if btn_gerar:
                 if "CRONOGRAMA_C" in df_cliente.columns:
                     valores = df_cliente["CRONOGRAMA_C"].dropna().tolist()
                     if len(valores) >= 4:
-                        ws.merge_range(f'A{row}:H{row}', "CRONOGRAMA", f_blue)
-                        ws.set_row(row - 1, 18); row += 1
-                        ws.write(f'A{row}', "Prazo de implantação (dias úteis):", f_TL)
-                        ws.write(f'C{row}', str(valores[0]), f_T); row += 1
-                        ws.write(f'A{row}', "Horas Estimadas:", f_TL)
-                        ws.write(f'C{row}', str(valores[1]), f_T); row += 1
-                        ws.write(f'A{row}', "Disponibilidade horário do cliente:", f_TL)
-                        ws.write(f'C{row}', str(valores[2]), f_T); row += 1
-                        ws.write(f'A{row}', "Disponibilidade dias da semana cliente:", f_TL)
-                        ws.write(f'C{row}', str(valores[3]), f_T); row += 1
+                        pdf.set_font("Arial", "B", 10)
+                        pdf.set_fill_color(4,36,100)
+                        pdf.set_text_color(255,255,255)
+                        pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
+                        pdf.set_text_color(0,0,0)
+                        pdf.set_font("Arial","",10)
+                        pdf.cell(95,8,"Prazo de implantação (dias úteis):",border=1)
+                        pdf.cell(95,8,str(valores[0]),border=1,ln=True)
+                        pdf.cell(95,8,"Horas Estimadas:",border=1)
+                        pdf.cell(95,8,str(valores[1]),border=1,ln=True)
+                        pdf.cell(95,8,"Disponibilidade horário do cliente:",border=1)
+                        pdf.cell(95,8,str(valores[2]),border=1,ln=True)
+                        pdf.cell(95,8,"Disponibilidade dias da semana cliente:",border=1)
+                        pdf.cell(95,8,str(valores[3]),border=1,ln=True)
             
                 # ATIVIDADES
                 if {"DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"} <= set(df_cliente.columns):
                     grupo_atividades = df_cliente[["DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"]].dropna(how="all")
                     if not grupo_atividades.empty:
-                        ws.merge_range(f'A{row}:H{row}', "ATIVIDADES", f_blue)
-                        ws.set_row(row - 1, 18); row += 1
-                        ws.write(f'A{row}', "DATA", f_TL)
-                        ws.write(f'B{row}', "DIA DA SEMANA", f_T_b)
-                        ws.write(f'C{row}', "HORÁRIO", f_T_b)
-                        ws.merge_range(f'D{row}:H{row}', "ATIVIDADES", f_TR)
-                        row += 1
+                        pdf.set_font("Arial", "B", 10)
+                        pdf.set_fill_color(4,36,100)
+                        pdf.set_text_color(255,255,255)
+                        pdf.cell(190, 10, "ATIVIDADES", border=1, ln=True, fill=True, align="C")
+                        pdf.set_text_color(0,0,0)
+                        pdf.set_font("Arial","B",9)
+                        pdf.cell(30,8,"DATA",border=1,align="C")
+                        pdf.cell(40,8,"DIA DA SEMANA",border=1,align="C")
+                        pdf.cell(40,8,"HORÁRIO",border=1,align="C")
+                        pdf.cell(80,8,"ATIVIDADES",border=1,ln=True,align="C")
+                        pdf.set_font("Arial","",9)
                         for _, linha in grupo_atividades.iterrows():
-                            ws.write(f'A{row}', str(linha["DATA_C"]), f_T)
-                            ws.write(f'B{row}', str(linha["DIA_C"]), f_T)
-                            ws.write(f'C{row}', str(linha["HORARIO_C"]), f_T)
-                            ws.merge_range(f'D{row}:H{row}', str(linha["ATIVIDADES_C"]), f_T)
-                            row += 1
+                            pdf.cell(30,8,str(linha["DATA_C"]),border=1)
+                            pdf.cell(40,8,str(linha["DIA_C"]),border=1)
+                            pdf.cell(40,8,str(linha["HORARIO_C"]),border=1)
+                            pdf.cell(80,8,str(linha["ATIVIDADES_C"]),border=1,ln=True)
+
             
 
 
@@ -881,6 +890,7 @@ if btn_gerar:
            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
+           # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
             abas_normalizadas = {k.strip().upper(): v for k,v in dict_abas.items()}
             nome_cliente = str(cliente).strip().upper()
             
@@ -926,6 +936,7 @@ if btn_gerar:
                             pdf.cell(40,8,str(linha["DIA_C"]),border=1)
                             pdf.cell(40,8,str(linha["HORARIO_C"]),border=1)
                             pdf.cell(80,8,str(linha["ATIVIDADES_C"]),border=1,ln=True)
+
 
 
 
