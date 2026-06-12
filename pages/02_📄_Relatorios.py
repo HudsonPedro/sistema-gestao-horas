@@ -821,8 +821,8 @@ if btn_gerar:
                     #linhas_dp = max(1, len(desc_p) // 90 + 1)
                     #ws.write(f'A{row}', "Descrição:", f_BL)
                     #ws.merge_range(f'B{row}:H{row}',desc_p if desc_p else "-", f_merge_bot)#
-                    #ws.set_row(row - 1, 15 * linhas_dp)
-                    #row += 1
+                    ws.set_row(row - 1, 15 * linhas_dp)
+                    row += 1
 
             row += 2
             ws.merge_range(f'A{row}:D{row}', f"Curitiba, {data_rodape}.", f_norm)
