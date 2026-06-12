@@ -797,18 +797,32 @@ if btn_gerar:
                     status_p = str(linha_p["STATUS_P"]).strip()
                     ws.write(f'A{row}', "Data:", f_TL)
                     ws.write(f'B{row}', pd.to_datetime(linha_p["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_p["DATA"]) else data_inicio_rel, f_T)
+
                     ws.write(f'C{row}', "Descrição:", f_T_b)
-                    ws.write(f'D{row}', desc_p, f_T)
+                    ws.write(f'D{row}', desc_p if desc_p else "-", f_T)
+
                     ws.write(f'E{row}', "Responsável:", f_T_b)
                     ws.write(f'F{row}', resp_p, f_T)
+
                     ws.write(f'G{row}', "Status:", f_T_b)
                     ws.write(f'H{row}', status_p, f_TR)
+                    ws.set_row(row - 1, 18)
                     row += 1
-                    linhas_dp = max(1, len(desc_p) // 90 + 1)
+                    #--antigo ---
+                    #ws.write(f'A{row}', "Data:", f_TL)
+                    #ws.write(f'B{row}', pd.to_datetime(linha_p["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_p["DATA"]) else data_inicio_rel, f_T)
+                    #ws.write(f'C{row}', "Descrição:", f_T_b)
+                    #ws.write(f'D{row}', desc_p, f_T)
+                    #ws.write(f'E{row}', "Responsável:", f_T_b)
+                    #ws.write(f'F{row}', resp_p, f_T)
+                    #ws.write(f'G{row}', "Status:", f_T_b)
+                    #ws.write(f'H{row}', status_p, f_TR)
+                    #row += 1
+                    #linhas_dp = max(1, len(desc_p) // 90 + 1)
                     #ws.write(f'A{row}', "Descrição:", f_BL)
-                    ws.merge_range(f'B{row}:H{row}', f_merge_bot)#desc_p if desc_p else
-                    ws.set_row(row - 1, 15 * linhas_dp)
-                    row += 1
+                    #ws.merge_range(f'B{row}:H{row}',desc_p if desc_p else "-", f_merge_bot)#
+                    #ws.set_row(row - 1, 15 * linhas_dp)
+                    #row += 1
 
             row += 2
             ws.merge_range(f'A{row}:D{row}', f"Curitiba, {data_rodape}.", f_norm)
