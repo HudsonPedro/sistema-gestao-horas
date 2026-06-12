@@ -580,7 +580,7 @@ if btn_gerar:
                 x_i = 10
                 
                 pdf.set_font("Arial", "B", 10)
-                pdf.set_fill_color(250, 250, 0)
+                pdf.set_fill_color(244, 55, 66)
                 pdf.set_text_color(0, 0, 0)
                 pdf.cell(190, 10, "PENDÊNCIAS (Obrigatório)", border=1, ln=True, fill=True, align="C")
                 
