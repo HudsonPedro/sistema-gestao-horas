@@ -787,7 +787,7 @@ if btn_gerar:
                     'valign': 'vcenter',
                     'bg_color': '#FF0000',   # vermelho
                     'font_color': '#FFFFFF',  # branco
-                    'border': 1
+                    'bottom': 1
                 })
                 ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS (OBRIGATÓRIO O PREENCHIMENTO)", f_red_white) # tenho f_red
                 ws.set_row(row - 1, 18)
@@ -796,27 +796,22 @@ if btn_gerar:
                     desc_p = str(linha_p["DESCRICAO_P"]).strip()
                     resp_p = str(linha_p["RESPONSAVEL_P"]).strip()
                     status_p = str(linha_p["STATUS_P"]).strip()
-                    f_T_data = wb.add_format({
-                        'align': 'left',
-                        'valign': 'vcenter',
-                        'border': 1,       # borda em todos os lados
-                        'bottom': 1        # garante a linha inferior
-                    })
-
-                    ws.write(f'A{row}', "Data:", f_T_data)
-                    ws.write(f'B{row}', data_formatada, f_T_data)
-
-                    ws.write(f'C{row}', "Descrição:", f_T_data)
-                    ws.write(f'D{row}', desc_p if desc_p else "-", f_T_data)
+                    ws.write(f'A{row}', "Data:", f_TL)
+                    ws.write(f'B{row}', pd.to_datetime(linha_p["DATA"]).strftime("%d/%m/%Y") if pd.notnull(linha_p["DATA"]) else data_inicio_rel, f_T)
                     
-                    ws.write(f'E{row}', "Responsável:", f_T_data)
-                    ws.write(f'F{row}', resp_p, f_T_data)
+                    ws.write(f'C{row}', "Descrição:", f_T_b)
+                    ws.write(f'D{row}', desc_p if desc_p else "-", f_T)
                     
-                    ws.write(f'G{row}', "Status:", f_T_data)
-                    ws.write(f'H{row}', status_p, f_T_data)
+                    ws.write(f'E{row}', "Responsável:", f_T_b)
+                    ws.write(f'F{row}', resp_p, f_T)
+                    
+                    ws.write(f'G{row}', "Status:", f_T_b)
+                    ws.write(f'H{row}', status_p, f_TR)
                     
                     ws.set_row(row - 1, 18)
                     row += 1
+
+
 
                     #--antigo ---
                     #ws.write(f'A{row}', "Data:", f_TL)
