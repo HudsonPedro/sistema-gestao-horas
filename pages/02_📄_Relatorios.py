@@ -582,7 +582,7 @@ if btn_gerar:
                 pdf.set_font("Arial", "B", 10)
                 pdf.set_fill_color(244, 55, 66)
                 pdf.set_text_color(255, 255, 255)
-                pdf.cell(190, 10, "f_ye (OBRIGATÓRIO O PREENCHIMENTO)", border=1, ln=True, fill=True, align="C")
+                pdf.cell(190, 10, "PENDÊNCIAS (OBRIGATÓRIO O PREENCHIMENTO)", border=1, ln=True, fill=True, align="C")
                 pdf.set_text_color(0, 0, 0)
             
                 total_linhas = len(grupo_pendencias)
@@ -778,10 +778,11 @@ if btn_gerar:
                     ws.merge_range(f'B{row}:H{row}', ds_d if ds_d else "-", f_merge_bot)
                     ws.set_row(row - 1, 15 * linhas_ds)
                     row += 1
-
+                
             # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO EXCEL (MESMA ORDEM DO PDF E EM AMARELO) ---
             if tem_pendencias:
-                ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS (OBRIGATÓRIO O PREENCHIMENTO)", f_yellow)
+                ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS (OBRIGATÓRIO O PREENCHIMENTO)", f_red)
+                ws.set_text_color(0, 0, 0)
                 ws.set_row(row - 1, 18)
                 row += 1
                 for _, linha_p in grupo_pendencias.iterrows():
@@ -797,11 +798,11 @@ if btn_gerar:
                     ws.write(f'G{row}', "Status:", f_T_b)
                     ws.write(f'H{row}', status_p, f_TR)
                     row += 1
-                    #linhas_dp = max(1, len(desc_p) // 90 + 1)
+                    linhas_dp = max(1, len(desc_p) // 90 + 1)
                     #ws.write(f'A{row}', "Descrição:", f_BL)
-                    #ws.merge_range(f'B{row}:H{row}', desc_p if desc_p else "-", f_merge_bot)
-                    #ws.set_row(row - 1, 15 * linhas_dp)
-                    #row += 1
+                    ws.merge_range(f'B{row}:H{row}', desc_p if desc_p else "-", f_merge_bot)
+                    ws.set_row(row - 1, 15 * linhas_dp)
+                    row += 1
 
             row += 2
             ws.merge_range(f'A{row}:D{row}', f"Curitiba, {data_rodape}.", f_norm)
