@@ -627,6 +627,7 @@ if btn_gerar:
                 # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
                 # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
                 # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
+                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
                 abas_normalizadas = {k.strip().upper(): v for k,v in dict_abas.items()}
                 nome_cliente = str(cliente).strip().upper()
                 
@@ -672,6 +673,7 @@ if btn_gerar:
                                 pdf.cell(40,8,str(linha["DIA_C"]),border=1)
                                 pdf.cell(40,8,str(linha["HORARIO_C"]),border=1)
                                 pdf.cell(80,8,str(linha["ATIVIDADES_C"]),border=1,ln=True)
+
                 
 
 
@@ -874,6 +876,7 @@ if btn_gerar:
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
+            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             abas_normalizadas = {k.strip().upper(): v for k,v in dict_abas.items()}
             nome_cliente = str(cliente).strip().upper()
             
@@ -912,6 +915,7 @@ if btn_gerar:
                             ws.write(f'C{row}', str(linha["HORARIO_C"]), f_T)
                             ws.merge_range(f'D{row}:H{row}', str(linha["ATIVIDADES_C"]), f_T)
                             row += 1
+
 
 
 
