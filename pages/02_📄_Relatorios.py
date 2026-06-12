@@ -666,7 +666,7 @@ if btn_gerar:
             f_hdr_u = wb.add_format({'bold': True, 'underline': True, 'font_size': 10})
             f_bold = wb.add_format({'bold': True, 'font_size': 10, 'valign': 'vcenter'})
             f_norm = wb.add_format({'font_size': 10, 'valign': 'vcenter'})
-            f_blue = wb.add_format({'bold': True, 'bg_color': '#0070c0', 'font_color': 'white', 'align': 'center', 'valign': 'vcenter', 'border': 1})
+            f_blue = wb.add_format({'bold': True, 'bg_color': '#042464', 'font_color': 'white', 'align': 'center', 'valign': 'vcenter', 'border': 1})
             f_yellow = wb.add_format({'bold': True, 'bg_color': '#FAFA00', 'font_color': 'black', 'align': 'center', 'valign': 'vcenter', 'border': 1})
             f_red = wb.add_format({'font_color': 'red', 'align': 'center', 'valign': 'vcenter', 'text_wrap': True})
             f_center = wb.add_format({'align': 'center', 'valign': 'top', 'font_size': 10})
@@ -780,7 +780,7 @@ if btn_gerar:
 
             # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO EXCEL (MESMA ORDEM DO PDF E EM AMARELO) ---
             if tem_pendencias:
-                ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS (Obrigatório)", f_yellow)
+                ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS (Obrigatório)", f_red)
                 ws.set_row(row - 1, 18)
                 row += 1
                 for _, linha_p in grupo_pendencias.iterrows():
