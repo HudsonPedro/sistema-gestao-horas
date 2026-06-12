@@ -836,8 +836,8 @@ if btn_gerar:
             ws.set_row(row - 1, 30)
             row += 5
             # Primeira linha: títulos
-            ws.merge_range(f'A{row}:C{row}', "Consultor", f_sign)
-            ws.merge_range(f'F{row}:H{row}', "Solicitante", f_sign)
+            ws.merge_range(f'A{row}:C{row}', consultor, f_sign)
+            ws.merge_range(f'F{row}:H{row}', solicitante, f_sign)
             row += 1
             
             # Segunda linha: valores
