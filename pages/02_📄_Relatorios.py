@@ -672,7 +672,7 @@ if btn_gerar:
             f_red = wb.add_format({'font_color': 'red', 'align': 'center', 'valign': 'vcenter', 'text_wrap': True})
             f_center = wb.add_format({'align': 'center', 'valign': 'top', 'font_size': 10})
             f_sign = wb.add_format({'top': 1, 'align': 'center', 'font_size': 10, 'valign': 'top'})
-            f_TL = wb.add_format({'top': 1, 'left': 1,'bold': True, 'valign': 'vcenter'}) #'bottom': 1,
+            f_TL = wb.add_format({'top': 1, 'left': 1,'bottom': 1,'bold': True, 'valign': 'vcenter'}) #'bottom': 1,
             f_T = wb.add_format({'top': 1,'bottom': 1, 'valign': 'vcenter'})#'bottom': 1,
             f_T_b = wb.add_format({'top': 1,'bottom': 1, 'bold': True, 'valign': 'vcenter'})
             f_TR = wb.add_format({'top': 1, 'right': 1,'bottom': 1, 'valign': 'vcenter'})
