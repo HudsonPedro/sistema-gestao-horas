@@ -622,44 +622,49 @@ if btn_gerar:
                 pdf.set_y(pdf.get_y() + 2)
                 # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
                 # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-                if cliente in dict_abas:
-                    df_cliente = dict_abas[cliente].copy()
-                
-                    # CRONOGRAMA
-                    if {"CRONOGRAMA_C","OBSERVACAO_C"} <= set(df_cliente.columns):
-                        grupo_cronograma = df_cliente[["CRONOGRAMA_C","OBSERVACAO_C"]].dropna(how="all")
-                        if not grupo_cronograma.empty:
-                            pdf.set_font("Arial", "B", 10)
-                            pdf.set_fill_color(4,36,100)
-                            pdf.set_text_color(255,255,255)
-                            pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
-                            pdf.set_text_color(0,0,0)
-                            for _, linha_c in grupo_cronograma.iterrows():
-                                pdf.set_font("Arial","B",10); pdf.cell(40,6,"Prazo:",ln=False)
-                                pdf.set_font("Arial","",10); pdf.cell(50,6,str(linha_c["CRONOGRAMA_C"]),ln=False)
-                                pdf.set_font("Arial","B",10); pdf.cell(30,6,"Obs.:",ln=False)
-                                pdf.set_font("Arial","",10); pdf.cell(0,6,str(linha_c["OBSERVACAO_C"]),ln=True)
-                
-                    # ATIVIDADES
-                    if {"DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"} <= set(df_cliente.columns):
-                        grupo_atividades = df_cliente[["DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"]].dropna(how="all")
-                        if not grupo_atividades.empty:
-                            pdf.set_font("Arial", "B", 10)
-                            pdf.set_fill_color(4,36,100)
-                            pdf.set_text_color(255,255,255)
-                            pdf.cell(190, 10, "ATIVIDADES", border=1, ln=True, fill=True, align="C")
-                            pdf.set_text_color(0,0,0)
-                            pdf.set_font("Arial","B",9)
-                            pdf.cell(30,8,"Data",border=1,align="C")
-                            pdf.cell(50,8,"Dia da Semana",border=1,align="C")
-                            pdf.cell(40,8,"Horário",border=1,align="C")
-                            pdf.cell(70,8,"Atividades",border=1,ln=True,align="C")
-                            pdf.set_font("Arial","",9)
-                            for _, linha_a in grupo_atividades.iterrows():
-                                pdf.cell(30,8,str(linha_a["DATA_C"]),border=1)
-                                pdf.cell(50,8,str(linha_a["DIA_C"]),border=1)
-                                pdf.cell(40,8,str(linha_a["HORARIO_C"]),border=1)
-                                pdf.cell(70,8,str(linha_a["ATIVIDADES_C"]),border=1,ln=True)
+                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
+            abas_normalizadas = {k.strip().upper(): v for k, v in dict_abas.items()}
+            nome_cliente = str(cliente).strip().upper()
+            
+            if nome_cliente in abas_normalizadas:
+                df_cliente = abas_normalizadas[nome_cliente].copy()
+            
+                # CRONOGRAMA
+                if {"CRONOGRAMA_C","OBSERVACAO_C"} <= set(df_cliente.columns):
+                    grupo_cronograma = df_cliente[["CRONOGRAMA_C","OBSERVACAO_C"]].dropna(how="all")
+                    if not grupo_cronograma.empty:
+                        pdf.set_font("Arial", "B", 10)
+                        pdf.set_fill_color(4,36,100)
+                        pdf.set_text_color(255,255,255)
+                        pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
+                        pdf.set_text_color(0,0,0)
+                        for _, linha_c in grupo_cronograma.iterrows():
+                            pdf.set_font("Arial","B",10); pdf.cell(40,6,"Prazo:",ln=False)
+                            pdf.set_font("Arial","",10); pdf.cell(50,6,str(linha_c["CRONOGRAMA_C"]),ln=False)
+                            pdf.set_font("Arial","B",10); pdf.cell(30,6,"Obs.:",ln=False)
+                            pdf.set_font("Arial","",10); pdf.cell(0,6,str(linha_c["OBSERVACAO_C"]),ln=True)
+            
+                # ATIVIDADES
+                if {"DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"} <= set(df_cliente.columns):
+                    grupo_atividades = df_cliente[["DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"]].dropna(how="all")
+                    if not grupo_atividades.empty:
+                        pdf.set_font("Arial", "B", 10)
+                        pdf.set_fill_color(4,36,100)
+                        pdf.set_text_color(255,255,255)
+                        pdf.cell(190, 10, "ATIVIDADES", border=1, ln=True, fill=True, align="C")
+                        pdf.set_text_color(0,0,0)
+                        pdf.set_font("Arial","B",9)
+                        pdf.cell(30,8,"Data",border=1,align="C")
+                        pdf.cell(50,8,"Dia da Semana",border=1,align="C")
+                        pdf.cell(40,8,"Horário",border=1,align="C")
+                        pdf.cell(70,8,"Atividades",border=1,ln=True,align="C")
+                        pdf.set_font("Arial","",9)
+                        for _, linha_a in grupo_atividades.iterrows():
+                            pdf.cell(30,8,str(linha_a["DATA_C"]),border=1)
+                            pdf.cell(50,8,str(linha_a["DIA_C"]),border=1)
+                            pdf.cell(40,8,str(linha_a["HORARIO_C"]),border=1)
+                            pdf.cell(70,8,str(linha_a["ATIVIDADES_C"]),border=1,ln=True)
+
 
 
             if pdf.get_y() > 220:
@@ -853,8 +858,12 @@ if btn_gerar:
 
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-            if cliente in dict_abas:
-                df_cliente = dict_abas[cliente].copy()
+            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
+            abas_normalizadas = {k.strip().upper(): v for k, v in dict_abas.items()}
+            nome_cliente = str(cliente).strip().upper()
+            
+            if nome_cliente in abas_normalizadas:
+                df_cliente = abas_normalizadas[nome_cliente].copy()
             
                 # CRONOGRAMA
                 if {"CRONOGRAMA_C","OBSERVACAO_C"} <= set(df_cliente.columns):
