@@ -581,7 +581,7 @@ if btn_gerar:
                 
                 pdf.set_font("Arial", "B", 10)
                 pdf.set_fill_color(244, 55, 66)
-                pdf.set_text_color(100, 100, 100)
+                pdf.set_text_color(255, 255, 255)
                 pdf.cell(190, 10, "PENDÊNCIAS (OBRIGATÓRIO O PREENCHIMENTO)", border=1, ln=True, fill=True, align="C")
                 
                 total_linhas = len(grupo_pendencias)
