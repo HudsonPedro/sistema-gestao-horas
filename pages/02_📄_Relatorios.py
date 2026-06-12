@@ -838,9 +838,9 @@ if btn_gerar:
             ws.merge_range(f'A{row}:C{row}', consultor, f_sign)
             ws.merge_range(f'F{row}:H{row}', solicitante, f_sign)
             ws.merge_range(f'A{row}:C{row}', "CRTI", f_center)
-            ws.write(f'A{row}:C{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
+            ws.merge_range(f'A{row}:C{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
             ws.merge_range(f'F{row}:H{row}', cliente, f_center)
-            ws.write(f'F{row}:H{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
+            ws.merge_range(f'F{row}:H{row}', f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", f_center)
             row += 1
             
             ws.hide_gridlines(2)
