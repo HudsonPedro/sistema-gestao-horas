@@ -624,16 +624,17 @@ if btn_gerar:
                 # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
                 # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
                 # --- NOVO BLOCO: CRONOGRAMA (PDF) ---
+                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
                 abas_normalizadas = {k.strip().upper(): v for k,v in dict_abas.items()}
                 nome_cliente = str(cliente).strip().upper()
                 
                 if nome_cliente in abas_normalizadas:
                     df_cliente = abas_normalizadas[nome_cliente].copy()
                 
-                    # CRONOGRAMA
-                    if {"CRONOGRAMA_C"} <= set(df_cliente.columns):
+                    # CRONOGRAMA (primeiras 4 linhas da coluna CRONOGRAMA_C)
+                    if "CRONOGRAMA_C" in df_cliente.columns:
                         valores = df_cliente["CRONOGRAMA_C"].dropna().tolist()
-                        if valores:
+                        if len(valores) >= 4:
                             pdf.set_font("Arial", "B", 10)
                             pdf.set_fill_color(4,36,100)
                             pdf.set_text_color(255,255,255)
@@ -669,6 +670,7 @@ if btn_gerar:
                                 pdf.cell(40,8,str(linha["DIA_C"]),border=1)
                                 pdf.cell(40,8,str(linha["HORARIO_C"]),border=1)
                                 pdf.cell(80,8,str(linha["ATIVIDADES_C"]),border=1,ln=True)
+
 
 
 
@@ -865,6 +867,7 @@ if btn_gerar:
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             # --- NOVO BLOCO: CRONOGRAMA (Excel) ---
+            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             abas_normalizadas = {k.strip().upper(): v for k,v in dict_abas.items()}
             nome_cliente = str(cliente).strip().upper()
             
@@ -872,9 +875,9 @@ if btn_gerar:
                 df_cliente = abas_normalizadas[nome_cliente].copy()
             
                 # CRONOGRAMA
-                if {"CRONOGRAMA_C"} <= set(df_cliente.columns):
+                if "CRONOGRAMA_C" in df_cliente.columns:
                     valores = df_cliente["CRONOGRAMA_C"].dropna().tolist()
-                    if valores:
+                    if len(valores) >= 4:
                         ws.merge_range(f'A{row}:H{row}', "CRONOGRAMA", f_blue)
                         ws.set_row(row - 1, 18); row += 1
                         ws.write(f'A{row}', "Prazo de implantação (dias úteis):", f_TL)
@@ -903,6 +906,7 @@ if btn_gerar:
                             ws.write(f'C{row}', str(linha["HORARIO_C"]), f_T)
                             ws.merge_range(f'D{row}:H{row}', str(linha["ATIVIDADES_C"]), f_T)
                             row += 1
+
 
 
 
