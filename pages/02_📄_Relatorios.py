@@ -450,7 +450,7 @@ if btn_gerar:
             pdf.cell(0, 5, f"{total_km} km", ln=True)
             pdf.ln(5)
             pdf.set_font("Arial", "B", 10)
-            pdf.set_fill_color(0, 112, 192)
+            pdf.set_fill_color(4,36,100)
             pdf.set_text_color(255, 255, 255)
             pdf.cell(190, 10, "DESCRIÇÃO DAS ATIVIDADES", border=1, ln=True, fill=True, align="C")
             pdf.set_text_color(0, 0, 0)
@@ -580,7 +580,7 @@ if btn_gerar:
                 x_i = 10
               
                 pdf.set_font("Arial", "B", 10)
-                pdf.set_fill_color(244, 55, 66)
+                pdf.set_fill_color(249, 0, 0)
                 pdf.set_text_color(255, 255, 255)
                 pdf.cell(190, 10, "PENDÊNCIAS (OBRIGATÓRIO O PREENCHIMENTO)", border=1, ln=True, fill=True, align="C")
                 pdf.set_text_color(0, 0, 0)
