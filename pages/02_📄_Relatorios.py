@@ -570,20 +570,21 @@ if btn_gerar:
                     pdf.set_y(pdf.get_y() + 2)
                     pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
 
-            # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO PDF (ORDEM CORRIGIDA E FUNDO AMARELO) ---
-            # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO PDF (TABELA UNIFICADA IGUAL ATIVIDADES) AJUSTE DAS LINHAS DO QUADRO---
+            # --- NOVO BLOCO 3: f_ye HISTÓRICAS NO PDF (ORDEM CORRIGIDA E FUNDO AMARELO) ---
+            # --- NOVO BLOCO 3: f_ye HISTÓRICAS NO PDF (TABELA UNIFICADA IGUAL ATIVIDADES) AJUSTE DAS LINHAS DO QUADRO---
             if tem_pendencias:
                 if pdf.get_y() > 220:
                     pdf.add_page()
                 pdf.ln(2)
                 y_inicio_bloco = pdf.get_y() # Guarda onde o quadro começa
                 x_i = 10
-                
+              
                 pdf.set_font("Arial", "B", 10)
                 pdf.set_fill_color(244, 55, 66)
                 pdf.set_text_color(255, 255, 255)
-                pdf.cell(190, 10, "PENDÊNCIAS (OBRIGATÓRIO O PREENCHIMENTO)", border=1, ln=True, fill=True, align="C")
-                
+                pdf.cell(190, 10, "f_ye (OBRIGATÓRIO O PREENCHIMENTO)", border=1, ln=True, fill=True, align="C")
+                pdf.set_text_color(0, 0, 0)
+            
                 total_linhas = len(grupo_pendencias)
                 for index, linha_p in enumerate(grupo_pendencias.iterrows()):
                     # Desempacota a linha corretamente
@@ -780,7 +781,7 @@ if btn_gerar:
 
             # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO EXCEL (MESMA ORDEM DO PDF E EM AMARELO) ---
             if tem_pendencias:
-                ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS (Obrigatório)", f_red)
+                ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS (OBRIGATÓRIO O PREENCHIMENTO)", f_yellow)
                 ws.set_row(row - 1, 18)
                 row += 1
                 for _, linha_p in grupo_pendencias.iterrows():
@@ -796,11 +797,11 @@ if btn_gerar:
                     ws.write(f'G{row}', "Status:", f_T_b)
                     ws.write(f'H{row}', status_p, f_TR)
                     row += 1
-                    linhas_dp = max(1, len(desc_p) // 90 + 1)
-                    ws.write(f'A{row}', "Descrição:", f_BL)
-                    ws.merge_range(f'B{row}:H{row}', desc_p if desc_p else "-", f_merge_bot)
-                    ws.set_row(row - 1, 15 * linhas_dp)
-                    row += 1
+                    #linhas_dp = max(1, len(desc_p) // 90 + 1)
+                    #ws.write(f'A{row}', "Descrição:", f_BL)
+                    #ws.merge_range(f'B{row}:H{row}', desc_p if desc_p else "-", f_merge_bot)
+                    #ws.set_row(row - 1, 15 * linhas_dp)
+                    #row += 1
 
             row += 2
             ws.merge_range(f'A{row}:D{row}', f"Curitiba, {data_rodape}.", f_norm)
