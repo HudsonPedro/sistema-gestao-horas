@@ -787,6 +787,7 @@ if btn_gerar:
                     'valign': 'vcenter',
                     'bg_color': '#FF0000',   # vermelho
                     'font_color': '#FFFFFF'  # branco
+                    'border': 1
                 })
                 ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS (OBRIGATÓRIO O PREENCHIMENTO)", f_red_white) # tenho f_red
                 ws.set_row(row - 1, 18)
