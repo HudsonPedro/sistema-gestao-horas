@@ -781,8 +781,14 @@ if btn_gerar:
                 
             # --- NOVO BLOCO 3: PENDÊNCIAS HISTÓRICAS NO EXCEL (MESMA ORDEM DO PDF E EM AMARELO) ---
             if tem_pendencias:
-                ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS (OBRIGATÓRIO O PREENCHIMENTO)", f_red)
-                ws.set_text_color(0, 0, 0)
+                f_red_white = wb.add_format({
+                    'bold': True,
+                    'align': 'center',
+                    'valign': 'vcenter',
+                    'bg_color': '#FF0000',   # vermelho
+                    'font_color': '#FFFFFF'  # branco
+                })
+                ws.merge_range(f'A{row}:H{row}', "PENDÊNCIAS (OBRIGATÓRIO O PREENCHIMENTO)", f_red_shite) # tenho f_red
                 ws.set_row(row - 1, 18)
                 row += 1
                 for _, linha_p in grupo_pendencias.iterrows():
