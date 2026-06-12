@@ -806,7 +806,7 @@ if btn_gerar:
                     row += 1
                     linhas_dp = max(1, len(desc_p) // 90 + 1)
                     #ws.write(f'A{row}', "Descrição:", f_BL)
-                    ws.merge_range(f'B{row}:H{row}', desc_p if desc_p else "-", f_merge_bot)
+                    #ws.merge_range(f'B{row}:H{row}', desc_p if desc_p else "-", f_merge_bot)
                     ws.set_row(row - 1, 15 * linhas_dp)
                     row += 1
 
