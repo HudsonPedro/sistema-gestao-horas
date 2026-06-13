@@ -621,80 +621,103 @@ if btn_gerar:
                 pdf.rect(x_i, y_inicio_bloco, 190, pdf.get_y() - y_inicio_bloco)
                 pdf.set_y(pdf.get_y() + 2)
                
-             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF CORRIGIDO) ---
+             #--- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF ULTRA REVISADO) ---
+            # 1. Validação estrita: Só entra se a aba com o nome exato do cliente existir no documento
             if cliente in dict_abas:
-                 df_cliente = dict_abas[cliente].copy()
-                 
-                 # Identifica a coluna correta do cronograma de forma flexível
-                 col_cronograma = None
-                 for c in ["CRONOGRAMA_C", "CRONOGRAMA"]:
-                     if c in df_cliente.columns:
-                         col_cronograma = c
-                         break
-                         
-                 if col_cronograma:
-                     # Extrai os valores removendo nulos
-                     valores = df_cliente[col_cronograma].dropna().tolist()
-                     
-                     # Garante que temos pelo menos strings vazias para não quebrar o layout vertical
-                     while len(valores) < 4:
-                         valores.append("-")
-                         
-                     # Renderiza o Quadro de Cronograma de forma segura
-                     pdf.set_font("Arial", "B", 10)
-                     pdf.set_fill_color(4, 36, 100)
-                     pdf.set_text_color(255, 255, 255)
-                     pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
-                     pdf.set_text_color(0, 0, 0)
-                     pdf.set_font("Arial", "", 10)
-                     
-                     pdf.cell(95, 8, "Prazo de implantação (dias úteis):", border=1)
-                     pdf.cell(95, 8, str(valores[0]), border=1, ln=True)
-                     pdf.cell(95, 8, "Horas Estimadas:", border=1)
-                     pdf.cell(95, 8, str(valores[1]), border=1, ln=True)
-                     pdf.cell(95, 8, "Disponibilidade horário do cliente:", border=1)
-                     pdf.cell(95, 8, str(valores[2]), border=1, ln=True)
-                     pdf.cell(95, 8, "Disponibilidade dias da semana cliente:", border=1)
-                     pdf.cell(95, 8, str(valores[3]), border=1, ln=True)
-                     pdf.ln(2)
-            
-                 # Identifica colunas de atividades com ou sem o sufixo _C
-                 col_data = "DATA_C" if "DATA_C" in df_cliente.columns else ("DATA" if "DATA" in df_cliente.columns else None)
-                 col_dia = "DIA_C" if "DIA_C" in df_cliente.columns else ("DIA" if "DIA" in df_cliente.columns else None)
-                 col_hora = "HORARIO_C" if "HORARIO_C" in df_cliente.columns else ("HORARIO" if "HORARIO" in df_cliente.columns else None)
-                 col_ativ = "ATIVIDADES_C" if "ATIVIDADES_C" in df_cliente.columns else ("ATIVIDADES" if "ATIVIDADES" in df_cliente.columns else None)
-            
-                 if col_data and col_dia and col_hora and col_ativ:
-                     # Filtra removendo linhas totalmente vazias nas colunas chave
-                     grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(how="all")
-                     
-                     if not grupo_atividades.empty:
-                         if pdf.get_y() > 220:
-                             pdf.add_page()
-                             
-                         pdf.set_font("Arial", "B", 10)
-                         pdf.set_fill_color(4, 36, 100)
-                         pdf.set_text_color(255, 255, 255)
-                         pdf.cell(190, 10, "ATIVIDADES", border=1, ln=True, fill=True, align="C")
-                         pdf.set_text_color(0, 0, 0)
-                         
-                         # Cabeçalho da tabela
-                         pdf.set_font("Arial", "B", 9)
-                         pdf.cell(30, 8, "DATA", border=1, align="C")
-                         pdf.cell(40, 8, "DIA DA SEMANA", border=1, align="C")
-                         pdf.cell(40, 8, "HORÁRIO", border=1, align="C")
-                         pdf.cell(80, 8, "ATIVIDADES", border=1, ln=True, align="C")
-                         
-                         # Dados da tabela
-                         pdf.set_font("Arial", "", 9)
-                         for _, linha in grupo_atividades.iterrows():
-                             if pdf.get_y() > 245:
-                                 pdf.add_page()
-                             pdf.cell(30, 8, str(linha[col_data]), border=1)
-                             pdf.cell(40, 8, str(linha[col_dia]), border=1)
-                             pdf.cell(40, 8, str(linha[col_hora]), border=1)
-                             pdf.cell(80, 8, str(linha[col_ativ]), border=1, ln=True)
-                         pdf.ln(2)
+                df_cliente = dict_abas[cliente].copy()
+                
+                # Identifica de forma flexível as colunas de Cronograma e Observação
+                col_cronograma = next((c for c in ["CRONOGRAMA_C", "CRONOGRAMA"] if c in df_cliente.columns), None)
+                col_observacao = next((c for c in ["OBSERVACAO_C", "OBSERVAÇÃO"] if c in df_cliente.columns), None)
+                
+                # Só renderiza o Cronograma se a coluna principal existir
+                if col_cronograma:
+                    valores_c = df_cliente[col_cronograma].dropna().tolist()
+                    
+                    # Busca as observações correspondentes às linhas (garante alinhamento)
+                    valores_obs = []
+                    if col_observacao:
+                        valores_obs = df_cliente[col_observacao].fillna("").astype(str).tolist()
+                    
+                    # Preenche com vazio se faltar linhas para não quebrar a estrutura vertical
+                    while len(valores_c) < 4: valores_c.append("")
+                    while len(valores_obs) < 4: valores_obs.append("")
+                    
+                    # Rótulos verticais das linhas fixas
+                    rotulos = [
+                        "Prazo de implantação (dias úteis):",
+                        "Horas Estimadas:",
+                        "Disponibilidade horário do cliente:",
+                        "Disponibilidade dias da semana cliente:"
+                    ]
+                    
+                    # Desenha o cabeçalho do bloco CRONOGRAMA
+                    pdf.set_font("Arial", "B", 10)
+                    pdf.set_fill_color(4, 36, 100)
+                    pdf.set_text_color(255, 255, 255)
+                    pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
+                    pdf.set_text_color(0, 0, 0)
+                    
+                    # Desenha a tabela com 3 colunas (Rótulo menor, Valor ajustado, Observação estendida)
+                    pdf.set_font("Arial", "", 9)
+                    for idx in range(4):
+                        # Coluna 1: Diminuída para otimizar espaço
+                        pdf.cell(65, 8, rotulos[idx], border=1)
+                        # Coluna 2: Dados do cronograma
+                        pdf.cell(30, 8, str(valores_c[idx]), border=1, align="C")
+                        # Coluna 3: Campo OBSERVACAO_C novo (se não tiver nada, fica em branco)
+                        pdf.cell(95, 8, str(valores_obs[idx]), border=1, ln=True)
+                    pdf.ln(2)
+    
+                # Identifica as colunas da tabela de Atividades
+                col_data = next((c for c in ["DATA_C", "DATA"] if c in df_cliente.columns), None)
+                col_dia = next((c for c in ["DIA_C", "DIA"] if c in df_cliente.columns), None)
+                col_hora = next((c for c in ["HORARIO_C", "HORARIO"] if c in df_cliente.columns), None)
+                col_ativ = next((c for c in ["ATIVIDADES_C", "ATIVIDADES"] if c in df_cliente.columns), None)
+    
+                if col_data and col_dia and col_hora and col_ativ:
+                    grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(how="all")
+                    
+                    if not grupo_atividades.empty:
+                        if pdf.get_y() > 220:
+                            pdf.add_page()
+                            
+                        pdf.set_font("Arial", "B", 10)
+                        pdf.set_fill_color(4, 36, 100)
+                        pdf.set_text_color(255, 255, 255)
+                        pdf.cell(190, 10, "ATIVIDADES", border=1, ln=True, fill=True, align="C")
+                        pdf.set_text_color(0, 0, 0)
+                        
+                        # Cabeçalho da tabela com larguras redimensionadas e menores
+                        pdf.set_font("Arial", "B", 9)
+                        pdf.cell(25, 8, "DATA", border=1, align="C")
+                        pdf.cell(35, 8, "DIA DA SEMANA", border=1, align="C")
+                        pdf.cell(30, 8, "HORÁRIO", border=1, align="C")
+                        pdf.cell(100, 8, "ATIVIDADES", border=1, ln=True, align="C")
+                        
+                        # Processamento e limpeza de dados das linhas
+                        pdf.set_font("Arial", "", 9)
+                        for _, linha in grupo_atividades.iterrows():
+                            if pdf.get_y() > 245:
+                                pdf.add_page()
+                            
+                            # Limpeza 1: Trata a estampa de data removendo o "00:00:00" indesejado
+                            data_limpa = str(linha[col_data]).split(" ")[0]
+                            if "-" in data_limpa:
+                                try:
+                                    data_limpa = datetime.strptime(data_limpa, "%Y-%m-%d").strftime("%d/%m/%Y")
+                                except: pass
+                            
+                            # Limpeza 2: Diminui string poluidora do Horário (ex: remove repetições se necessário)
+                            horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h")
+                            
+                            # Renderização final na tabela com largura diminuída
+                            pdf.cell(25, 8, data_limpa, border=1, align="C")
+                            pdf.cell(35, 8, str(linha[col_dia]), border=1, align="C")
+                            pdf.cell(30, 8, horario_limpo, border=1, align="C")
+                            pdf.cell(100, 8, str(linha[col_ativ]), border=1, ln=True)
+                        pdf.ln(2)
+
 
                       
             if pdf.get_y() > 220:
