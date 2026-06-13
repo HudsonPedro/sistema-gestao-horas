@@ -896,7 +896,8 @@ if btn_gerar:
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-          if cliente in dict_abas:
+            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
+            if cliente in dict_abas:
                 df_cliente = dict_abas[cliente].copy()
             
                 # CRONOGRAMA (4 linhas fixas)
@@ -930,7 +931,8 @@ if btn_gerar:
                             ws.write(f'B{row}', str(linha["DIA_C"]), f_T)
                             ws.write(f'C{row}', str(linha["HORARIO_C"]), f_T)
                             ws.merge_range(f'D{row}:H{row}', str(linha["ATIVIDADES_C"]), f_T)
-                            row += 1           
+                            row += 1
+                      
 
 
 
