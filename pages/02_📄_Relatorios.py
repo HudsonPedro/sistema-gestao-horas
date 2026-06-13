@@ -635,24 +635,30 @@ if btn_gerar:
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
+            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
             if cliente in dict_abas:
                 df_cliente = dict_abas[cliente].copy()
             
-                # CRONOGRAMA
-                if {"CRONOGRAMA_C","OBSERVACAO_C"} <= set(df_cliente.columns):
-                    grupo_cronograma = df_cliente[["CRONOGRAMA_C","OBSERVACAO_C"]].dropna(how="all")
-                    if not grupo_cronograma.empty:
+                # CRONOGRAMA (4 linhas fixas)
+                if "CRONOGRAMA_C" in df_cliente.columns:
+                    valores = df_cliente["CRONOGRAMA_C"].dropna().tolist()
+                    if len(valores) >= 4:
                         pdf.set_font("Arial", "B", 10)
                         pdf.set_fill_color(4,36,100)
                         pdf.set_text_color(255,255,255)
                         pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
                         pdf.set_text_color(0,0,0)
                         pdf.set_font("Arial","",10)
-                        for _, linha_c in grupo_cronograma.iterrows():
-                            pdf.cell(95,8,f"Prazo: {linha_c['CRONOGRAMA_C']}",border=1)
-                            pdf.cell(95,8,f"Obs.: {linha_c['OBSERVACAO_C']}",border=1,ln=True)
+                        pdf.cell(95,8,"Prazo de implantação (dias úteis):",border=1)
+                        pdf.cell(95,8,str(valores[0]),border=1,ln=True)
+                        pdf.cell(95,8,"Horas Estimadas:",border=1)
+                        pdf.cell(95,8,str(valores[1]),border=1,ln=True)
+                        pdf.cell(95,8,"Disponibilidade horário do cliente:",border=1)
+                        pdf.cell(95,8,str(valores[2]),border=1,ln=True)
+                        pdf.cell(95,8,"Disponibilidade dias da semana cliente:",border=1)
+                        pdf.cell(95,8,str(valores[3]),border=1,ln=True)
             
-                # ATIVIDADES
+                # ATIVIDADES (tabela com cabeçalho)
                 if {"DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"} <= set(df_cliente.columns):
                     grupo_atividades = df_cliente[["DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"]].dropna(how="all")
                     if not grupo_atividades.empty:
@@ -672,6 +678,7 @@ if btn_gerar:
                             pdf.cell(40,8,str(linha["DIA_C"]),border=1)
                             pdf.cell(40,8,str(linha["HORARIO_C"]),border=1)
                             pdf.cell(80,8,str(linha["ATIVIDADES_C"]),border=1,ln=True)
+
 
 
             
@@ -888,23 +895,26 @@ if btn_gerar:
            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
+            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
             if cliente in dict_abas:
                 df_cliente = dict_abas[cliente].copy()
             
-                # CRONOGRAMA
-                if {"CRONOGRAMA_C","OBSERVACAO_C"} <= set(df_cliente.columns):
-                    grupo_cronograma = df_cliente[["CRONOGRAMA_C","OBSERVACAO_C"]].dropna(how="all")
-                    if not grupo_cronograma.empty:
+                # CRONOGRAMA (4 linhas fixas)
+                if "CRONOGRAMA_C" in df_cliente.columns:
+                    valores = df_cliente["CRONOGRAMA_C"].dropna().tolist()
+                    if len(valores) >= 4:
                         ws.merge_range(f'A{row}:H{row}', "CRONOGRAMA", f_blue)
                         ws.set_row(row - 1, 18); row += 1
-                        for _, linha_c in grupo_cronograma.iterrows():
-                            ws.write(f'A{row}', "Prazo:", f_TL)
-                            ws.write(f'B{row}', str(linha_c["CRONOGRAMA_C"]), f_T)
-                            ws.write(f'C{row}', "Obs.:", f_T_b)
-                            ws.merge_range(f'D{row}:H{row}', str(linha_c["OBSERVACAO_C"]), f_T)
-                            row += 1
+                        ws.write(f'A{row}', "Prazo de implantação (dias úteis):", f_TL)
+                        ws.write(f'C{row}', str(valores[0]), f_T); row += 1
+                        ws.write(f'A{row}', "Horas Estimadas:", f_TL)
+                        ws.write(f'C{row}', str(valores[1]), f_T); row += 1
+                        ws.write(f'A{row}', "Disponibilidade horário do cliente:", f_TL)
+                        ws.write(f'C{row}', str(valores[2]), f_T); row += 1
+                        ws.write(f'A{row}', "Disponibilidade dias da semana cliente:", f_TL)
+                        ws.write(f'C{row}', str(valores[3]), f_T); row += 1
             
-                # ATIVIDADES
+                # ATIVIDADES (tabela com cabeçalho)
                 if {"DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"} <= set(df_cliente.columns):
                     grupo_atividades = df_cliente[["DATA_C","DIA_C","HORARIO_C","ATIVIDADES_C"]].dropna(how="all")
                     if not grupo_atividades.empty:
