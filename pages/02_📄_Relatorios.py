@@ -620,25 +620,8 @@ if btn_gerar:
                 # Desenha o retângulo externo unificado fechando todo o bloco de pendências
                 pdf.rect(x_i, y_inicio_bloco, 190, pdf.get_y() - y_inicio_bloco)
                 pdf.set_y(pdf.get_y() + 2)
-                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-                # --- NOVO BLOCO: CRONOGRAMA (PDF) ---
-                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-           # Dentro do loop for (cliente, ra), grupo in grupos:
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF CORRIGIDO) ---
-         # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF CORRIGIDO) ---
+               
+             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF CORRIGIDO) ---
              if cliente in dict_abas:
                  df_cliente = dict_abas[cliente].copy()
                  
@@ -903,80 +886,81 @@ if btn_gerar:
                     ws.set_row(row - 1, 18)
                     row += 1
 
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-            # --- NOVO BLOCO: CRONOGRAMA (Excel) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-           # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-           # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-           # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-           # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel) ---
-             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel CORRIGIDO) ---
-             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel CORRIGIDO) ---
-             if cliente in dict_abas:
-                 df_cliente = dict_abas[cliente].copy()
-                 
-                 # Identifica a coluna correta do cronograma de forma flexível
-                 col_cronograma = None
-                 for c in ["CRONOGRAMA_C", "CRONOGRAMA"]:
-                     if c in df_cliente.columns:
-                         col_cronograma = c
-                         break
-                         
-                 if col_cronograma:
-                     valores = df_cliente[col_cronograma].dropna().tolist()
-                     while len(valores) < 4:
-                         valores.append("-")
-                         
-                     ws.merge_range(f'A{row}:H{row}', "CRONOGRAMA", f_blue)
-                     ws.set_row(row - 1, 18); row += 1
-                     
-                     ws.write(f'A{row}', "Prazo de implantação (dias úteis):", f_TL)
-                     ws.write(f'C{row}', str(valores[0]), f_T); row += 1
-                     ws.write(f'A{row}', "Horas Estimadas:", f_TL)
-                     ws.write(f'C{row}', str(valores[1]), f_T); row += 1
-                     ws.write(f'A{row}', "Disponibilidade horário do cliente:", f_TL)
-                     ws.write(f'C{row}', str(valores[2]), f_T); row += 1
-                     ws.write(f'A{row}', "Disponibilidade dias da semana cliente:", f_TL)
-                     ws.write(f'C{row}', str(valores[3]), f_T); row += 1
-                     row += 1
+            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF CORRIGIDO) ---
+            if cliente in dict_abas:
+                df_cliente = dict_abas[cliente].copy()
+                
+                # Identifica a coluna correta do cronograma de forma flexível
+                col_cronograma = None
+                for c in ["CRONOGRAMA_C", "CRONOGRAMA"]:
+                    if c in df_cliente.columns:
+                        col_cronograma = c
+                        break
+                        
+                if col_cronograma:
+                    # Extrai os valores removendo nulos
+                    valores = df_cliente[col_cronograma].dropna().tolist()
+                    
+                    # Garante que temos pelo menos strings vazias para não quebrar o layout vertical
+                    while len(valores) < 4:
+                        valores.append("-")
+                        
+                    # Renderiza o Quadro de Cronograma de forma segura
+                    pdf.set_font("Arial", "B", 10)
+                    pdf.set_fill_color(4, 36, 100)
+                    pdf.set_text_color(255, 255, 255)
+                    pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
+                    pdf.set_text_color(0, 0, 0)
+                    pdf.set_font("Arial", "", 10)
+                    
+                    pdf.cell(95, 8, "Prazo de implantação (dias úteis):", border=1)
+                    pdf.cell(95, 8, str(valores[0]), border=1, ln=True)
+                    pdf.cell(95, 8, "Horas Estimadas:", border=1)
+                    pdf.cell(95, 8, str(valores[1]), border=1, ln=True)
+                    pdf.cell(95, 8, "Disponibilidade horário do cliente:", border=1)
+                    pdf.cell(95, 8, str(valores[2]), border=1, ln=True)
+                    pdf.cell(95, 8, "Disponibilidade dias da semana cliente:", border=1)
+                    pdf.cell(95, 8, str(valores[3]), border=1, ln=True)
+                    pdf.ln(2)
+    
+                # Identifica colunas de atividades com ou sem o sufixo _C
+                col_data = "DATA_C" if "DATA_C" in df_cliente.columns else ("DATA" if "DATA" in df_cliente.columns else None)
+                col_dia = "DIA_C" if "DIA_C" in df_cliente.columns else ("DIA" if "DIA" in df_cliente.columns else None)
+                col_hora = "HORARIO_C" if "HORARIO_C" in df_cliente.columns else ("HORARIO" if "HORARIO" in df_cliente.columns else None)
+                col_ativ = "ATIVIDADES_C" if "ATIVIDADES_C" in df_cliente.columns else ("ATIVIDADES" if "ATIVIDADES" in df_cliente.columns else None)
+    
+                if col_data and col_dia and col_hora and col_ativ:
+                    # Filtra removendo linhas totalmente vazias nas colunas chave
+                    grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(how="all")
+                    
+                    if not grupo_atividades.empty:
+                        if pdf.get_y() > 220:
+                            pdf.add_page()
+                            
+                        pdf.set_font("Arial", "B", 10)
+                        pdf.set_fill_color(4, 36, 100)
+                        pdf.set_text_color(255, 255, 255)
+                        pdf.cell(190, 10, "ATIVIDADES", border=1, ln=True, fill=True, align="C")
+                        pdf.set_text_color(0, 0, 0)
+                        
+                        # Cabeçalho da tabela
+                        pdf.set_font("Arial", "B", 9)
+                        pdf.cell(30, 8, "DATA", border=1, align="C")
+                        pdf.cell(40, 8, "DIA DA SEMANA", border=1, align="C")
+                        pdf.cell(40, 8, "HORÁRIO", border=1, align="C")
+                        pdf.cell(80, 8, "ATIVIDADES", border=1, ln=True, align="C")
+                        
+                        # Dados da tabela
+                        pdf.set_font("Arial", "", 9)
+                        for _, linha in grupo_atividades.iterrows():
+                            if pdf.get_y() > 245:
+                                pdf.add_page()
+                            pdf.cell(30, 8, str(linha[col_data]), border=1)
+                            pdf.cell(40, 8, str(linha[col_dia]), border=1)
+                            pdf.cell(40, 8, str(linha[col_hora]), border=1)
+                            pdf.cell(80, 8, str(linha[col_ativ]), border=1, ln=True)
+                        pdf.ln(2)
             
-                 # Identifica colunas de atividades de forma flexível
-                 col_data = "DATA_C" if "DATA_C" in df_cliente.columns else ("DATA" if "DATA" in df_cliente.columns else None)
-                 col_dia = "DIA_C" if "DIA_C" in df_cliente.columns else ("DIA" if "DIA" in df_cliente.columns else None)
-                 col_hora = "HORARIO_C" if "HORARIO_C" in df_cliente.columns else ("HORARIO" if "HORARIO" in df_cliente.columns else None)
-                 col_ativ = "ATIVIDADES_C" if "ATIVIDADES_C" in df_cliente.columns else ("ATIVIDADES" if "ATIVIDADES" in df_cliente.columns else None)
-            
-                 if col_data and col_dia and col_hora and col_ativ:
-                     grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(how="all")
-                     
-                     if not grupo_atividades.empty:
-                         ws.merge_range(f'A{row}:H{row}', "ATIVIDADES", f_blue)
-                         ws.set_row(row - 1, 18); row += 1
-                         
-                         ws.write(f'A{row}', "DATA", f_TL)
-                         ws.write(f'B{row}', "DIA DA SEMANA", f_T_b)
-                         ws.write(f'C{row}', "HORÁRIO", f_T_b)
-                         ws.merge_range(f'D{row}:H{row}', "ATIVIDADES", f_TR)
-                         row += 1
-                         
-                         for _, linha in grupo_atividades.iterrows():
-                             ws.write(f'A{row}', str(linha[col_data]), f_T)
-                             ws.write(f'B{row}', str(linha[col_dia]), f_T)
-                             ws.write(f'C{row}', str(linha[col_hora]), f_T)
-                             ws.merge_range(f'D{row}:H{row}', str(linha[col_ativ]), f_T)
-                             row += 1
-                         row += 1
-
 
 
 
