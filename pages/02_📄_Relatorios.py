@@ -622,7 +622,7 @@ if btn_gerar:
                 pdf.set_y(pdf.get_y() + 2)
                
              # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF CORRIGIDO) ---
-             if cliente in dict_abas:
+            if cliente in dict_abas:
                  df_cliente = dict_abas[cliente].copy()
                  
                  # Identifica a coluna correta do cronograma de forma flexível
