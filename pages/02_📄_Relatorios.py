@@ -634,110 +634,113 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (RESOLVIDO COM PROPAGAÇÃO DE LINHAS) ---
                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE VALIDAÇÃO DE COLUNA) ---
                    # Como os nomes estão idênticos, a busca direta por chave funciona perfeitamente
-                   if cliente in dict_abas:
-                        try:
-                            df_cliente = dict_abas[cliente].copy()
-                            
-                            # Identifica as colunas exatas do Cronograma e Observação
-                            col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
-                            col_observacao = "OBSERVACAO_C" if "OBSERVACAO_C" in df_cliente.columns else ("OBSERVAÇÃO" if "OBSERVAÇÃO" in df_cliente.columns else None)
-                            
-                            # VALIDAÇÃO DIRETA: Verifica se a coluna existe e se a primeira linha (índice 0) não está vazia
-                            if col_cronograma and len(df_cliente) > 0 and not pd.isna(df_cliente[col_cronograma].iloc[0]):
-                                
-                                # Captura exatamente as 4 primeiras linhas físicas da planilha para o Cronograma
-                                valores_c = df_cliente[col_cronograma].iloc[0:4].fillna("").astype(str).tolist()
-                                
-                                valores_obs = []
-                                if col_observacao:
-                                    valores_obs = df_cliente[col_observacao].iloc[0:4].fillna("").astype(str).tolist()
-                                
-                                # Garante que as listas tenham exatamente 4 itens preenchendo com texto vazio se necessário
-                                while len(valores_c) < 4: valores_c.append("")
-                                while len(valores_obs) < 4: valores_obs.append("")
-                                
-                                rotulos = [
-                                    "Prazo de implantação (dias úteis):",
-                                    "Horas Estimadas:",
-                                    "Disponibilidade horário do cliente:",
-                                    "Disponibilidade dias da semana cliente:"
-                                ]
-                                
-                                # Desenha o cabeçalho do bloco CRONOGRAMA
-                                pdf.set_font("Arial", "B", 10)
-                                pdf.set_fill_color(4, 36, 100)
-                                pdf.set_text_color(255, 255, 255)
-                                pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
-                                pdf.set_text_color(0, 0, 0)
-                                
-                                # Desenha as 4 linhas fixas do Cronograma
-                                pdf.set_font("Arial", "", 9)
-                                for idx in range(4):
-                                    pdf.cell(65, 8, rotulos[idx], border=1)
-                                    pdf.cell(30, 8, str(valores_c[idx]), border=1, align="C")
-                                    pdf.cell(95, 8, str(valores_obs[idx]), border=1, ln=True)
-                                pdf.ln(2)
+            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE VALIDAÇÃO DE COLUNA) ---
+            # Como os nomes estão idênticos, a busca direta por chave funciona perfeitamente
+            if cliente in dict_abas:
+                try:
+                    df_cliente = dict_abas[cliente].copy()
                     
-                            # Identifica as colunas exatas da tabela de Atividades
-                            col_data = "DATA_C" if "DATA_C" in df_cliente.columns else ("DATA" if "DATA" in df_cliente.columns else None)
-                            col_dia = "DIA_C" if "DIA_C" in df_cliente.columns else ("DIA" if "DIA" in df_cliente.columns else None)
-                            col_hora = "HORARIO_C" if "HORARIO_C" in df_cliente.columns else ("HORARIO" if "HORARIO" in df_cliente.columns else None)
-                            col_ativ = "ATIVIDADES_C" if "ATIVIDADES_C" in df_cliente.columns else ("ATIVIDADES" if "ATIVIDADES" in df_cliente.columns else None)
+                    # Identifica as colunas exatas do Cronograma e Observação
+                    col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
+                    col_observacao = "OBSERVACAO_C" if "OBSERVACAO_C" in df_cliente.columns else ("OBSERVAÇÃO" if "OBSERVAÇÃO" in df_cliente.columns else None)
                     
-                            if col_data and col_dia and col_hora and col_ativ:
-                                # Filtra trazendo apenas as linhas onde a coluna de ATIVIDADES está preenchida
-                                grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(subset=[col_ativ])
+                    # VALIDAÇÃO DIRETA: Verifica se a coluna existe e se a primeira linha (índice 0) não está vazia
+                    if col_cronograma and len(df_cliente) > 0 and not pd.isna(df_cliente[col_cronograma].iloc[0]):
+                        
+                        # Captura exatamente as 4 primeiras linhas físicas da planilha para o Cronograma
+                        valores_c = df_cliente[col_cronograma].iloc[0:4].fillna("").astype(str).tolist()
+                        
+                        valores_obs = []
+                        if col_observacao:
+                            valores_obs = df_cliente[col_observacao].iloc[0:4].fillna("").astype(str).tolist()
+                        
+                        # Garante que as listas tenham exatamente 4 itens preenchendo com texto vazio se necessário
+                        while len(valores_c) < 4: valores_c.append("")
+                        while len(valores_obs) < 4: valores_obs.append("")
+                        
+                        rotulos = [
+                            "Prazo de implantação (dias úteis):",
+                            "Horas Estimadas:",
+                            "Disponibilidade horário do cliente:",
+                            "Disponibilidade dias da semana cliente:"
+                        ]
+                        
+                        # Desenha o cabeçalho do bloco CRONOGRAMA
+                        pdf.set_font("Arial", "B", 10)
+                        pdf.set_fill_color(4, 36, 100)
+                        pdf.set_text_color(255, 255, 255)
+                        pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
+                        pdf.set_text_color(0, 0, 0)
+                        
+                        # Desenha as 4 linhas fixas do Cronograma
+                        pdf.set_font("Arial", "", 9)
+                        for idx in range(4):
+                            pdf.cell(65, 8, rotulos[idx], border=1)
+                            pdf.cell(30, 8, str(valores_c[idx]), border=1, align="C")
+                            pdf.cell(95, 8, str(valores_obs[idx]), border=1, ln=True)
+                        pdf.ln(2)
+    
+                    # Identifica as colunas exatas da tabela de Atividades
+                    col_data = "DATA_C" if "DATA_C" in df_cliente.columns else ("DATA" if "DATA" in df_cliente.columns else None)
+                    col_dia = "DIA_C" if "DIA_C" in df_cliente.columns else ("DIA" if "DIA" in df_cliente.columns else None)
+                    col_hora = "HORARIO_C" if "HORARIO_C" in df_cliente.columns else ("HORARIO" if "HORARIO" in df_cliente.columns else None)
+                    col_ativ = "ATIVIDADES_C" if "ATIVIDADES_C" in df_cliente.columns else ("ATIVIDADES" if "ATIVIDADES" in df_cliente.columns else None)
+    
+                    if col_data and col_dia and col_hora and col_ativ:
+                        # Filtra trazendo apenas as linhas onde a coluna de ATIVIDADES está preenchida
+                        grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(subset=[col_ativ])
+                        
+                        if not grupo_atividades.empty:
+                            if pdf.get_y() > 220:
+                                pdf.add_page()
                                 
-                                if not grupo_atividades.empty:
-                                    if pdf.get_y() > 220:
-                                        pdf.add_page()
-                                        
-                                    pdf.set_font("Arial", "B", 10)
-                                    pdf.set_fill_color(4, 36, 100)
-                                    pdf.set_text_color(255, 255, 255)
-                                    pdf.cell(190, 10, "ATIVIDADES", border=1, ln=True, fill=True, align="C")
-                                    pdf.set_text_color(0, 0, 0)
-                                    
-                                    # Cabeçalho da tabela de atividades
-                                    pdf.set_font("Arial", "B", 9)
-                                    pdf.cell(25, 8, "DATA", border=1, align="C")
-                                    pdf.cell(35, 8, "DIA DA SEMANA", border=1, align="C")
-                                    pdf.cell(30, 8, "HORÁRIO", border=1, align="C")
-                                    pdf.cell(100, 8, "ATIVIDADES", border=1, ln=True, align="C")
-                                    
-                                    # Lista dinamicamente TODAS as linhas de atividades do cliente
-                                    pdf.set_font("Arial", "", 9)
-                                    for _, linha in grupo_atividades.iterrows():
-                                        if pdf.get_y() > 245:
-                                            pdf.add_page()
-                                        
-                                        # Tratamento seguro da estampa de data para remover o "00:00:00"
-                                        val_data = linha[col_data]
-                                        data_exibicao = ""
-                                        
-                                        if hasattr(val_data, "strftime"):
-                                            data_exibicao = val_data.strftime("%d/%m/%Y")
-                                        else:
-                                            raw_data = str(val_data).strip().split(" ")[0]
-                                            if "-" in raw_data:
-                                                try:
-                                                    from datetime import datetime
-                                                    data_exibicao = datetime.strptime(raw_data, "%Y-%m-%d").strftime("%d/%m/%Y")
-                                                except:
-                                                    data_exibicao = raw_data
-                                            else:
-                                                data_exibicao = raw_data
-                                        
-                                        horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
-                                        
-                                        pdf.cell(25, 8, data_exibicao, border=1, align="C")
-                                        pdf.cell(35, 8, str(linha[col_dia]), border=1, align="C")
-                                        pdf.cell(30, 8, horario_limpo, border=1, align="C")
-                                        pdf.cell(100, 8, str(linha[col_ativ]), border=1, ln=True)
-                                    pdf.ln(2)
-                        except Exception as e:
-                            import streamlit as st
-                            st.warning(f"Aviso técnico: Erro ao gerar blocos do cliente {cliente}: {e}")
+                            pdf.set_font("Arial", "B", 10)
+                            pdf.set_fill_color(4, 36, 100)
+                            pdf.set_text_color(255, 255, 255)
+                            pdf.cell(190, 10, "ATIVIDADES", border=1, ln=True, fill=True, align="C")
+                            pdf.set_text_color(0, 0, 0)
+                            
+                            # Cabeçalho da tabela de atividades
+                            pdf.set_font("Arial", "B", 9)
+                            pdf.cell(25, 8, "DATA", border=1, align="C")
+                            pdf.cell(35, 8, "DIA DA SEMANA", border=1, align="C")
+                            pdf.cell(30, 8, "HORÁRIO", border=1, align="C")
+                            pdf.cell(100, 8, "ATIVIDADES", border=1, ln=True, align="C")
+                            
+                            # Lista dinamicamente TODAS as linhas de atividades do cliente
+                            pdf.set_font("Arial", "", 9)
+                            for _, linha in grupo_atividades.iterrows():
+                                if pdf.get_y() > 245:
+                                    pdf.add_page()
+                                
+                                # Tratamento seguro da estampa de data para remover o "00:00:00"
+                                val_data = linha[col_data]
+                                data_exibicao = ""
+                                
+                                if hasattr(val_data, "strftime"):
+                                    data_exibicao = val_data.strftime("%d/%m/%Y")
+                                else:
+                                    raw_data = str(val_data).strip().split(" ")[0]
+                                    if "-" in raw_data:
+                                        try:
+                                            from datetime import datetime
+                                            data_exibicao = datetime.strptime(raw_data, "%Y-%m-%d").strftime("%d/%m/%Y")
+                                        except:
+                                            data_exibicao = raw_data
+                                    else:
+                                        data_exibicao = raw_data
+                                
+                                horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
+                                
+                                pdf.cell(25, 8, data_exibicao, border=1, align="C")
+                                pdf.cell(35, 8, str(linha[col_dia]), border=1, align="C")
+                                pdf.cell(30, 8, horario_limpo, border=1, align="C")
+                                pdf.cell(100, 8, str(linha[col_ativ]), border=1, ln=True)
+                            pdf.ln(2)
+                except Exception as e:
+                    import streamlit as st
+                    st.warning(f"Aviso técnico: Erro ao gerar blocos do cliente {cliente}: {e}")
+
 
 
 
