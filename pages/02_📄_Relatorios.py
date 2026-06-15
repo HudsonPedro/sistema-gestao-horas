@@ -631,6 +631,7 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VERSÃO ANTI-TRAVAMENTO MULTI-CLIENTE) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (RESOLVIDO PARA DADOS ESPALHADOS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE MÚLTIPLAS LINHAS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (RESOLVIDO COM PROPAGAÇÃO DE LINHAS) ---
             import re
             import unicodedata
     
@@ -659,21 +660,20 @@ if btn_gerar:
                     col_cronograma = next((c for c in ["CRONOGRAMA_C", "CRONOGRAMA"] if c in df_cliente.columns), None)
                     col_observacao = next((c for c in ["OBSERVACAO_C", "OBSERVAÇÃO"] if c in df_cliente.columns), None)
                     
-                    # Só renderiza o Cronograma se a coluna existir e tiver dados na primeira linha
+                    # --- EXTRAÇÃO DO CRONOGRAMA (Linhas fixas de 1 a 4 antes de qualquer modificação) ---
                     if col_cronograma and len(df_cliente) > 0:
-                        # CORREÇÃO INVERTIDA: Captura as 4 primeiras linhas da tabela, substituindo NaN por vazio
                         valores_c = df_cliente[col_cronograma].iloc[0:4].fillna("").astype(str).tolist()
                         
                         valores_obs = []
                         if col_observacao:
                             valores_obs = df_cliente[col_observacao].iloc[0:4].fillna("").astype(str).tolist()
                         
-                        # Garante tamanho exato de 4 elementos na lista para o quadro fixo
+                        # Garante tamanho exato de 4 elementos na lista para as 4 perguntas fixas
                         while len(valores_c) < 4: valores_c.append("")
                         while len(valores_obs) < 4: valores_obs.append("")
                         
-                        # Verifica se pelo menos o primeiro valor do cronograma existe para desenhar o bloco
-                        if valores_c[0].strip() != "":
+                        # Se houver dados reais no cronograma, renderiza o bloco
+                        if any(v.strip() != "" for v in valores_c):
                             rotulos = [
                                 "Prazo de implantação (dias úteis):",
                                 "Horas Estimadas:",
@@ -695,14 +695,14 @@ if btn_gerar:
                                 pdf.cell(95, 8, str(valores_obs[idx]), border=1, ln=True)
                             pdf.ln(2)
     
-                    # Identifica de forma flexível as colunas da tabela de Atividades
+                    # --- EXTRAÇÃO DAS ATIVIDADES (Garante a leitura de todas as linhas de baixo) ---
                     col_data = next((c for c in ["DATA_C", "DATA"] if c in df_cliente.columns), None)
                     col_dia = next((c for c in ["DIA_C", "DIA"] if c in df_cliente.columns), None)
                     col_hora = next((c for c in ["HORARIO_C", "HORARIO"] if c in df_cliente.columns), None)
                     col_ativ = next((c for c in ["ATIVIDADES_C", "ATIVIDADES"] if c in df_cliente.columns), None)
     
                     if col_data and col_dia and col_hora and col_ativ:
-                        # Remove linhas onde os dados essenciais de atividades estejam vazios
+                        # Remove linhas onde absolutamente tudo está vazio para não criar lixo na tabela
                         grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(how="all")
                         
                         if not grupo_atividades.empty:
@@ -726,23 +726,22 @@ if btn_gerar:
                                 if pdf.get_y() > 245:
                                     pdf.add_page()
                                 
-                                # Tratamento seguro da data salvando contra quebras de tipo (str vs Timestamp)
+                                # Tratamento seguro da data para remover timestamp
                                 val_data = linha[col_data]
                                 data_exibicao = ""
                                 
                                 if hasattr(val_data, "strftime"):
                                     data_exibicao = val_data.strftime("%d/%m/%Y")
                                 else:
-                                    raw_data = str(val_data).strip().split(" ")
-                                    data_somente = raw_data[0]
-                                    if "-" in data_somente:
+                                    raw_data = str(val_data).strip().split(" ")[0]
+                                    if "-" in raw_data:
                                         try:
                                             from datetime import datetime
-                                            data_exibicao = datetime.strptime(data_somente, "%Y-%m-%d").strftime("%d/%m/%Y")
+                                            data_exibicao = datetime.strptime(raw_data, "%Y-%m-%d").strftime("%d/%m/%Y")
                                         except:
-                                            data_exibicao = data_somente
+                                            data_exibicao = raw_data
                                     else:
-                                        data_exibicao = data_somente
+                                        data_exibicao = raw_data
                                 
                                 horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                                 
@@ -754,6 +753,7 @@ if btn_gerar:
                 except Exception as e:
                     import streamlit as st
                     st.warning(f"Aviso técnico: Erro ao processar dados extras do cliente {cliente}: {e}")
+
 
 
 
