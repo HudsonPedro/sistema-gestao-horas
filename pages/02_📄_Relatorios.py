@@ -151,15 +151,22 @@ class PDF(FPDF):
         self.cell(0, 15, f"RELATÓRIO DE ATENDIMENTO Nº {ra_mostrar}", ln=True, align="L")
 
 def enviar_relatorio_email(arquivos_anexos, servidor_smtp, porta, email_remetente, senha, destinatario):
-    if not arquivos_anexos: 
+    if not arquivos_anexos:
         return False, "Nenhum arquivo para anexar."
-    
+
+    # CORREÇÃO: Extrai corretamente o primeiro elemento se for uma lista
     if isinstance(arquivos_anexos, list):
-        primeiro_arquivo = arquivos_anexos
+        if len(arquivos_anexos) > 0:
+            primeiro_arquivo = arquivos_anexos[0]  # Pega o primeiro item da lista
+        else:
+            return False, "A lista de anexos está vazia."
     else:
         primeiro_arquivo = arquivos_anexos
-    
-    nome_base = os.path.basename(primeiro_arquivo).replace(".pdf", "").replace(".xlsx", "").strip()
+
+    # Garante que é uma string válida antes de extrair o nome base
+    primeiro_arquivo_str = str(primeiro_arquivo)
+    nome_base = os.path.basename(primeiro_arquivo_str).replace(".pdf", "").replace(".xlsx", "").strip()
+
     
     msg = MIMEMultipart()
     msg['From'] = email_remetente
