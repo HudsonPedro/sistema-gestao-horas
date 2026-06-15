@@ -625,8 +625,29 @@ if btn_gerar:
             # 1. Validação estrita: Só entra se a aba com o nome exato do cliente existir no documento
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF BLINDADO E CORRIGIDO) ---
             # Verifica se o cliente possui uma aba dedicada na planilha
-            if cliente in dict_abas:
-                df_cliente = dict_abas[cliente].copy()
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VERSÃO FLEXÍVEL MULTI-CLIENTE) ---
+            import re
+            import unicodedata
+    
+            def normalizar_texto(texto):
+                """Remove acentos, espaços extras e padroniza em minúsculas para comparação segura."""
+                if not isinstance(texto, str):
+                    return ""
+                texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
+                return re.sub(r'\s+', ' ', texto).strip().lower()
+    
+            # Procura a aba do cliente usando comparação flexível
+            aba_encontrada = None
+            cliente_normalizado = normalizar_texto(cliente)
+    
+            for nome_aba in dict_abas.keys():
+                if normalizar_texto(nome_aba) == cliente_normalizado:
+                    aba_encontrada = nome_aba
+                    break
+    
+            # Se encontrou a aba (para os clientes especiais que possuem o bloco)
+            if aba_encontrada:
+                df_cliente = dict_abas[aba_encontrada].copy()
                 
                 # Identifica de forma flexível as colunas de Cronograma e Observação
                 col_cronograma = next((c for c in ["CRONOGRAMA_C", "CRONOGRAMA"] if c in df_cliente.columns), None)
@@ -640,7 +661,7 @@ if btn_gerar:
                     if col_observacao:
                         valores_obs = df_cliente[col_observacao].fillna("").astype(str).tolist()
                     
-                    # Garante tamanho mínimo preenchendo com espaço em branco
+                    # Garante tamanho mínimo de 4 linhas preenchendo com espaço em branco
                     while len(valores_c) < 4: valores_c.append("")
                     while len(valores_obs) < 4: valores_obs.append("")
                     
@@ -651,7 +672,7 @@ if btn_gerar:
                         "Disponibilidade dias da semana cliente:"
                     ]
                     
-                    # Renderização segura do cabeçalho CRONOGRAMA
+                    # Renderização do cabeçalho CRONOGRAMA
                     pdf.set_font("Arial", "B", 10)
                     pdf.set_fill_color(4, 36, 100)
                     pdf.set_text_color(255, 255, 255)
@@ -700,9 +721,10 @@ if btn_gerar:
                             raw_data = str(linha[col_data]).strip()
                             data_limpa = raw_data.split(" ")[0] # Pega apenas a parte antes do espaço
                             
-                            # Tenta converter o formato se a data vier no padrão americano (AAAA-MM-DD)
+                            # Tenta converter o formato se a data vier no padrão ISO (AAAA-MM-DD)
                             if "-" in data_limpa:
                                 try:
+                                    from datetime import datetime
                                     data_limpa = datetime.strptime(data_limpa, "%Y-%m-%d").strftime("%d/%m/%Y")
                                 except:
                                     pass
@@ -715,6 +737,7 @@ if btn_gerar:
                             pdf.cell(30, 8, horario_limpo, border=1, align="C")
                             pdf.cell(100, 8, str(linha[col_ativ]), border=1, ln=True)
                         pdf.ln(2)
+
 
 
 
