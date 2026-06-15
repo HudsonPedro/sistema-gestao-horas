@@ -627,6 +627,7 @@ if btn_gerar:
             # Verifica se o cliente possui uma aba dedicada na planilha
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VERSÃO FLEXÍVEL MULTI-CLIENTE) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE CONVERSÃO DE DATA) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORRIGIDO PARA MÚLTIPLAS LINHAS) ---
             import re
             import unicodedata
     
@@ -654,15 +655,16 @@ if btn_gerar:
                 col_cronograma = next((c for c in ["CRONOGRAMA_C", "CRONOGRAMA"] if c in df_cliente.columns), None)
                 col_observacao = next((c for c in ["OBSERVACAO_C", "OBSERVAÇÃO"] if c in df_cliente.columns), None)
                 
-                # Só renderiza o Cronograma se a coluna existir e não estiver totalmente vazia
+                # Só renderiza o Cronograma se a coluna existir e tiver dados
                 if col_cronograma and not df_cliente[col_cronograma].dropna().empty:
-                    valores_c = df_cliente[col_cronograma].fillna("").astype(str).tolist()
+                    # CORREÇÃO DA MATRIZ: Pegamos apenas as 4 primeiras linhas da aba para o Cronograma
+                    valores_c = df_cliente[col_cronograma].head(4).fillna("").astype(str).tolist()
                     
                     valores_obs = []
                     if col_observacao:
-                        valores_obs = df_cliente[col_observacao].fillna("").astype(str).tolist()
+                        valores_obs = df_cliente[col_observacao].head(4).fillna("").astype(str).tolist()
                     
-                    # Garante tamanho mínimo de 4 linhas preenchendo com espaço em branco
+                    # Garante tamanho exato de 4 elementos na lista para as 4 perguntas fixas
                     while len(valores_c) < 4: valores_c.append("")
                     while len(valores_obs) < 4: valores_obs.append("")
                     
@@ -694,7 +696,7 @@ if btn_gerar:
                 col_ativ = next((c for c in ["ATIVIDADES_C", "ATIVIDADES"] if c in df_cliente.columns), None)
     
                 if col_data and col_dia and col_hora and col_ativ:
-                    # Remove linhas completamente nulas para evitar renderizar tabelas vazias
+                    # Remove linhas completamente nulas para listar todos os atendimentos
                     grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(how="all")
                     
                     if not grupo_atividades.empty:
@@ -718,11 +720,10 @@ if btn_gerar:
                             if pdf.get_y() > 245:
                                 pdf.add_page()
                             
-                            # Limpeza corrigida da estampa de data para remover o "00:00:00"
+                            # Limpeza robusta da data independente de quantas linhas existam
                             raw_data = str(linha[col_data]).strip()
-                            data_somente = raw_data.split(" ")[0] # Pega apenas a string antes do espaço
+                            data_somente = raw_data.split(" ")[0] # Pega estritamente antes do espaço
                             
-                            # Converte de AAAA-MM-DD para DD/MM/AAAA de forma segura se necessário
                             if "-" in data_somente:
                                 try:
                                     from datetime import datetime
@@ -732,7 +733,6 @@ if btn_gerar:
                             else:
                                 data_exibicao = data_somente
                             
-                            # Limpeza do Horário
                             horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                             
                             pdf.cell(25, 8, data_exibicao, border=1, align="C")
@@ -740,6 +740,7 @@ if btn_gerar:
                             pdf.cell(30, 8, horario_limpo, border=1, align="C")
                             pdf.cell(100, 8, str(linha[col_ativ]), border=1, ln=True)
                         pdf.ln(2)
+
 
 
 
