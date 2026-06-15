@@ -964,6 +964,7 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - CORREÇÃO DE BORDAS INTERNAS) ---
                 # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - CORREÇÃO DE BORDAS INTERNAS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX DE BORDAS MERGE DEFINITIVO) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - SEGUINDO ESTILO DO BLOCO DE CIMA) ---
             import re
             import unicodedata
     
@@ -995,10 +996,10 @@ if btn_gerar:
                 try:
                     df_cliente = dict_abas[aba_encontrada].copy()
                     
-                    # REUTILIZAÇÃO SEGURA: Variáveis de estilo nativas do seu app
-                    estilo_texto = f_T if 'f_T' in locals() else None
-                    estilo_cabecalho = f_T_b if 'f_T_b' in locals() else ('f_TR' if 'f_TR' in locals() else estilo_texto)
-                    estilo_lateral = f_TL if 'f_TL' in locals() else estilo_texto
+                    # Resgata os formatos oficiais que funcionam perfeitamente no seu relatório
+                    f_comum = f_T if 'f_T' in locals() else None
+                    f_cab = f_T_b if 'f_T_b' in locals() else f_comum
+                    f_lat = f_TL if 'f_TL' in locals() else f_comum
                     
                     # Identifica as colunas de Cronograma e Observação
                     col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
@@ -1029,14 +1030,15 @@ if btn_gerar:
                             ]
                             
                             for idx in range(4):
-                                # Escreve o rótulo mesclando A e B aplicando o formato diretamente no merge_range
-                                ws.merge_range(row - 1, 0, row - 1, 1, rotulos[idx], estilo_lateral)
+                                # Aplica o estilo na célula final do merge para forçar o fechamento da linha vertical
+                                ws.write(row - 1, 1, "", f_lat)
+                                ws.merge_range(row - 1, 0, row - 1, 1, rotulos[idx], f_lat)
                                 
-                                # Coluna C (Valor único)
-                                ws.write(row - 1, 2, str(valores_c[idx]), estilo_texto)
+                                ws.write(row - 1, 2, str(valores_c[idx]), f_comum)
                                 
-                                # Escreve as observações mesclando de D até H aplicando o formato diretamente no merge_range
-                                ws.merge_range(row - 1, 3, row - 1, 7, str(valores_obs[idx]), estilo_texto)
+                                # Força a borda da extrema direita (Coluna H / Índice 7) antes do merge
+                                ws.write(row - 1, 7, "", f_comum)
+                                ws.merge_range(row - 1, 3, row - 1, 7, str(valores_obs[idx]), f_comum)
                                 
                                 ws.set_row(row - 1, 16)
                                 row += 1
@@ -1058,16 +1060,17 @@ if btn_gerar:
                             row += 1
                             
                             # Cabeçalho das Colunas
-                            ws.write(row - 1, 0, "DATA", estilo_cabecalho)
-                            ws.write(row - 1, 1, "DIA DA SEMANA", estilo_cabecalho)
-                            ws.write(row - 1, 2, "HORÁRIO", estilo_cabecalho)
+                            ws.write(row - 1, 0, "DATA", f_cab)
+                            ws.write(row - 1, 1, "DIA DA SEMANA", f_cab)
+                            ws.write(row - 1, 2, "HORÁRIO", f_cab)
                             
-                            # Merge do cabeçalho de ATIVIDADES (D até H) via índices numéricos seguros
-                            ws.merge_range(row - 1, 3, row - 1, 7, "ATIVIDADES", estilo_cabecalho)
+                            # Força borda direita do cabeçalho
+                            ws.write(row - 1, 7, "", f_cab)
+                            ws.merge_range(row - 1, 3, row - 1, 7, "ATIVIDADES", f_cab)
                             ws.set_row(row - 1, 16)
                             row += 1
                             
-                            # Loop de registros
+                            # Loop de registros dinâmicos
                             for _, linha in grupo_atividades.iterrows():
                                 val_data = linha[col_data]
                                 data_exibicao = ""
@@ -1088,12 +1091,13 @@ if btn_gerar:
                                 
                                 horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                                 
-                                ws.write(row - 1, 0, data_exibicao, estilo_texto)
-                                ws.write(row - 1, 1, str(linha[col_dia]), estilo_texto)
-                                ws.write(row - 1, 2, horario_limpo, estilo_texto)
+                                ws.write(row - 1, 0, data_exibicao, f_comum)
+                                ws.write(row - 1, 1, str(linha[col_dia]), f_comum)
+                                ws.write(row - 1, 2, horario_limpo, f_comum)
                                 
-                                # Merge final de dados (D até H) aplicando a borda em todo o bloco de uma vez só
-                                ws.merge_range(row - 1, 3, row - 1, 7, str(linha[col_ativ]), estilo_texto)
+                                # ESCREVE NA CÉLULA EXTREMA DIREITA (Coluna H / Índice 7) para fechar a linha vermelha do seu print
+                                ws.write(row - 1, 7, "", f_comum)
+                                ws.merge_range(row - 1, 3, row - 1, 7, str(linha[col_ativ]), f_comum)
                                 
                                 ws.set_row(row - 1, 16)
                                 row += 1
@@ -1101,6 +1105,7 @@ if btn_gerar:
                 except Exception as e:
                     import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
+
 
 
 
