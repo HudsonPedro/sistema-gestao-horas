@@ -959,6 +959,8 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel REPLICADO E CORRIGIDO) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL DEFINITIVO E AUTOCONTIDO) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL CORRIGIDO E SEGURO) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL COM ESTILOS EXISTENTES) ---
+                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL COM ESTILOS EXISTENTES) ---
             import re
             import unicodedata
     
@@ -991,13 +993,11 @@ if btn_gerar:
                 try:
                     df_cliente = dict_abas[aba_encontrada].copy()
                     
-                    # --- SOLUÇÃO DO BUG: Pega a referência do workbook direto da worksheet (ws) ---
-                    wb_ref = ws.workbook
-                    
-                    # Cria os formatos vinculados ao workbook correto de produção
-                    f_celula_comum = wb_ref.add_format({'border': 1, 'align': 'left', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
-                    f_celula_centro = wb_ref.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
-                    f_cabecalho_tabela = wb_ref.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'bold': True, 'font_name': 'Arial', 'font_size': 9})
+                    # REUTILIZAÇÃO SEGURA: Usamos f_T para texto comum e f_T_b para cabeçalhos (variáveis do seu app)
+                    # Criamos um fallback caso f_T_b ou f_TL não existam
+                    estilo_texto = f_T if 'f_T' in locals() else None
+                    estilo_cabecalho = f_T_b if 'f_T_b' in locals() else ('f_TR' if 'f_TR' in locals() else estilo_texto)
+                    estilo_lateral = f_TL if 'f_TL' in locals() else estilo_texto
                     
                     # Identifica as colunas de Cronograma e Observação
                     col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
@@ -1015,7 +1015,7 @@ if btn_gerar:
                         while len(valores_obs) < 4: valores_obs.append("")
                         
                         if any(v.strip() != "" for v in valores_c):
-                            # Título do Bloco Cronograma (Usa o f_blue original do seu app)
+                            # Título do Bloco Cronograma
                             ws.merge_range(f'A{row}:H{row}', "CRONOGRAMA", f_blue)
                             ws.set_row(row - 1, 18)
                             row += 1
@@ -1028,15 +1028,12 @@ if btn_gerar:
                             ]
                             
                             for idx in range(4):
-                                # Coluna A e B mescladas para o Rótulo lateral esquerdo
-                                ws.merge_range(f'A{row}:B{row}', rotulos[idx], f_celula_comum)
-                                # Coluna C para o Valor numérico/texto centralizado
-                                ws.write(f'C{row}', str(valores_c[idx]), f_celula_centro)
-                                # Colunas D até H mescladas para a Observação da direita
-                                ws.merge_range(f'D{row}:H{row}', str(valores_obs[idx]), f_celula_comum)
+                                ws.merge_range(f'A{row}:B{row}', rotulos[idx], estilo_lateral)
+                                ws.write(f'C{row}', str(valores_c[idx]), estilo_texto)
+                                ws.merge_range(f'D{row}:H{row}', str(valores_obs[idx]), estilo_texto)
                                 ws.set_row(row - 1, 16)
                                 row += 1
-                            row += 1 # Linha em branco de respiro
+                            row += 1
     
                     # 2. GRAVAÇÃO DO BLOCO ATIVIDADES NO EXCEL
                     col_data = "DATA_C" if "DATA_C" in df_cliente.columns else ("DATA" if "DATA" in df_cliente.columns else None)
@@ -1048,22 +1045,22 @@ if btn_gerar:
                         grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(subset=[col_ativ])
                         
                         if not grupo_atividades.empty:
-                            # Título do Bloco Atividades (Usa o f_blue original do seu app)
+                            # Título do Bloco Atividades
                             ws.merge_range(f'A{row}:H{row}', "ATIVIDADES", f_blue)
                             ws.set_row(row - 1, 18)
                             row += 1
                             
-                            # Cabeçalho das Colunas igualzinho ao PDF
-                            ws.write(f'A{row}', "DATA", f_cabecalho_tabela)
-                            ws.write(f'B{row}', "DIA DA SEMANA", f_cabecalho_tabela)
-                            ws.write(f'C{row}', "HORÁRIO", f_cabecalho_tabela)
-                            ws.merge_range(f'D{row}:H{row}', "ATIVIDADES", f_cabecalho_tabela)
+                            # Cabeçalho das Colunas
+                            ws.write(f'A{row}', "DATA", estilo_cabecalho)
+                            ws.write(f'B{row}', "DIA DA SEMANA", estilo_cabecalho)
+                            ws.write(f'C{row}', "HORÁRIO", estilo_cabecalho)
+                            ws.merge_range(f'D{row}:H{row}', "ATIVIDADES", estilo_cabecalho)
                             ws.set_row(row - 1, 16)
                             row += 1
                             
-                            # Loop para descarregar todas as linhas de atendimentos com bordas fechadas
+                            # Loop de registros
                             for _, linha in grupo_atividades.iterrows():
-                                val_data = Finder_data = linha[col_data]
+                                val_data = linha[col_data]
                                 data_exibicao = ""
                                 
                                 if hasattr(val_data, "strftime"):
@@ -1082,17 +1079,18 @@ if btn_gerar:
                                 
                                 horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                                 
-                                # Grava as células com bordas completas em todas as laterais (idêntico ao grid do PDF)
-                                ws.write(f'A{row}', data_exibicao, f_celula_centro)
-                                ws.write(f'B{row}', str(linha[col_dia]), f_celula_centro)
-                                ws.write(f'C{row}', horario_limpo, f_celula_centro)
-                                ws.merge_range(f'D{row}:H{row}', str(linha[col_ativ]), f_celula_comum)
+                                ws.write(f'A{row}', data_exibicao, estilo_texto)
+                                ws.write(f'B{row}', str(linha[col_dia]), estilo_texto)
+                                ws.write(f'C{row}', horario_limpo, estilo_texto)
+                                ws.merge_range(f'D{row}:H{row}', str(linha[col_ativ]), estilo_texto)
                                 ws.set_row(row - 1, 16)
                                 row += 1
-                            row += 1 # Linha em branco de respiro
+                            row += 1
                 except Exception as e:
                     import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
+
+
 
 
 
