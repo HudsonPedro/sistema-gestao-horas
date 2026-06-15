@@ -968,6 +968,7 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - GRID TOTALMENTE FECHADO) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - REMOÇÃO DE MERGES EM DADOS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX TOTAL DE BORDAS VERTICAIS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - LÓGICA DO PDF REPLICADA) ---
             import re
             import unicodedata
     
@@ -999,20 +1000,13 @@ if btn_gerar:
                 try:
                     df_cliente = dict_abas[aba_encontrada].copy()
                     
-                    # --- AQUI ESTÁ A SOLUÇÃO: Forçamos a criação de formatos com bordas 4D completas ---
-                    # Pegamos o workbook de produção diretamente de onde os estilos originais foram criados
-                    wb_ref = f_T.workbook if 'f_T' in locals() and hasattr(f_T, 'workbook') else (f_blue.workbook if 'f_blue' in locals() and hasattr(f_blue, 'workbook') else None)
+                    # --- SOLUÇÃO DEFINITIVA: Extrai o workbook do objeto ws para injetar bordas reais ---
+                    wb_atual = ws.workbook
                     
-                    if wb_ref:
-                        # Cria novos estilos blindados com bordas em todos os lados (idêntico ao grid do PDF)
-                        f_grid_comum = wb_ref.add_format({'border': 1, 'align': 'left', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
-                        f_grid_centro = wb_ref.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
-                        f_grid_cab = wb_ref.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'bold': True, 'font_name': 'Arial', 'font_size': 9, 'bg_color': '#EFEFEF'})
-                    else:
-                        # Fallback de segurança usando seus estilos caso o workbook não seja exposto
-                        f_grid_comum = f_T if 'f_T' in locals() else None
-                        f_grid_centro = f_T if 'f_T' in locals() else None
-                        f_grid_cab = f_T_b if 'f_T_b' in locals() else f_grid_comum
+                    # Formatos autocontidos com bordas fechadas em todas as direções (Ignora f_T problemático)
+                    f_grade_texto = wb_atual.add_format({'border': 1, 'align': 'left', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
+                    f_grade_centro = wb_atual.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
+                    f_grade_cabecalho = wb_atual.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'bold': True, 'font_name': 'Arial', 'font_size': 9})
                     
                     # Identifica as colunas de Cronograma e Observação
                     col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
@@ -1043,18 +1037,14 @@ if btn_gerar:
                             ]
                             
                             for idx in range(4):
-                                # Aplica o formato de grade fechada célula por célula antes do merge de rótulos
-                                ws.write_blank(row - 1, 0, f_grid_comum)
-                                ws.write_blank(row - 1, 1, f_grid_comum)
-                                ws.merge_range(row - 1, 0, row - 1, 1, rotulos[idx], f_grid_comum)
+                                # Mesclagem A-B com bordas completas
+                                ws.merge_range(row - 1, 0, row - 1, 1, rotulos[idx], f_grade_texto)
                                 
-                                # Coluna C (Valor centralizado com bordas completas)
-                                ws.write(row - 1, 2, str(valores_c[idx]), f_grid_centro)
+                                # Coluna C (Valor centralizado e cercado por bordas)
+                                ws.write(row - 1, 2, str(valores_c[idx]), f_grade_centro)
                                 
-                                # Aplica o formato de grade em todo o bloco de Observações (D até H)
-                                for col_idx in range(3, 8):
-                                    ws.write_blank(row - 1, col_idx, f_grid_comum)
-                                ws.merge_range(row - 1, 3, row - 1, 7, str(valores_obs[idx]), f_grid_comum)
+                                # Mesclagem D-H para observações com bordas completas nas extremidades
+                                ws.merge_range(row - 1, 3, row - 1, 7, str(valores_obs[idx]), f_grade_texto)
                                 
                                 ws.set_row(row - 1, 16)
                                 row += 1
@@ -1075,18 +1065,15 @@ if btn_gerar:
                             ws.set_row(row - 1, 18)
                             row += 1
                             
-                            # Cabeçalho das Colunas com a nova grade fechada
-                            ws.write(row - 1, 0, "DATA", f_grid_cab)
-                            ws.write(row - 1, 1, "DIA DA SEMANA", f_grid_cab)
-                            ws.write(row - 1, 2, "HORÁRIO", f_grid_cab)
-                            
-                            for col_idx in range(3, 8):
-                                ws.write_blank(row - 1, col_idx, f_grid_cab)
-                            ws.merge_range(row - 1, 3, row - 1, 7, "ATIVIDADES", f_grid_cab)
+                            # Cabeçalho das Colunas
+                            ws.write(row - 1, 0, "DATA", f_grade_cabecalho)
+                            ws.write(row - 1, 1, "DIA DA SEMANA", f_grade_cabecalho)
+                            ws.write(row - 1, 2, "HORÁRIO", f_grade_cabecalho)
+                            ws.merge_range(row - 1, 3, row - 1, 7, "ATIVIDADES", f_grade_cabecalho)
                             ws.set_row(row - 1, 16)
                             row += 1
                             
-                            # Loop de registros dinâmicos das Atividades
+                            # Loop de registros dinâmicos das Atividades (Célula por Célula como no FPDF)
                             for _, linha in grupo_atividades.iterrows():
                                 val_data = linha[col_data]
                                 data_exibicao = ""
@@ -1107,15 +1094,11 @@ if btn_gerar:
                                 
                                 horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                                 
-                                # Grava as colunas A, B e C usando o novo grid fechado em 4 direções
-                                ws.write(row - 1, 0, data_exibicao, f_grid_centro)
-                                ws.write(row - 1, 1, str(linha[col_dia]), f_grid_centro)
-                                ws.write(row - 1, 2, horario_limpo, f_grid_centro)
-                                
-                                # Aplica a grade em todas as colunas do merge de Atividades (D até H)
-                                for col_idx in range(3, 8):
-                                    ws.write_blank(row - 1, col_idx, f_grid_comum)
-                                ws.merge_range(row - 1, 3, row - 1, 7, str(linha[col_ativ]), f_grid_comum)
+                                # Escrita explícita forçando a ativação do grid vertical
+                                ws.write(row - 1, 0, data_exibicao, f_grade_centro)
+                                ws.write(row - 1, 1, str(linha[col_dia]), f_grade_centro)
+                                ws.write(row - 1, 2, horario_limpo, f_grade_centro)
+                                ws.merge_range(row - 1, 3, row - 1, 7, str(linha[col_ativ]), f_grade_texto)
                                 
                                 ws.set_row(row - 1, 16)
                                 row += 1
@@ -1123,6 +1106,7 @@ if btn_gerar:
                 except Exception as e:
                     import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
+
 
 
 
