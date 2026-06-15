@@ -969,6 +969,7 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - REMOÇÃO DE MERGES EM DADOS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX TOTAL DE BORDAS VERTICAIS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - LÓGICA DO PDF REPLICADA) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - MODIFICAÇÃO DE FORMATO ATIVO) ---
             import re
             import unicodedata
     
@@ -1000,13 +1001,26 @@ if btn_gerar:
                 try:
                     df_cliente = dict_abas[aba_encontrada].copy()
                     
-                    # --- SOLUÇÃO DEFINITIVA: Extrai o workbook do objeto ws para injetar bordas reais ---
-                    wb_atual = ws.workbook
-                    
-                    # Formatos autocontidos com bordas fechadas em todas as direções (Ignora f_T problemático)
-                    f_grade_texto = wb_atual.add_format({'border': 1, 'align': 'left', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
-                    f_grade_centro = wb_atual.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
-                    f_grade_cabecalho = wb_atual.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'bold': True, 'font_name': 'Arial', 'font_size': 9})
+                    # --- SOLUÇÃO REAL DAS BORDAS SEM USAR 'workbook':
+                    # Reutilizamos os seus formatos originais do aplicativo
+                    f_grade_texto = f_T if 'f_T' in locals() else None
+                    f_grade_centro = f_T if 'f_T' in locals() else None
+                    f_grade_cabecalho = f_T_b if 'f_T_b' in locals() else f_grade_texto
+    
+                    # Força dinamicamente a ativação de bordas completas (esquerda, direita, cima, baixo)
+                    # alterando as propriedades internas dos objetos de formato que você já declarou
+                    if f_grade_texto:
+                        f_grade_texto.set_border(1)
+                        f_grade_texto.set_align('left')
+                        f_grade_texto.set_valign('vcenter')
+                    if f_grade_centro:
+                        f_grade_centro.set_border(1)
+                        f_grade_centro.set_align('center')
+                        f_grade_centro.set_valign('vcenter')
+                    if f_grade_cabecalho:
+                        f_grade_cabecalho.set_border(1)
+                        f_grade_cabecalho.set_align('center')
+                        f_grade_cabecalho.set_valign('vcenter')
                     
                     # Identifica as colunas de Cronograma e Observação
                     col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
@@ -1037,13 +1051,13 @@ if btn_gerar:
                             ]
                             
                             for idx in range(4):
-                                # Mesclagem A-B com bordas completas
+                                # Mesclagem A-B com bordas completas aplicadas direto no método oficial
                                 ws.merge_range(row - 1, 0, row - 1, 1, rotulos[idx], f_grade_texto)
                                 
                                 # Coluna C (Valor centralizado e cercado por bordas)
                                 ws.write(row - 1, 2, str(valores_c[idx]), f_grade_centro)
                                 
-                                # Mesclagem D-H para observações com bordas completas nas extremidades
+                                # Mesclagem D-H para observações com as bordas laterais travadas
                                 ws.merge_range(row - 1, 3, row - 1, 7, str(valores_obs[idx]), f_grade_texto)
                                 
                                 ws.set_row(row - 1, 16)
@@ -1073,7 +1087,7 @@ if btn_gerar:
                             ws.set_row(row - 1, 16)
                             row += 1
                             
-                            # Loop de registros dinâmicos das Atividades (Célula por Célula como no FPDF)
+                            # Loop de registros dinâmicos das Atividades (Célula por Célula)
                             for _, linha in grupo_atividades.iterrows():
                                 val_data = linha[col_data]
                                 data_exibicao = ""
@@ -1094,7 +1108,7 @@ if btn_gerar:
                                 
                                 horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                                 
-                                # Escrita explícita forçando a ativação do grid vertical
+                                # Escrita explícita ativando o grid completo
                                 ws.write(row - 1, 0, data_exibicao, f_grade_centro)
                                 ws.write(row - 1, 1, str(linha[col_dia]), f_grade_centro)
                                 ws.write(row - 1, 2, horario_limpo, f_grade_centro)
@@ -1106,6 +1120,7 @@ if btn_gerar:
                 except Exception as e:
                     import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
+
 
 
 
