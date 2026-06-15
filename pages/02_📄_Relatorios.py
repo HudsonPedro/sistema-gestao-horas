@@ -633,8 +633,8 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE MÚLTIPLAS LINHAS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (RESOLVIDO COM PROPAGAÇÃO DE LINHAS) ---
                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE VALIDAÇÃO DE COLUNA) ---
-                    # Como os nomes estão idênticos, a busca direta por chave funciona perfeitamente
-                    if cliente in dict_abas:
+                   # Como os nomes estão idênticos, a busca direta por chave funciona perfeitamente
+                   if cliente in dict_abas:
                         try:
                             df_cliente = dict_abas[cliente].copy()
                             
