@@ -637,80 +637,58 @@ if btn_gerar:
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE VALIDAÇÃO DE COLUNA) ---
             # Como os nomes estão idênticos, a busca direta por chave funciona perfeitamente
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (COMPARAÇÃO COM ABA LEGENDAS) ---
-            import re
-            import unicodedata
-    
-            def normalizar_texto(texto):
-                """Remove acentos, espaços extras e padroniza para comparação segura."""
-                if not isinstance(texto, str):
-                    return ""
-                texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
-                return re.sub(r'\s+', ' ', texto).strip().lower()
-    
-            # 1. Validação Crucial: Verifica se o cliente está listado na aba Legendas
-            cliente_autorizado = False
-            if "Legendas" in dict_abas:
-                df_legendas = dict_abas["Legendas"]
-                # Identifica a coluna correta (Clientes) independente de espaços ou maiúsculas
-                col_clientes_leg = next((c for c in df_legendas.columns if "CLIENTE" in str(c).upper()), None)
-                
-                if col_clientes_leg:
-                    lista_autorizados = df_legendas[col_clientes_leg].dropna().astype(str).tolist()
-                    lista_autorizados_norm = [normalizar_texto(x) for x in lista_autorizados]
-                    if normalizar_texto(cliente) in lista_autorizados_norm:
-                        cliente_autorizado = True
-    
-            # 2. Se o cliente estiver na aba Legendas e possuir uma aba própria com o mesmo nome
-            if cliente_autorizado and (cliente in dict_abas):
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VALIDAÇÃO INDEPENDENTE DIRETA) ---
+            if cliente in dict_abas:
                 try:
                     df_cliente = dict_abas[cliente].copy()
                     
-                    # Identifica as colunas exatas do Cronograma e Observação
+                    # Identifica as colunas de Cronograma e Observação
                     col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
                     col_observacao = "OBSERVACAO_C" if "OBSERVACAO_C" in df_cliente.columns else ("OBSERVAÇÃO" if "OBSERVAÇÃO" in df_cliente.columns else None)
                     
-                    # VALIDAÇÃO FIXADA: Verifica se a primeira linha do cronograma possui dado válido
-                    if col_cronograma and len(df_cliente) > 0 and not pd.isna(df_cliente[col_cronograma].iloc[0]):
-                        
-                        # Captura exatamente as 4 primeiras linhas físicas para o Cronograma
+                    # 1. RENDERIZAÇÃO DO CRONOGRAMA (Se a coluna existir na aba)
+                    if col_cronograma and len(df_cliente) > 0:
+                        # Captura estritamente as 4 primeiras linhas da aba para o quadro fixo
                         valores_c = df_cliente[col_cronograma].iloc[0:4].fillna("").astype(str).tolist()
                         
                         valores_obs = []
                         if col_observacao:
                             valores_obs = df_cliente[col_observacao].iloc[0:4].fillna("").astype(str).tolist()
                         
+                        # Garante tamanho exato de 4 elementos na lista
                         while len(valores_c) < 4: valores_c.append("")
                         while len(valores_obs) < 4: valores_obs.append("")
                         
-                        rotulos = [
-                            "Prazo de implantação (dias úteis):",
-                            "Horas Estimadas:",
-                            "Disponibilidade horário do cliente:",
-                            "Disponibilidade dias da semana cliente:"
-                        ]
-                        
-                        # Desenha o cabeçalho do bloco CRONOGRAMA
-                        pdf.set_font("Arial", "B", 10)
-                        pdf.set_fill_color(4, 36, 100)
-                        pdf.set_text_color(255, 255, 255)
-                        pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
-                        pdf.set_text_color(0, 0, 0)
-                        
-                        pdf.set_font("Arial", "", 9)
-                        for idx in range(4):
-                            pdf.cell(65, 8, rotulos[idx], border=1)
-                            pdf.cell(30, 8, str(valores_c[idx]), border=1, align="C")
-                            pdf.cell(95, 8, str(valores_obs[idx]), border=1, ln=True)
-                        pdf.ln(2)
+                        # Só desenha o quadro se pelo menos um dos campos do cronograma tiver texto
+                        if any(v.strip() != "" for v in valores_c):
+                            rotulos = [
+                                "Prazo de implantação (dias úteis):",
+                                "Horas Estimadas:",
+                                "Disponibilidade horário do cliente:",
+                                "Disponibilidade dias da semana cliente:"
+                            ]
+                            
+                            pdf.set_font("Arial", "B", 10)
+                            pdf.set_fill_color(4, 36, 100)
+                            pdf.set_text_color(255, 255, 255)
+                            pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
+                            pdf.set_text_color(0, 0, 0)
+                            
+                            pdf.set_font("Arial", "", 9)
+                            for idx in range(4):
+                                pdf.cell(65, 8, rotulos[idx], border=1)
+                                pdf.cell(30, 8, str(valores_c[idx]), border=1, align="C")
+                                pdf.cell(95, 8, str(valores_obs[idx]), border=1, ln=True)
+                            pdf.ln(2)
     
-                    # Identifica as colunas exatas da tabela de Atividades
+                    # 2. RENDERIZAÇÃO DAS ATIVIDADES (Totalmente independente do Cronograma)
                     col_data = "DATA_C" if "DATA_C" in df_cliente.columns else ("DATA" if "DATA" in df_cliente.columns else None)
                     col_dia = "DIA_C" if "DIA_C" in df_cliente.columns else ("DIA" if "DIA" in df_cliente.columns else None)
                     col_hora = "HORARIO_C" if "HORARIO_C" in df_cliente.columns else ("HORARIO" if "HORARIO" in df_cliente.columns else None)
                     col_ativ = "ATIVIDADES_C" if "ATIVIDADES_C" in df_cliente.columns else ("ATIVIDADES" if "ATIVIDADES" in df_cliente.columns else None)
     
                     if col_data and col_dia and col_hora and col_ativ:
-                        # Filtra trazendo apenas as linhas onde a coluna de ATIVIDADES de fato existe
+                        # Remove linhas onde a descrição da atividade esteja vazia
                         grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(subset=[col_ativ])
                         
                         if not grupo_atividades.empty:
@@ -734,6 +712,7 @@ if btn_gerar:
                                 if pdf.get_y() > 245:
                                     pdf.add_page()
                                 
+                                # Limpeza da estampa de data para remover o "00:00:00"
                                 val_data = linha[col_data]
                                 data_exibicao = ""
                                 
@@ -760,7 +739,8 @@ if btn_gerar:
                             pdf.ln(2)
                 except Exception as e:
                     import streamlit as st
-                    st.warning(f"Aviso técnico: Erro ao processar blocos do cliente {cliente}: {e}")
+                    st.warning(f"Aviso técnico: Erro ao processar dados da aba do cliente {cliente}: {e}")
+
 
 
 
