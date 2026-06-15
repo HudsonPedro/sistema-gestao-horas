@@ -629,9 +629,9 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE CONVERSÃO DE DATA) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORRIGIDO PARA MÚLTIPLAS LINHAS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VERSÃO ANTI-TRAVAMENTO MULTI-CLIENTE) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (RESOLVIDO PARA DADOS ESPALHADOS) ---
             import re
             import unicodedata
-            from datetime import datetime
     
             def normalizar_texto(texto):
                 """Remove acentos, espaços extras e padroniza em minúsculas para comparação segura."""
@@ -658,15 +658,18 @@ if btn_gerar:
                     col_cronograma = next((c for c in ["CRONOGRAMA_C", "CRONOGRAMA"] if c in df_cliente.columns), None)
                     col_observacao = next((c for c in ["OBSERVACAO_C", "OBSERVAÇÃO"] if c in df_cliente.columns), None)
                     
-                    # Só renderiza o Cronograma se a coluna existir e tiver dados
+                    # CORREÇÃO CHAVE: Remove nulos ANTES de pegar os valores do cronograma
                     if col_cronograma and not df_cliente[col_cronograma].dropna().empty:
-                        valores_c = df_cliente[col_cronograma].head(4).fillna("").astype(str).tolist()
+                        valores_c = df_cliente[col_cronograma].dropna().astype(str).tolist()
                         
                         valores_obs = []
                         if col_observacao:
-                            valores_obs = df_cliente[col_observacao].head(4).fillna("").astype(str).tolist()
+                            # Pega as observações das mesmas linhas válidas ou limpa nulos
+                            valores_obs = df_cliente[col_observacao].fillna("").astype(str).tolist()
+                            # Garante sincronia removendo excessos se necessário
+                            valores_obs = valores_obs[:len(valores_c)]
                         
-                        # Garante tamanho exato de 4 elementos na lista para as 4 perguntas fixas
+                        # Garante tamanho exato de 4 elementos na lista preenchendo com vazio
                         while len(valores_c) < 4: valores_c.append("")
                         while len(valores_obs) < 4: valores_obs.append("")
                         
@@ -698,7 +701,7 @@ if btn_gerar:
                     col_ativ = next((c for c in ["ATIVIDADES_C", "ATIVIDADES"] if c in df_cliente.columns), None)
     
                     if col_data and col_dia and col_hora and col_ativ:
-                        # Remove linhas completamente nulas para listar todos os atendimentos
+                        # Remove linhas completamente nulas nas colunas de atividades
                         grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(how="all")
                         
                         if not grupo_atividades.empty:
@@ -722,23 +725,24 @@ if btn_gerar:
                                 if pdf.get_y() > 245:
                                     pdf.add_page()
                                 
-                                # TRATAMENTO ULTRA SEGURO DE DATA:
+                                # Tratamento seguro da data para remover timestamp
                                 val_data = linha[col_data]
                                 data_exibicao = ""
                                 
-                                if hasattr(val_data, "strftime"): # Se for objeto Datetime/Timestamp do pandas
+                                if hasattr(val_data, "strftime"):
                                     data_exibicao = val_data.strftime("%d/%m/%Y")
                                 else:
-                                    raw_data = str(val_data).strip().split(" ")[0]
-                                    if "-" in raw_data:
+                                    raw_data = str(val_data).strip().split(" ")
+                                    data_somente = raw_data[0]
+                                    if "-" in data_somente:
                                         try:
-                                            data_exibicao = datetime.strptime(raw_data, "%Y-%m-%d").strftime("%d/%m/%Y")
+                                            from datetime import datetime
+                                            data_exibicao = datetime.strptime(data_somente, "%Y-%m-%d").strftime("%d/%m/%Y")
                                         except:
-                                            data_exibicao = raw_data
+                                            data_exibicao = data_somente
                                     else:
-                                        data_exibicao = raw_data
+                                        data_exibicao = data_somente
                                 
-                                # Limpeza segura do Horário
                                 horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                                 
                                 pdf.cell(25, 8, data_exibicao, border=1, align="C")
@@ -747,8 +751,6 @@ if btn_gerar:
                                 pdf.cell(100, 8, str(linha[col_ativ]), border=1, ln=True)
                             pdf.ln(2)
                 except Exception as e:
-                    # Protege o loop principal: Se esta aba específica falhar por qualquer motivo, 
-                    # ela registra o erro no log, mas não impede a geração dos demais clientes.
                     import streamlit as st
                     st.warning(f"Aviso técnico: Erro ao processar dados extras do cliente {cliente}: {e}")
 
