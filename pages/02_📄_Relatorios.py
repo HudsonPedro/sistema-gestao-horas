@@ -972,6 +972,7 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - MODIFICAÇÃO DE FORMATO ATIVO) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX DE ALINHAMENTO E CENTRALIZAÇÃO) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - INSTANCIAÇÃO SEGURA DE FORMATOS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - ACESSO DIRETO AO WORKBOOK) ---
             import re
             import unicodedata
     
@@ -1003,25 +1004,24 @@ if btn_gerar:
                 try:
                     df_cliente = dict_abas[aba_encontrada].copy()
                     
-                    # --- SOLUÇÃO DEFINITIVA: Localiza o objeto Workbook na memória de forma automática ---
+                    # --- SOLUÇÃO REAL E BLINDADA: Resgata o workbook através da propriedade nativa da Worksheet
                     wb_objeto = None
-                    for var_nome, var_val in locals().items():
-                        if var_val.__class__.__name__ == 'Workbook':
-                            wb_objeto = var_val
-                            break
-                    if not wb_objeto:
-                        for var_nome, var_val in globals().items():
-                            if var_val.__class__.__name__ == 'Workbook':
-                                wb_objeto = var_val
-                                break
+                    
+                    # O XlsxWriter guarda o workbook pai dentro do atributo privado da worksheet:
+                    if hasattr(ws, 'workbook'):
+                        wb_objeto = ws.workbook
+                    elif 'f_T' in locals() and hasattr(f_T, 'workbook'):
+                        wb_objeto = f_T.workbook
+                    elif 'f_blue' in locals() and hasattr(f_blue, 'workbook'):
+                        wb_objeto = f_blue.workbook
     
-                    # Se achou o Workbook, cria formatos novos do zero (evita quebrar no wb.close())
+                    # Se achou o Workbook, cria formatos novos isolados e exclusivos para esta tabela
                     if wb_objeto:
                         f_grade_texto = wb_objeto.add_format({'border': 1, 'align': 'left', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
                         f_grade_centro = wb_objeto.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
                         f_grade_cabecalho = wb_objeto.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'bold': True, 'font_name': 'Arial', 'font_size': 9})
                     else:
-                        # Fallback de segurança se não achar o objeto
+                        # Fallback de segurança se não achar o objeto pai (reutiliza o seu original)
                         f_grade_texto = f_T if 'f_T' in locals() else None
                         f_grade_centro = f_T if 'f_T' in locals() else None
                         f_grade_cabecalho = f_T_b if 'f_T_b' in locals() else f_grade_texto
@@ -1117,6 +1117,7 @@ if btn_gerar:
                 except Exception as e:
                     import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
+
 
 
 
