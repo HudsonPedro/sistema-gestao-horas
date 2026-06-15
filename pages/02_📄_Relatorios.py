@@ -626,6 +626,7 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF BLINDADO E CORRIGIDO) ---
             # Verifica se o cliente possui uma aba dedicada na planilha
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VERSÃO FLEXÍVEL MULTI-CLIENTE) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE CONVERSÃO DE DATA) ---
             import re
             import unicodedata
     
@@ -717,26 +718,29 @@ if btn_gerar:
                             if pdf.get_y() > 245:
                                 pdf.add_page()
                             
-                            # Limpeza robusta da estampa de data para remover o "00:00:00"
+                            # Limpeza corrigida da estampa de data para remover o "00:00:00"
                             raw_data = str(linha[col_data]).strip()
-                            data_limpa = raw_data.split(" ")[0] # Pega apenas a parte antes do espaço
+                            data_somente = raw_data.split(" ")[0] # Pega apenas a string antes do espaço
                             
-                            # Tenta converter o formato se a data vier no padrão ISO (AAAA-MM-DD)
-                            if "-" in data_limpa:
+                            # Converte de AAAA-MM-DD para DD/MM/AAAA de forma segura se necessário
+                            if "-" in data_somente:
                                 try:
                                     from datetime import datetime
-                                    data_limpa = datetime.strptime(data_limpa, "%Y-%m-%d").strftime("%d/%m/%Y")
+                                    data_exibicao = datetime.strptime(data_somente, "%Y-%m-%d").strftime("%d/%m/%Y")
                                 except:
-                                    pass
+                                    data_exibicao = data_somente
+                            else:
+                                data_exibicao = data_somente
                             
                             # Limpeza do Horário
                             horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                             
-                            pdf.cell(25, 8, data_limpa, border=1, align="C")
+                            pdf.cell(25, 8, data_exibicao, border=1, align="C")
                             pdf.cell(35, 8, str(linha[col_dia]), border=1, align="C")
                             pdf.cell(30, 8, horario_limpo, border=1, align="C")
                             pdf.cell(100, 8, str(linha[col_ativ]), border=1, ln=True)
                         pdf.ln(2)
+
 
 
 
