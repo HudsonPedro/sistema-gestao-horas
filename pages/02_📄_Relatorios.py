@@ -630,6 +630,7 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORRIGIDO PARA MÚLTIPLAS LINHAS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VERSÃO ANTI-TRAVAMENTO MULTI-CLIENTE) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (RESOLVIDO PARA DADOS ESPALHADOS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE MÚLTIPLAS LINHAS) ---
             import re
             import unicodedata
     
@@ -658,41 +659,41 @@ if btn_gerar:
                     col_cronograma = next((c for c in ["CRONOGRAMA_C", "CRONOGRAMA"] if c in df_cliente.columns), None)
                     col_observacao = next((c for c in ["OBSERVACAO_C", "OBSERVAÇÃO"] if c in df_cliente.columns), None)
                     
-                    # CORREÇÃO CHAVE: Remove nulos ANTES de pegar os valores do cronograma
-                    if col_cronograma and not df_cliente[col_cronograma].dropna().empty:
-                        valores_c = df_cliente[col_cronograma].dropna().astype(str).tolist()
+                    # Só renderiza o Cronograma se a coluna existir e tiver dados na primeira linha
+                    if col_cronograma and len(df_cliente) > 0:
+                        # CORREÇÃO INVERTIDA: Captura as 4 primeiras linhas da tabela, substituindo NaN por vazio
+                        valores_c = df_cliente[col_cronograma].iloc[0:4].fillna("").astype(str).tolist()
                         
                         valores_obs = []
                         if col_observacao:
-                            # Pega as observações das mesmas linhas válidas ou limpa nulos
-                            valores_obs = df_cliente[col_observacao].fillna("").astype(str).tolist()
-                            # Garante sincronia removendo excessos se necessário
-                            valores_obs = valores_obs[:len(valores_c)]
+                            valores_obs = df_cliente[col_observacao].iloc[0:4].fillna("").astype(str).tolist()
                         
-                        # Garante tamanho exato de 4 elementos na lista preenchendo com vazio
+                        # Garante tamanho exato de 4 elementos na lista para o quadro fixo
                         while len(valores_c) < 4: valores_c.append("")
                         while len(valores_obs) < 4: valores_obs.append("")
                         
-                        rotulos = [
-                            "Prazo de implantação (dias úteis):",
-                            "Horas Estimadas:",
-                            "Disponibilidade horário do cliente:",
-                            "Disponibilidade dias da semana cliente:"
-                        ]
-                        
-                        # Renderização do cabeçalho CRONOGRAMA
-                        pdf.set_font("Arial", "B", 10)
-                        pdf.set_fill_color(4, 36, 100)
-                        pdf.set_text_color(255, 255, 255)
-                        pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
-                        pdf.set_text_color(0, 0, 0)
-                        
-                        pdf.set_font("Arial", "", 9)
-                        for idx in range(4):
-                            pdf.cell(65, 8, rotulos[idx], border=1)
-                            pdf.cell(30, 8, str(valores_c[idx]), border=1, align="C")
-                            pdf.cell(95, 8, str(valores_obs[idx]), border=1, ln=True)
-                        pdf.ln(2)
+                        # Verifica se pelo menos o primeiro valor do cronograma existe para desenhar o bloco
+                        if valores_c[0].strip() != "":
+                            rotulos = [
+                                "Prazo de implantação (dias úteis):",
+                                "Horas Estimadas:",
+                                "Disponibilidade horário do cliente:",
+                                "Disponibilidade dias da semana cliente:"
+                            ]
+                            
+                            # Renderização do cabeçalho CRONOGRAMA
+                            pdf.set_font("Arial", "B", 10)
+                            pdf.set_fill_color(4, 36, 100)
+                            pdf.set_text_color(255, 255, 255)
+                            pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
+                            pdf.set_text_color(0, 0, 0)
+                            
+                            pdf.set_font("Arial", "", 9)
+                            for idx in range(4):
+                                pdf.cell(65, 8, rotulos[idx], border=1)
+                                pdf.cell(30, 8, str(valores_c[idx]), border=1, align="C")
+                                pdf.cell(95, 8, str(valores_obs[idx]), border=1, ln=True)
+                            pdf.ln(2)
     
                     # Identifica de forma flexível as colunas da tabela de Atividades
                     col_data = next((c for c in ["DATA_C", "DATA"] if c in df_cliente.columns), None)
@@ -701,7 +702,7 @@ if btn_gerar:
                     col_ativ = next((c for c in ["ATIVIDADES_C", "ATIVIDADES"] if c in df_cliente.columns), None)
     
                     if col_data and col_dia and col_hora and col_ativ:
-                        # Remove linhas completamente nulas nas colunas de atividades
+                        # Remove linhas onde os dados essenciais de atividades estejam vazios
                         grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(how="all")
                         
                         if not grupo_atividades.empty:
@@ -725,7 +726,7 @@ if btn_gerar:
                                 if pdf.get_y() > 245:
                                     pdf.add_page()
                                 
-                                # Tratamento seguro da data para remover timestamp
+                                # Tratamento seguro da data salvando contra quebras de tipo (str vs Timestamp)
                                 val_data = linha[col_data]
                                 data_exibicao = ""
                                 
@@ -753,6 +754,7 @@ if btn_gerar:
                 except Exception as e:
                     import streamlit as st
                     st.warning(f"Aviso técnico: Erro ao processar dados extras do cliente {cliente}: {e}")
+
 
 
 
