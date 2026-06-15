@@ -958,6 +958,7 @@ if btn_gerar:
 
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel REPLICADO E CORRIGIDO) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL DEFINITIVO E AUTOCONTIDO) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL CORRIGIDO E SEGURO) ---
             import re
             import unicodedata
     
@@ -990,11 +991,13 @@ if btn_gerar:
                 try:
                     df_cliente = dict_abas[aba_encontrada].copy()
                     
-                    # --- CRIAÇÃO DOS ESTILOS EXATOS DO PDF PARA O EXCEL ---
-                    # workbook é a variável padrão do XlsxWriter do seu código. Se o seu objeto se chamar de outra forma, mude para o nome correto.
-                    f_celula_comum = workbook.add_format({'border': 1, 'align': 'left', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
-                    f_celula_centro = workbook.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
-                    f_cabecalho_tabela = workbook.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'bold': True, 'font_name': 'Arial', 'font_size': 9})
+                    # --- SOLUÇÃO DO BUG: Pega a referência do workbook direto da worksheet (ws) ---
+                    wb_ref = ws.workbook
+                    
+                    # Cria os formatos vinculados ao workbook correto de produção
+                    f_celula_comum = wb_ref.add_format({'border': 1, 'align': 'left', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
+                    f_celula_centro = wb_ref.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
+                    f_cabecalho_tabela = wb_ref.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'bold': True, 'font_name': 'Arial', 'font_size': 9})
                     
                     # Identifica as colunas de Cronograma e Observação
                     col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
@@ -1060,14 +1063,14 @@ if btn_gerar:
                             
                             # Loop para descarregar todas as linhas de atendimentos com bordas fechadas
                             for _, linha in grupo_atividades.iterrows():
-                                val_data = linha[col_data]
+                                val_data = Finder_data = linha[col_data]
                                 data_exibicao = ""
                                 
                                 if hasattr(val_data, "strftime"):
                                     data_exibicao = val_data.strftime("%d/%m/%Y")
                                 else:
                                     raw_data = str(val_data).strip().split(" ")
-                                    data_somente = raw_data
+                                    data_somente = raw_data[0]
                                     if "-" in data_somente:
                                         try:
                                             from datetime import datetime
@@ -1090,6 +1093,7 @@ if btn_gerar:
                 except Exception as e:
                     import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
+
 
 
             
