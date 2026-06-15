@@ -973,6 +973,7 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX DE ALINHAMENTO E CENTRALIZAÇÃO) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - INSTANCIAÇÃO SEGURA DE FORMATOS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - ACESSO DIRETO AO WORKBOOK) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX TOTAL DE BORDAS COM LOOPS) ---
             import re
             import unicodedata
     
@@ -1004,27 +1005,10 @@ if btn_gerar:
                 try:
                     df_cliente = dict_abas[aba_encontrada].copy()
                     
-                    # --- SOLUÇÃO REAL E BLINDADA: Resgata o workbook através da propriedade nativa da Worksheet
-                    wb_objeto = None
-                    
-                    # O XlsxWriter guarda o workbook pai dentro do atributo privado da worksheet:
-                    if hasattr(ws, 'workbook'):
-                        wb_objeto = ws.workbook
-                    elif 'f_T' in locals() and hasattr(f_T, 'workbook'):
-                        wb_objeto = f_T.workbook
-                    elif 'f_blue' in locals() and hasattr(f_blue, 'workbook'):
-                        wb_objeto = f_blue.workbook
-    
-                    # Se achou o Workbook, cria formatos novos isolados e exclusivos para esta tabela
-                    if wb_objeto:
-                        f_grade_texto = wb_objeto.add_format({'border': 1, 'align': 'left', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
-                        f_grade_centro = wb_objeto.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
-                        f_grade_cabecalho = wb_objeto.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'bold': True, 'font_name': 'Arial', 'font_size': 9})
-                    else:
-                        # Fallback de segurança se não achar o objeto pai (reutiliza o seu original)
-                        f_grade_texto = f_T if 'f_T' in locals() else None
-                        f_grade_centro = f_T if 'f_T' in locals() else None
-                        f_grade_cabecalho = f_T_b if 'f_T_b' in locals() else f_grade_texto
+                    # Resgata os formatos oficiais do seu aplicativo que contêm as cores/fontes certas
+                    f_comum = f_T if 'f_T' in locals() else None
+                    f_cab = f_T_b if 'f_T_b' in locals() else f_comum
+                    f_lat = f_TL if 'f_TL' in locals() else f_comum
                     
                     # Identifica as colunas de Cronograma e Observação
                     col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
@@ -1055,9 +1039,19 @@ if btn_gerar:
                             ]
                             
                             for idx in range(4):
-                                ws.merge_range(row - 1, 0, row - 1, 1, rotulos[idx], f_grade_texto)
-                                ws.write(row - 1, 2, str(valores_c[idx]), f_grade_centro)
-                                ws.merge_range(row - 1, 3, row - 1, 7, str(valores_obs[idx]), f_grade_texto)
+                                # Passo 1: Aplica o formato na célula B antes de mesclar A-B para não sumir a linha do meio
+                                ws.write_blank(row - 1, 1, f_lat)
+                                ws.merge_range(row - 1, 0, row - 1, 1, rotulos[idx], f_lat)
+                                
+                                # Coluna C (Valor centralizado)
+                                ws.write(row - 1, 2, str(valores_c[idx]), f_comum)
+                                
+                                # Passo 2: Aplica o formato em CADA UMA das células invisíveis (E, F, G, H) antes do merge.
+                                # Isso força o Excel a manter as bordas verticais da direita intactas!
+                                for c_idx in range(4, 8): # Colunas E(4), F(5), G(6), H(7)
+                                    ws.write_blank(row - 1, c_idx, f_comum)
+                                ws.merge_range(row - 1, 3, row - 1, 7, str(valores_obs[idx]), f_comum)
+                                
                                 ws.set_row(row - 1, 16)
                                 row += 1
                             row += 1
@@ -1078,10 +1072,14 @@ if btn_gerar:
                             row += 1
                             
                             # Cabeçalho das Colunas
-                            ws.write(row - 1, 0, "DATA", f_grade_cabecalho)
-                            ws.write(row - 1, 1, "DIA DA SEMANA", f_grade_cabecalho)
-                            ws.write(row - 1, 2, "HORÁRIO", f_grade_cabecalho)
-                            ws.merge_range(row - 1, 3, row - 1, 7, "ATIVIDADES", f_grade_cabecalho)
+                            ws.write(row - 1, 0, "DATA", f_cab)
+                            ws.write(row - 1, 1, "DIA DA SEMANA", f_cab)
+                            ws.write(row - 1, 2, "HORÁRIO", f_cab)
+                            
+                            # Aplica bordas nas colunas invisíveis do cabeçalho mesclado
+                            for c_idx in range(4, 8):
+                                ws.write_blank(row - 1, c_idx, f_cab)
+                            ws.merge_range(row - 1, 3, row - 1, 7, "ATIVIDADES", f_cab)
                             ws.set_row(row - 1, 16)
                             row += 1
                             
@@ -1106,10 +1104,14 @@ if btn_gerar:
                                 
                                 horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                                 
-                                ws.write(row - 1, 0, data_exibicao, f_grade_centro)
-                                ws.write(row - 1, 1, str(linha[col_dia]), f_grade_centro)
-                                ws.write(row - 1, 2, horario_limpo, f_grade_centro)
-                                ws.merge_range(row - 1, 3, row - 1, 7, str(linha[col_ativ]), f_grade_texto)
+                                ws.write(row - 1, 0, data_exibicao, f_comum)
+                                ws.write(row - 1, 1, str(linha[col_dia]), f_comum)
+                                ws.write(row - 1, 2, horario_limpo, f_comum)
+                                
+                                # Aplica o formato célula por célula de E até H para travar as paredes verticais e a borda da direita (H)
+                                for c_idx in range(4, 8):
+                                    ws.write_blank(row - 1, c_idx, f_comum)
+                                ws.merge_range(row - 1, 3, row - 1, 7, str(linha[col_ativ]), f_comum)
                                 
                                 ws.set_row(row - 1, 16)
                                 row += 1
@@ -1117,6 +1119,7 @@ if btn_gerar:
                 except Exception as e:
                     import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
+
 
 
 
