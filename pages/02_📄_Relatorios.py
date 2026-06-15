@@ -638,28 +638,56 @@ if btn_gerar:
             # Como os nomes estão idênticos, a busca direta por chave funciona perfeitamente
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (COMPARAÇÃO COM ABA LEGENDAS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VALIDAÇÃO INDEPENDENTE DIRETA) ---
-            if cliente in dict_abas:
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (SOLUÇÃO DEFINITIVA DE CORRESPONDÊNCIA) ---
+            import re
+            import unicodedata
+    
+            def simplificar_para_comparacao(texto):
+                """Remove acentos, pontuação e espaços para garantir o cruzamento de abas."""
+                if not isinstance(texto, str):
+                    texto = str(texto)
+                # Remove acentos
+                texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
+                # Deixa em maiúsculo e remove tudo que não for letra ou número (espaços, traços, pontos)
+                return re.sub(r'[^A-Z0-9]', '', texto.upper().strip())
+    
+            # Força a variável cliente a virar uma string limpa
+            nome_cliente_pesquisa = str(cliente).strip()
+            cliente_alvo = simplificar_para_comparacao(nome_cliente_pesquisa)
+    
+            # Procura a aba correspondente varrendo o dicionário
+            aba_encontrada = None
+            for nome_aba in dict_abas.keys():
+                if nome_aba.upper() == "LEGENDAS":
+                    continue
+                
+                aba_comparar = simplificar_para_comparacao(nome_aba)
+                
+                # Se uma string faz parte da outra (ex: 'MZCONSTRUCAO' está dentro de 'MZCONSTRUCAOMINERACAO...')
+                if (aba_comparar in cliente_alvo) or (cliente_alvo in aba_comparar):
+                    aba_encontrada = nome_aba
+                    break
+    
+            # Se encontrou a aba (independente de como o Pandas indexou o nome)
+            if aba_encontrada:
                 try:
-                    df_cliente = dict_abas[cliente].copy()
+                    df_cliente = dict_abas[aba_encontrada].copy()
                     
                     # Identifica as colunas de Cronograma e Observação
                     col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
                     col_observacao = "OBSERVACAO_C" if "OBSERVACAO_C" in df_cliente.columns else ("OBSERVAÇÃO" if "OBSERVAÇÃO" in df_cliente.columns else None)
                     
-                    # 1. RENDERIZAÇÃO DO CRONOGRAMA (Se a coluna existir na aba)
+                    # 1. RENDERIZAÇÃO DO CRONOGRAMA
                     if col_cronograma and len(df_cliente) > 0:
-                        # Captura estritamente as 4 primeiras linhas da aba para o quadro fixo
                         valores_c = df_cliente[col_cronograma].iloc[0:4].fillna("").astype(str).tolist()
                         
                         valores_obs = []
                         if col_observacao:
                             valores_obs = df_cliente[col_observacao].iloc[0:4].fillna("").astype(str).tolist()
                         
-                        # Garante tamanho exato de 4 elementos na lista
                         while len(valores_c) < 4: valores_c.append("")
                         while len(valores_obs) < 4: valores_obs.append("")
                         
-                        # Só desenha o quadro se pelo menos um dos campos do cronograma tiver texto
                         if any(v.strip() != "" for v in valores_c):
                             rotulos = [
                                 "Prazo de implantação (dias úteis):",
@@ -681,14 +709,13 @@ if btn_gerar:
                                 pdf.cell(95, 8, str(valores_obs[idx]), border=1, ln=True)
                             pdf.ln(2)
     
-                    # 2. RENDERIZAÇÃO DAS ATIVIDADES (Totalmente independente do Cronograma)
+                    # 2. RENDERIZAÇÃO DAS ATIVIDADES
                     col_data = "DATA_C" if "DATA_C" in df_cliente.columns else ("DATA" if "DATA" in df_cliente.columns else None)
                     col_dia = "DIA_C" if "DIA_C" in df_cliente.columns else ("DIA" if "DIA" in df_cliente.columns else None)
                     col_hora = "HORARIO_C" if "HORARIO_C" in df_cliente.columns else ("HORARIO" if "HORARIO" in df_cliente.columns else None)
                     col_ativ = "ATIVIDADES_C" if "ATIVIDADES_C" in df_cliente.columns else ("ATIVIDADES" if "ATIVIDADES" in df_cliente.columns else None)
     
                     if col_data and col_dia and col_hora and col_ativ:
-                        # Remove linhas onde a descrição da atividade esteja vazia
                         grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(subset=[col_ativ])
                         
                         if not grupo_atividades.empty:
@@ -712,7 +739,6 @@ if btn_gerar:
                                 if pdf.get_y() > 245:
                                     pdf.add_page()
                                 
-                                # Limpeza da estampa de data para remover o "00:00:00"
                                 val_data = linha[col_data]
                                 data_exibicao = ""
                                 
@@ -739,7 +765,8 @@ if btn_gerar:
                             pdf.ln(2)
                 except Exception as e:
                     import streamlit as st
-                    st.warning(f"Aviso técnico: Erro ao processar dados da aba do cliente {cliente}: {e}")
+                    st.warning(f"Aviso técnico: Erro ao processar dados da aba {aba_encontrada}: {e}")
+
 
 
 
