@@ -966,6 +966,7 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX DE BORDAS MERGE DEFINITIVO) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - SEGUINDO ESTILO DO BLOCO DE CIMA) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - GRID TOTALMENTE FECHADO) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - REMOÇÃO DE MERGES EM DADOS) ---
             import re
             import unicodedata
     
@@ -1018,7 +1019,7 @@ if btn_gerar:
                         while len(valores_obs) < 4: valores_obs.append("")
                         
                         if any(v.strip() != "" for v in valores_c):
-                            # Título do Bloco Cronograma
+                            # Título do Bloco Cronograma (Este merge grande superior funciona)
                             ws.merge_range(f'A{row}:H{row}', "CRONOGRAMA", f_blue)
                             ws.set_row(row - 1, 18)
                             row += 1
@@ -1031,18 +1032,19 @@ if btn_gerar:
                             ]
                             
                             for idx in range(4):
-                                # CORREÇÃO CRUCIAL DE BORDA (Esquerda): Carimba formato nas colunas A e B antes de mesclar
-                                ws.write_blank(row - 1, 0, f_lat)
-                                ws.write_blank(row - 1, 1, f_lat)
-                                ws.merge_range(row - 1, 0, row - 1, 1, rotulos[idx], f_lat)
+                                # Coluna A e B: Em vez de merge, escreve o texto na A e deixa correr para a B, desenhando o grid completo
+                                ws.write(row - 1, 0, rotulos[idx], f_lat)
+                                ws.write(row - 1, 1, "", f_lat)
                                 
-                                # Coluna C (Valor centralizado)
+                                # Coluna C: Valor centralizado
                                 ws.write(row - 1, 2, str(valores_c[idx]), f_comum)
                                 
-                                # CORREÇÃO CRUCIAL DE BORDA (Direita): Carimba formato em TODO o intervalo D-H antes de mesclar
-                                for col_idx in range(3, 8): # Colunas D, E, F, G, H (índices 3 a 7)
-                                    ws.write_blank(row - 1, col_idx, f_comum)
-                                ws.merge_range(row - 1, 3, row - 1, 7, str(valores_obs[idx]), f_comum)
+                                # Colunas D até H: Desenha todas as células com a grade e joga o texto na D (sem merge!)
+                                ws.write(row - 1, 3, str(valores_obs[idx]), f_comum)
+                                ws.write(row - 1, 4, "", f_comum)
+                                ws.write(row - 1, 5, "", f_comum)
+                                ws.write(row - 1, 6, "", f_comum)
+                                ws.write(row - 1, 7, "", f_comum)
                                 
                                 ws.set_row(row - 1, 16)
                                 row += 1
@@ -1063,19 +1065,15 @@ if btn_gerar:
                             ws.set_row(row - 1, 18)
                             row += 1
                             
-                            # Cabeçalho das Colunas
+                            # Cabeçalho das Colunas (A, B, C individuais e D-H com merge do cabeçalho que funciona)
                             ws.write(row - 1, 0, "DATA", f_cab)
                             ws.write(row - 1, 1, "DIA DA SEMANA", f_cab)
                             ws.write(row - 1, 2, "HORÁRIO", f_cab)
-                            
-                            # Garante bordas completas no cabeçalho mesclado de ATIVIDADES
-                            for col_idx in range(3, 8):
-                                ws.write_blank(row - 1, col_idx, f_cab)
                             ws.merge_range(row - 1, 3, row - 1, 7, "ATIVIDADES", f_cab)
                             ws.set_row(row - 1, 16)
                             row += 1
                             
-                            # Loop de registros dinâmicos
+                            # Loop de registros dinâmicos das Atividades
                             for _, linha in grupo_atividades.iterrows():
                                 val_data = linha[col_data]
                                 data_exibicao = ""
@@ -1096,17 +1094,18 @@ if btn_gerar:
                                 
                                 horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                                 
+                                # Colunas Normais A, B, C
                                 ws.write(row - 1, 0, data_exibicao, f_comum)
                                 ws.write(row - 1, 1, str(linha[col_dia]), f_comum)
                                 ws.write(row - 1, 2, horario_limpo, f_comum)
                                 
-                                # A MÁGICA REPLICADA DO SEU APP: Aplica f_comum usando write_blank em cada uma das colunas (D até H)
-                                # Isso força o Excel a desenhar os limites de grade em cada quadradinho oculto antes do merge!
-                                for col_idx in range(3, 8): # Índices 3=D, 4=E, 5=F, 6=G, 7=H
-                                    ws.write_blank(row - 1, col_idx, f_comum)
-                                
-                                # Faz o merge por cima escrevendo o texto de atividades
-                                ws.merge_range(row - 1, 3, row - 1, 7, str(linha[col_ativ]), f_comum)
+                                # A SOLUÇÃO DEFINITIVA: Escreve a grade em cada coluna de D até H individualmente.
+                                # O texto longo fica na coluna D e o Excel renderiza por cima das outras sem apagar as linhas verticais!
+                                ws.write(row - 1, 3, str(linha[col_ativ]), f_comum)
+                                ws.write(row - 1, 4, "", f_comum)
+                                ws.write(row - 1, 5, "", f_comum)
+                                ws.write(row - 1, 6, "", f_comum)
+                                ws.write(row - 1, 7, "", f_comum)
                                 
                                 ws.set_row(row - 1, 16)
                                 row += 1
@@ -1114,6 +1113,7 @@ if btn_gerar:
                 except Exception as e:
                     import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
+
 
 
 
