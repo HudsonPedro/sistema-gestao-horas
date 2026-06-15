@@ -636,7 +636,32 @@ if btn_gerar:
                    # Como os nomes estão idênticos, a busca direta por chave funciona perfeitamente
             # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE VALIDAÇÃO DE COLUNA) ---
             # Como os nomes estão idênticos, a busca direta por chave funciona perfeitamente
-            if cliente in dict_abas:
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (COMPARAÇÃO COM ABA LEGENDAS) ---
+            import re
+            import unicodedata
+    
+            def normalizar_texto(texto):
+                """Remove acentos, espaços extras e padroniza para comparação segura."""
+                if not isinstance(texto, str):
+                    return ""
+                texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
+                return re.sub(r'\s+', ' ', texto).strip().lower()
+    
+            # 1. Validação Crucial: Verifica se o cliente está listado na aba Legendas
+            cliente_autorizado = False
+            if "Legendas" in dict_abas:
+                df_legendas = dict_abas["Legendas"]
+                # Identifica a coluna correta (Clientes) independente de espaços ou maiúsculas
+                col_clientes_leg = next((c for c in df_legendas.columns if "CLIENTE" in str(c).upper()), None)
+                
+                if col_clientes_leg:
+                    lista_autorizados = df_legendas[col_clientes_leg].dropna().astype(str).tolist()
+                    lista_autorizados_norm = [normalizar_texto(x) for x in lista_autorizados]
+                    if normalizar_texto(cliente) in lista_autorizados_norm:
+                        cliente_autorizado = True
+    
+            # 2. Se o cliente estiver na aba Legendas e possuir uma aba própria com o mesmo nome
+            if cliente_autorizado and (cliente in dict_abas):
                 try:
                     df_cliente = dict_abas[cliente].copy()
                     
@@ -644,17 +669,16 @@ if btn_gerar:
                     col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
                     col_observacao = "OBSERVACAO_C" if "OBSERVACAO_C" in df_cliente.columns else ("OBSERVAÇÃO" if "OBSERVAÇÃO" in df_cliente.columns else None)
                     
-                    # VALIDAÇÃO DIRETA: Verifica se a coluna existe e se a primeira linha (índice 0) não está vazia
+                    # VALIDAÇÃO FIXADA: Verifica se a primeira linha do cronograma possui dado válido
                     if col_cronograma and len(df_cliente) > 0 and not pd.isna(df_cliente[col_cronograma].iloc[0]):
                         
-                        # Captura exatamente as 4 primeiras linhas físicas da planilha para o Cronograma
+                        # Captura exatamente as 4 primeiras linhas físicas para o Cronograma
                         valores_c = df_cliente[col_cronograma].iloc[0:4].fillna("").astype(str).tolist()
                         
                         valores_obs = []
                         if col_observacao:
                             valores_obs = df_cliente[col_observacao].iloc[0:4].fillna("").astype(str).tolist()
                         
-                        # Garante que as listas tenham exatamente 4 itens preenchendo com texto vazio se necessário
                         while len(valores_c) < 4: valores_c.append("")
                         while len(valores_obs) < 4: valores_obs.append("")
                         
@@ -672,7 +696,6 @@ if btn_gerar:
                         pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
                         pdf.set_text_color(0, 0, 0)
                         
-                        # Desenha as 4 linhas fixas do Cronograma
                         pdf.set_font("Arial", "", 9)
                         for idx in range(4):
                             pdf.cell(65, 8, rotulos[idx], border=1)
@@ -687,7 +710,7 @@ if btn_gerar:
                     col_ativ = "ATIVIDADES_C" if "ATIVIDADES_C" in df_cliente.columns else ("ATIVIDADES" if "ATIVIDADES" in df_cliente.columns else None)
     
                     if col_data and col_dia and col_hora and col_ativ:
-                        # Filtra trazendo apenas as linhas onde a coluna de ATIVIDADES está preenchida
+                        # Filtra trazendo apenas as linhas onde a coluna de ATIVIDADES de fato existe
                         grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(subset=[col_ativ])
                         
                         if not grupo_atividades.empty:
@@ -700,35 +723,33 @@ if btn_gerar:
                             pdf.cell(190, 10, "ATIVIDADES", border=1, ln=True, fill=True, align="C")
                             pdf.set_text_color(0, 0, 0)
                             
-                            # Cabeçalho da tabela de atividades
                             pdf.set_font("Arial", "B", 9)
                             pdf.cell(25, 8, "DATA", border=1, align="C")
                             pdf.cell(35, 8, "DIA DA SEMANA", border=1, align="C")
                             pdf.cell(30, 8, "HORÁRIO", border=1, align="C")
                             pdf.cell(100, 8, "ATIVIDADES", border=1, ln=True, align="C")
                             
-                            # Lista dinamicamente TODAS as linhas de atividades do cliente
                             pdf.set_font("Arial", "", 9)
                             for _, linha in grupo_atividades.iterrows():
                                 if pdf.get_y() > 245:
                                     pdf.add_page()
                                 
-                                # Tratamento seguro da estampa de data para remover o "00:00:00"
                                 val_data = linha[col_data]
                                 data_exibicao = ""
                                 
                                 if hasattr(val_data, "strftime"):
                                     data_exibicao = val_data.strftime("%d/%m/%Y")
                                 else:
-                                    raw_data = str(val_data).strip().split(" ")[0]
-                                    if "-" in raw_data:
+                                    raw_data = str(val_data).strip().split(" ")
+                                    data_somente = raw_data[0]
+                                    if "-" in data_somente:
                                         try:
                                             from datetime import datetime
-                                            data_exibicao = datetime.strptime(raw_data, "%Y-%m-%d").strftime("%d/%m/%Y")
+                                            data_exibicao = datetime.strptime(data_somente, "%Y-%m-%d").strftime("%d/%m/%Y")
                                         except:
-                                            data_exibicao = raw_data
+                                            data_exibicao = data_somente
                                     else:
-                                        data_exibicao = raw_data
+                                        data_exibicao = data_somente
                                 
                                 horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                                 
@@ -739,7 +760,8 @@ if btn_gerar:
                             pdf.ln(2)
                 except Exception as e:
                     import streamlit as st
-                    st.warning(f"Aviso técnico: Erro ao gerar blocos do cliente {cliente}: {e}")
+                    st.warning(f"Aviso técnico: Erro ao processar blocos do cliente {cliente}: {e}")
+
 
 
 
