@@ -961,6 +961,8 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL CORRIGIDO E SEGURO) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL COM ESTILOS EXISTENTES) ---
                 # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL COM ESTILOS EXISTENTES) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - CORREÇÃO DE BORDAS INTERNAS) ---
+                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - CORREÇÃO DE BORDAS INTERNAS) ---
             import re
             import unicodedata
     
@@ -983,7 +985,6 @@ if btn_gerar:
                 
                 aba_comparar = simplificar_para_comparacao(nome_aba)
                 
-                # Se uma string faz parte da outra (Match inteligente)
                 if (aba_comparar in cliente_alvo) or (cliente_alvo in aba_comparar):
                     aba_encontrada = nome_aba
                     break
@@ -993,8 +994,7 @@ if btn_gerar:
                 try:
                     df_cliente = dict_abas[aba_encontrada].copy()
                     
-                    # REUTILIZAÇÃO SEGURA: Usamos f_T para texto comum e f_T_b para cabeçalhos (variáveis do seu app)
-                    # Criamos um fallback caso f_T_b ou f_TL não existam
+                    # REUTILIZAÇÃO SEGURA: Variáveis de estilo nativas do seu app
                     estilo_texto = f_T if 'f_T' in locals() else None
                     estilo_cabecalho = f_T_b if 'f_T_b' in locals() else ('f_TR' if 'f_TR' in locals() else estilo_texto)
                     estilo_lateral = f_TL if 'f_TL' in locals() else estilo_texto
@@ -1028,9 +1028,17 @@ if btn_gerar:
                             ]
                             
                             for idx in range(4):
+                                # Correção de borda: Escreve células vazias com borda no intervalo para não sumir a linha lateral
+                                ws.write(f'B{row}', "", estilo_lateral)
                                 ws.merge_range(f'A{row}:B{row}', rotulos[idx], estilo_lateral)
+                                
                                 ws.write(f'C{row}', str(valores_c[idx]), estilo_texto)
+                                
+                                # Correção de borda nas colunas D até H das observações
+                                for c_idx in ["E", "F", "G", "H"]:
+                                    ws.write(f'{c_idx}{row}', "", estilo_texto)
                                 ws.merge_range(f'D{row}:H{row}', str(valores_obs[idx]), estilo_texto)
+                                
                                 ws.set_row(row - 1, 16)
                                 row += 1
                             row += 1
@@ -1054,6 +1062,9 @@ if btn_gerar:
                             ws.write(f'A{row}', "DATA", estilo_cabecalho)
                             ws.write(f'B{row}', "DIA DA SEMANA", estilo_cabecalho)
                             ws.write(f'C{row}', "HORÁRIO", estilo_cabecalho)
+                            
+                            for c_idx in ["E", "F", "G", "H"]:
+                                ws.write(f'{c_idx}{row}', "", estilo_cabecalho)
                             ws.merge_range(f'D{row}:H{row}', "ATIVIDADES", estilo_cabecalho)
                             ws.set_row(row - 1, 16)
                             row += 1
@@ -1067,7 +1078,7 @@ if btn_gerar:
                                     data_exibicao = val_data.strftime("%d/%m/%Y")
                                 else:
                                     raw_data = str(val_data).strip().split(" ")
-                                    data_somente = raw_data[0]
+                                    data_somente = raw_data
                                     if "-" in data_somente:
                                         try:
                                             from datetime import datetime
@@ -1082,13 +1093,20 @@ if btn_gerar:
                                 ws.write(f'A{row}', data_exibicao, estilo_texto)
                                 ws.write(f'B{row}', str(linha[col_dia]), estilo_texto)
                                 ws.write(f'C{row}', horario_limpo, estilo_texto)
+                                
+                                # Correção de borda final na linha de descrição longa de atividades (D até H)
+                                for c_idx in ["E", "F", "G", "H"]:
+                                    ws.write(f'{c_idx}{row}', "", estilo_texto)
                                 ws.merge_range(f'D{row}:H{row}', str(linha[col_ativ]), estilo_texto)
+                                
                                 ws.set_row(row - 1, 16)
                                 row += 1
                             row += 1
                 except Exception as e:
                     import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
+
+
 
 
 
