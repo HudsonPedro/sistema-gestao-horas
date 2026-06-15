@@ -967,6 +967,7 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - SEGUINDO ESTILO DO BLOCO DE CIMA) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - GRID TOTALMENTE FECHADO) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - REMOÇÃO DE MERGES EM DADOS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX TOTAL DE BORDAS VERTICAIS) ---
             import re
             import unicodedata
     
@@ -998,10 +999,20 @@ if btn_gerar:
                 try:
                     df_cliente = dict_abas[aba_encontrada].copy()
                     
-                    # Resgata os formatos oficiais que funcionam perfeitamente no seu relatório
-                    f_comum = f_T if 'f_T' in locals() else None
-                    f_cab = f_T_b if 'f_T_b' in locals() else f_comum
-                    f_lat = f_TL if 'f_TL' in locals() else f_comum
+                    # --- AQUI ESTÁ A SOLUÇÃO: Forçamos a criação de formatos com bordas 4D completas ---
+                    # Pegamos o workbook de produção diretamente de onde os estilos originais foram criados
+                    wb_ref = f_T.workbook if 'f_T' in locals() and hasattr(f_T, 'workbook') else (f_blue.workbook if 'f_blue' in locals() and hasattr(f_blue, 'workbook') else None)
+                    
+                    if wb_ref:
+                        # Cria novos estilos blindados com bordas em todos os lados (idêntico ao grid do PDF)
+                        f_grid_comum = wb_ref.add_format({'border': 1, 'align': 'left', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
+                        f_grid_centro = wb_ref.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'font_name': 'Arial', 'font_size': 9})
+                        f_grid_cab = wb_ref.add_format({'border': 1, 'align': 'center', 'valign': 'vcenter', 'bold': True, 'font_name': 'Arial', 'font_size': 9, 'bg_color': '#EFEFEF'})
+                    else:
+                        # Fallback de segurança usando seus estilos caso o workbook não seja exposto
+                        f_grid_comum = f_T if 'f_T' in locals() else None
+                        f_grid_centro = f_T if 'f_T' in locals() else None
+                        f_grid_cab = f_T_b if 'f_T_b' in locals() else f_grid_comum
                     
                     # Identifica as colunas de Cronograma e Observação
                     col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
@@ -1019,7 +1030,7 @@ if btn_gerar:
                         while len(valores_obs) < 4: valores_obs.append("")
                         
                         if any(v.strip() != "" for v in valores_c):
-                            # Título do Bloco Cronograma (Este merge grande superior funciona)
+                            # Título do Bloco Cronograma
                             ws.merge_range(f'A{row}:H{row}', "CRONOGRAMA", f_blue)
                             ws.set_row(row - 1, 18)
                             row += 1
@@ -1032,19 +1043,18 @@ if btn_gerar:
                             ]
                             
                             for idx in range(4):
-                                # Coluna A e B: Em vez de merge, escreve o texto na A e deixa correr para a B, desenhando o grid completo
-                                ws.write(row - 1, 0, rotulos[idx], f_lat)
-                                ws.write(row - 1, 1, "", f_lat)
+                                # Aplica o formato de grade fechada célula por célula antes do merge de rótulos
+                                ws.write_blank(row - 1, 0, f_grid_comum)
+                                ws.write_blank(row - 1, 1, f_grid_comum)
+                                ws.merge_range(row - 1, 0, row - 1, 1, rotulos[idx], f_grid_comum)
                                 
-                                # Coluna C: Valor centralizado
-                                ws.write(row - 1, 2, str(valores_c[idx]), f_comum)
+                                # Coluna C (Valor centralizado com bordas completas)
+                                ws.write(row - 1, 2, str(valores_c[idx]), f_grid_centro)
                                 
-                                # Colunas D até H: Desenha todas as células com a grade e joga o texto na D (sem merge!)
-                                ws.write(row - 1, 3, str(valores_obs[idx]), f_comum)
-                                ws.write(row - 1, 4, "", f_comum)
-                                ws.write(row - 1, 5, "", f_comum)
-                                ws.write(row - 1, 6, "", f_comum)
-                                ws.write(row - 1, 7, "", f_comum)
+                                # Aplica o formato de grade em todo o bloco de Observações (D até H)
+                                for col_idx in range(3, 8):
+                                    ws.write_blank(row - 1, col_idx, f_grid_comum)
+                                ws.merge_range(row - 1, 3, row - 1, 7, str(valores_obs[idx]), f_grid_comum)
                                 
                                 ws.set_row(row - 1, 16)
                                 row += 1
@@ -1065,11 +1075,14 @@ if btn_gerar:
                             ws.set_row(row - 1, 18)
                             row += 1
                             
-                            # Cabeçalho das Colunas (A, B, C individuais e D-H com merge do cabeçalho que funciona)
-                            ws.write(row - 1, 0, "DATA", f_cab)
-                            ws.write(row - 1, 1, "DIA DA SEMANA", f_cab)
-                            ws.write(row - 1, 2, "HORÁRIO", f_cab)
-                            ws.merge_range(row - 1, 3, row - 1, 7, "ATIVIDADES", f_cab)
+                            # Cabeçalho das Colunas com a nova grade fechada
+                            ws.write(row - 1, 0, "DATA", f_grid_cab)
+                            ws.write(row - 1, 1, "DIA DA SEMANA", f_grid_cab)
+                            ws.write(row - 1, 2, "HORÁRIO", f_grid_cab)
+                            
+                            for col_idx in range(3, 8):
+                                ws.write_blank(row - 1, col_idx, f_grid_cab)
+                            ws.merge_range(row - 1, 3, row - 1, 7, "ATIVIDADES", f_grid_cab)
                             ws.set_row(row - 1, 16)
                             row += 1
                             
@@ -1094,18 +1107,15 @@ if btn_gerar:
                                 
                                 horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                                 
-                                # Colunas Normais A, B, C
-                                ws.write(row - 1, 0, data_exibicao, f_comum)
-                                ws.write(row - 1, 1, str(linha[col_dia]), f_comum)
-                                ws.write(row - 1, 2, horario_limpo, f_comum)
+                                # Grava as colunas A, B e C usando o novo grid fechado em 4 direções
+                                ws.write(row - 1, 0, data_exibicao, f_grid_centro)
+                                ws.write(row - 1, 1, str(linha[col_dia]), f_grid_centro)
+                                ws.write(row - 1, 2, horario_limpo, f_grid_centro)
                                 
-                                # A SOLUÇÃO DEFINITIVA: Escreve a grade em cada coluna de D até H individualmente.
-                                # O texto longo fica na coluna D e o Excel renderiza por cima das outras sem apagar as linhas verticais!
-                                ws.write(row - 1, 3, str(linha[col_ativ]), f_comum)
-                                ws.write(row - 1, 4, "", f_comum)
-                                ws.write(row - 1, 5, "", f_comum)
-                                ws.write(row - 1, 6, "", f_comum)
-                                ws.write(row - 1, 7, "", f_comum)
+                                # Aplica a grade em todas as colunas do merge de Atividades (D até H)
+                                for col_idx in range(3, 8):
+                                    ws.write_blank(row - 1, col_idx, f_grid_comum)
+                                ws.merge_range(row - 1, 3, row - 1, 7, str(linha[col_ativ]), f_grid_comum)
                                 
                                 ws.set_row(row - 1, 16)
                                 row += 1
@@ -1113,6 +1123,7 @@ if btn_gerar:
                 except Exception as e:
                     import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
+
 
 
 
