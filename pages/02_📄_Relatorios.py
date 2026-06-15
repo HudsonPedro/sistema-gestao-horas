@@ -766,21 +766,7 @@ if btn_gerar:
                 except Exception as e:
                     import streamlit as st
                     st.warning(f"Aviso técnico: Erro ao processar dados da aba {aba_encontrada}: {e}")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                      
+                    
             if pdf.get_y() > 220:
                 pdf.add_page()
             pdf.ln(5)
@@ -970,80 +956,131 @@ if btn_gerar:
                     ws.set_row(row - 1, 18)
                     row += 1
 
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF CORRIGIDO) ---
-            if cliente in dict_abas:
-                df_cliente = dict_abas[cliente].copy()
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel REPLICADO E CORRIGIDO) ---
+            import re
+            import unicodedata
+    
+            def simplificar_para_comparacao(texto):
+                """Remove acentos, pontuação e espaços para garantir o cruzamento de abas."""
+                if not isinstance(texto, str):
+                    texto = str(texto)
+                texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
+                return re.sub(r'[^A-Z0-9]', '', texto.upper().strip())
+    
+            # Força a variável cliente a virar uma string limpa
+            nome_cliente_pesquisa = str(cliente).strip()
+            cliente_alvo = simplificar_para_comparacao(nome_cliente_pesquisa)
+    
+            # Procura a aba correspondente varrendo o dicionário
+            aba_encontrada = None
+            for nome_aba in dict_abas.keys():
+                if nome_aba.upper() == "LEGENDAS":
+                    continue
                 
-                # Identifica a coluna correta do cronograma de forma flexível
-                col_cronograma = None
-                for c in ["CRONOGRAMA_C", "CRONOGRAMA"]:
-                    if c in df_cliente.columns:
-                        col_cronograma = c
-                        break
-                        
-                if col_cronograma:
-                    # Extrai os valores removendo nulos
-                    valores = df_cliente[col_cronograma].dropna().tolist()
-                    
-                    # Garante que temos pelo menos strings vazias para não quebrar o layout vertical
-                    while len(valores) < 4:
-                        valores.append("-")
-                        
-                    # Renderiza o Quadro de Cronograma de forma segura
-                    pdf.set_font("Arial", "B", 10)
-                    pdf.set_fill_color(4, 36, 100)
-                    pdf.set_text_color(255, 255, 255)
-                    pdf.cell(190, 10, "CRONOGRAMA", border=1, ln=True, fill=True, align="C")
-                    pdf.set_text_color(0, 0, 0)
-                    pdf.set_font("Arial", "", 10)
-                    
-                    pdf.cell(95, 8, "Prazo de implantação (dias úteis):", border=1)
-                    pdf.cell(95, 8, str(valores[0]), border=1, ln=True)
-                    pdf.cell(95, 8, "Horas Estimadas:", border=1)
-                    pdf.cell(95, 8, str(valores[1]), border=1, ln=True)
-                    pdf.cell(95, 8, "Disponibilidade horário do cliente:", border=1)
-                    pdf.cell(95, 8, str(valores[2]), border=1, ln=True)
-                    pdf.cell(95, 8, "Disponibilidade dias da semana cliente:", border=1)
-                    pdf.cell(95, 8, str(valores[3]), border=1, ln=True)
-                    pdf.ln(2)
+                aba_comparar = simplificar_para_comparacao(nome_aba)
+                
+                # Se uma string faz parte da outra (Match inteligente)
+                if (aba_comparar in cliente_alvo) or (cliente_alvo in aba_comparar):
+                    aba_encontrada = nome_aba
+                    break
     
-                # Identifica colunas de atividades com ou sem o sufixo _C
-                col_data = "DATA_C" if "DATA_C" in df_cliente.columns else ("DATA" if "DATA" in df_cliente.columns else None)
-                col_dia = "DIA_C" if "DIA_C" in df_cliente.columns else ("DIA" if "DIA" in df_cliente.columns else None)
-                col_hora = "HORARIO_C" if "HORARIO_C" in df_cliente.columns else ("HORARIO" if "HORARIO" in df_cliente.columns else None)
-                col_ativ = "ATIVIDADES_C" if "ATIVIDADES_C" in df_cliente.columns else ("ATIVIDADES" if "ATIVIDADES" in df_cliente.columns else None)
-    
-                if col_data and col_dia and col_hora and col_ativ:
-                    # Filtra removendo linhas totalmente vazias nas colunas chave
-                    grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(how="all")
+            # Se encontrou a aba no dicionário do Excel
+            if aba_encontrada:
+                try:
+                    df_cliente = dict_abas[aba_encontrada].copy()
                     
-                    if not grupo_atividades.empty:
-                        if pdf.get_y() > 220:
-                            pdf.add_page()
+                    # Identifica as colunas de Cronograma e Observação
+                    col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
+                    col_observacao = "OBSERVACAO_C" if "OBSERVACAO_C" in df_cliente.columns else ("OBSERVAÇÃO" if "OBSERVAÇÃO" in df_cliente.columns else None)
+                    
+                    # 1. GRAVAÇÃO DO BLOCO CRONOGRAMA NO EXCEL
+                    if col_cronograma and len(df_cliente) > 0:
+                        valores_c = df_cliente[col_cronograma].iloc[0:4].fillna("").astype(str).tolist()
+                        
+                        valores_obs = []
+                        if col_observacao:
+                            valores_obs = df_cliente[col_observacao].iloc[0:4].fillna("").astype(str).tolist()
+                        
+                        while len(valores_c) < 4: valores_c.append("")
+                        while len(valores_obs) < 4: valores_obs.append("")
+                        
+                        if any(v.strip() != "" for v in valores_c):
+                            # Título do Bloco Cronograma (Mesclado de A até H como o f_blue padrão do seu app)
+                            ws.merge_range(f'A{row}:H{row}', "CRONOGRAMA", f_blue)
+                            ws.set_row(row - 1, 18)
+                            row += 1
                             
-                        pdf.set_font("Arial", "B", 10)
-                        pdf.set_fill_color(4, 36, 100)
-                        pdf.set_text_color(255, 255, 255)
-                        pdf.cell(190, 10, "ATIVIDADES", border=1, ln=True, fill=True, align="C")
-                        pdf.set_text_color(0, 0, 0)
+                            rotulos = [
+                                "Prazo de implantação (dias úteis):",
+                                "Horas Estimadas:",
+                                "Disponibilidade horário do cliente:",
+                                "Disponibilidade dias da semana cliente:"
+                            ]
+                            
+                            for idx in range(4):
+                                # Coluna A e B mescladas para o Rótulo lateral esquerdo
+                                ws.merge_range(f'A{row}:B{row}', rotulos[idx], f_TL if idx == 0 else f_L)
+                                # Coluna C para o Valor numérico/texto centralizado
+                                ws.write(f'C{row}', str(valores_c[idx]), f_T)
+                                # Colunas D até H mescladas para a Observação da direita
+                                ws.merge_range(f'D{row}:H{row}', str(valores_obs[idx]), f_TR if idx == 0 else f_R)
+                                row += 1
+                            row += 1 # Linha em branco de respiro
+    
+                    # 2. GRAVAÇÃO DO BLOCO ATIVIDADES NO EXCEL
+                    col_data = "DATA_C" if "DATA_C" in df_cliente.columns else ("DATA" if "DATA" in df_cliente.columns else None)
+                    col_dia = "DIA_C" if "DIA_C" in df_cliente.columns else ("DIA" if "DIA" in df_cliente.columns else None)
+                    col_hora = "HORARIO_C" if "HORARIO_C" in df_cliente.columns else ("HORARIO" if "HORARIO" in df_cliente.columns else None)
+                    col_ativ = "ATIVIDADES_C" if "ATIVIDADES_C" in df_cliente.columns else ("ATIVIDADES" if "ATIVIDADES" in df_cliente.columns else None)
+    
+                    if col_data and col_dia and col_hora and col_ativ:
+                        grupo_atividades = df_cliente[[col_data, col_dia, col_hora, col_ativ]].dropna(subset=[col_ativ])
                         
-                        # Cabeçalho da tabela
-                        pdf.set_font("Arial", "B", 9)
-                        pdf.cell(30, 8, "DATA", border=1, align="C")
-                        pdf.cell(40, 8, "DIA DA SEMANA", border=1, align="C")
-                        pdf.cell(40, 8, "HORÁRIO", border=1, align="C")
-                        pdf.cell(80, 8, "ATIVIDADES", border=1, ln=True, align="C")
-                        
-                        # Dados da tabela
-                        pdf.set_font("Arial", "", 9)
-                        for _, linha in grupo_atividades.iterrows():
-                            if pdf.get_y() > 245:
-                                pdf.add_page()
-                            pdf.cell(30, 8, str(linha[col_data]), border=1)
-                            pdf.cell(40, 8, str(linha[col_dia]), border=1)
-                            pdf.cell(40, 8, str(linha[col_hora]), border=1)
-                            pdf.cell(80, 8, str(linha[col_ativ]), border=1, ln=True)
-                        pdf.ln(2)
+                        if not grupo_atividades.empty:
+                            # Título do Bloco Atividades
+                            ws.merge_range(f'A{row}:H{row}', "ATIVIDADES", f_blue)
+                            ws.set_row(row - 1, 18)
+                            row += 1
+                            
+                            # Cabeçalho das Colunas
+                            ws.write(f'A{row}', "DATA", f_TL)
+                            ws.write(f'B{row}', "DIA DA SEMANA", f_T_b)
+                            ws.write(f'C{row}', "HORÁRIO", f_T_b)
+                            ws.merge_range(f'D{row}:H{row}', "ATIVIDADES", f_TR)
+                            row += 1
+                            
+                            # Loop para descarregar dinamicamente todas as linhas de atendimentos
+                            for _, linha in grupo_atividades.iterrows():
+                                val_data = linha[col_data]
+                                data_exibicao = ""
+                                
+                                if hasattr(val_data, "strftime"):
+                                    data_exibicao = val_data.strftime("%d/%m/%Y")
+                                else:
+                                    raw_data = str(val_data).strip().split(" ")
+                                    data_somente = raw_data[0]
+                                    if "-" in data_somente:
+                                        try:
+                                            from datetime import datetime
+                                            data_exibicao = datetime.strptime(data_somente, "%Y-%m-%d").strftime("%d/%m/%Y")
+                                        except:
+                                            data_exibicao = data_somente
+                                    else:
+                                        data_exibicao = data_somente
+                                
+                                horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
+                                
+                                # Grava as células nas colunas corretas aplicando as bordas/estilos nativos (f_T ou correspondente)
+                                ws.write(f'A{row}', data_exibicao, f_L)
+                                ws.write(f'B{row}', str(linha[col_dia]), f_T)
+                                ws.write(f'C{row}', horario_limpo, f_T)
+                                ws.merge_range(f'D{row}:H{row}', str(linha[col_ativ]), f_R)
+                                row += 1
+                            row += 1 # Linha em branco de respiro
+                except Exception as e:
+                    import streamlit as st
+                    st.write(f"DEBUG EXCEL: Ignorado erro na montagem da planilha para {cliente}: {e}")
+
             
 
 
