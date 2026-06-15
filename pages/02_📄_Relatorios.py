@@ -974,6 +974,7 @@ if btn_gerar:
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - INSTANCIAÇÃO SEGURA DE FORMATOS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - ACESSO DIRETO AO WORKBOOK) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX TOTAL DE BORDAS COM LOOPS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FECHAMENTO EM LOTE DE GRIDS) ---
             import re
             import unicodedata
     
@@ -1010,6 +1011,24 @@ if btn_gerar:
                     f_cab = f_T_b if 'f_T_b' in locals() else f_comum
                     f_lat = f_TL if 'f_TL' in locals() else f_comum
                     
+                    # --- INTEGRAÇÃO DA LÓGICA DE PENDÊNCIAS: Ativação forçada de paredes verticais ---
+                    # Modifica as propriedades internas de bordas para fechar os quadradinhos (Sem recriar objetos)
+                    if f_comum:
+                        f_comum.set_left(1)
+                        f_comum.set_right(1)
+                        f_comum.set_bottom(1)
+                        f_comum.set_top(1)
+                    if f_lat:
+                        f_lat.set_left(1)
+                        f_lat.set_right(1)
+                        f_lat.set_bottom(1)
+                        f_lat.set_top(1)
+                    if f_cab:
+                        f_cab.set_left(1)
+                        f_cab.set_right(1)
+                        f_cab.set_bottom(1)
+                        f_cab.set_top(1)
+                    
                     # Identifica as colunas de Cronograma e Observação
                     col_cronograma = "CRONOGRAMA_C" if "CRONOGRAMA_C" in df_cliente.columns else ("CRONOGRAMA" if "CRONOGRAMA" in df_cliente.columns else None)
                     col_observacao = "OBSERVACAO_C" if "OBSERVACAO_C" in df_cliente.columns else ("OBSERVAÇÃO" if "OBSERVAÇÃO" in df_cliente.columns else None)
@@ -1039,16 +1058,14 @@ if btn_gerar:
                             ]
                             
                             for idx in range(4):
-                                # Passo 1: Aplica o formato na célula B antes de mesclar A-B para não sumir a linha do meio
-                                ws.write_blank(row - 1, 1, f_lat)
+                                # Mesclagem A-B com as bordas verticais agora ativas
                                 ws.merge_range(row - 1, 0, row - 1, 1, rotulos[idx], f_lat)
                                 
-                                # Coluna C (Valor centralizado)
+                                # Coluna C (Valor centralizado com bordas fechadas em 4D)
                                 ws.write(row - 1, 2, str(valores_c[idx]), f_comum)
                                 
-                                # Passo 2: Aplica o formato em CADA UMA das células invisíveis (E, F, G, H) antes do merge.
-                                # Isso força o Excel a manter as bordas verticais da direita intactas!
-                                for c_idx in range(4, 8): # Colunas E(4), F(5), G(6), H(7)
+                                # Alimenta em lote as colunas ocultas para blindar contra falhas de merge do Excel
+                                for c_idx in range(3, 8): # Colunas D até H
                                     ws.write_blank(row - 1, c_idx, f_comum)
                                 ws.merge_range(row - 1, 3, row - 1, 7, str(valores_obs[idx]), f_comum)
                                 
@@ -1076,8 +1093,7 @@ if btn_gerar:
                             ws.write(row - 1, 1, "DIA DA SEMANA", f_cab)
                             ws.write(row - 1, 2, "HORÁRIO", f_cab)
                             
-                            # Aplica bordas nas colunas invisíveis do cabeçalho mesclado
-                            for c_idx in range(4, 8):
+                            for c_idx in range(3, 8):
                                 ws.write_blank(row - 1, c_idx, f_cab)
                             ws.merge_range(row - 1, 3, row - 1, 7, "ATIVIDADES", f_cab)
                             ws.set_row(row - 1, 16)
@@ -1104,12 +1120,13 @@ if btn_gerar:
                                 
                                 horario_limpo = str(linha[col_hora]).replace("13h às 15h", "13h-15h").strip()
                                 
+                                # Escreve os dados táticos (As linhas verticais entre as colunas vão saltar agora)
                                 ws.write(row - 1, 0, data_exibicao, f_comum)
                                 ws.write(row - 1, 1, str(linha[col_dia]), f_comum)
                                 ws.write(row - 1, 2, horario_limpo, f_comum)
                                 
-                                # Aplica o formato célula por célula de E até H para travar as paredes verticais e a borda da direita (H)
-                                for c_idx in range(4, 8):
+                                # Alimenta em lote com write_blank e executa o merge da descrição das atividades
+                                for c_idx in range(3, 8):
                                     ws.write_blank(row - 1, c_idx, f_comum)
                                 ws.merge_range(row - 1, 3, row - 1, 7, str(linha[col_ativ]), f_comum)
                                 
@@ -1119,6 +1136,7 @@ if btn_gerar:
                 except Exception as e:
                     import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
+
 
 
 
