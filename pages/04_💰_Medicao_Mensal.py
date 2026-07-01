@@ -364,6 +364,8 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_text_color(100, 100, 100); pdf.set_font("Arial", "I", 7)
     pdf.text(115, 104, "* Duplicatas a serem emitidas")
     pdf.text(115, 107, f"HPtech Informática ME, valor total de R$ {formatar_br(dados['preco_total'])}")
+    pdf.text(115, 110, "Banco: Santander Ag. 0809 CC: 01055895-8")
+    pdf.text(115, 113, "Pix: hudsonpedro@gmail.com")
     
     # ASSINATURAS LIMPAS
     pdf.set_text_color(0, 0, 0); pdf.set_font("Arial", "B", 9)
