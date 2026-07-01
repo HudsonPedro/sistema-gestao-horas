@@ -511,8 +511,10 @@ def gerar_xlsx_medicao_nova(dados):
     
     # Notas adicionais de rodapé
     worksheet.write("E14", "* Duplicatas a serem emitidas", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
-    worksheet.write("E15", f"HP SERVIÇOS ADM, valor total de R$ {formatar_br(dados['preco_total'])}", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
-    
+    worksheet.write("E15", f"HPtech Informática ME, valor total de R$ {formatar_br(dados['preco_total'])}", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
+    worksheet.write("E16", "Banco: Santander Ag. 0809 CC: 01055895-8", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
+    worksheet.write("E17", "Pix: hudsonpedro@gmail.com", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
+        
     # Seção de Assinaturas (Alinhada às margens da folha)
     worksheet.write("A17", "* De acordo com a Medição Mensal", fmt_negrito)
     
