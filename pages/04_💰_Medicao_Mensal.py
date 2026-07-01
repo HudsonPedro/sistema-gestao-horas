@@ -635,7 +635,7 @@ def confirmar_envio_popup(email, dados):
             st.rerun()
 
 # 2. Gatilho para abrir o pop-up na tela (Mantém igual)
-if btn_enviar_emails = st.button("🚀 Enviar Medição por E-mail", type="primary", key="pres_email_btn_key")#st.button("🚀 Enviar Medição por E-mail", use_container_width=True):  
+if st.button("🚀 Enviar Medição por E-mail", type="primary", key="pres_email_btn_key")#st.button("🚀 Enviar Medição por E-mail", use_container_width=True):  
     if not email_target:
         st.error("Por favor, preencha o e-mail do destinatário.")
     else:
