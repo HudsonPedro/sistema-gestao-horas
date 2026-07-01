@@ -598,8 +598,7 @@ with col_b2:
 
 # --- BOTÃO PRINCIPAL QUE ABRE O POPUP ---
 st.markdown("---")
-#email_target = st.text_input("Destinatário da Medição:", "suellen@crti.com.br")
-email_target = st.text_input("Destinatário da Medição:",  value="camille@crti.com.br,financeiro@crti.com.br", key="pres_email_dest_key")
+email_target = st.text_input("Destinatário da Medição:", "camille@crti.com.br")
 
 # 1. Definição da função do Pop-up (st.dialog)
 import time # Garante a importação do controle de tempo no script
@@ -635,7 +634,7 @@ def confirmar_envio_popup(email, dados):
             st.rerun()
 
 # 2. Gatilho para abrir o pop-up na tela (Mantém igual)
-if st.button("🚀 Enviar Medição por E-mail", type="primary", key="pres_email_btn_key")#st.button("🚀 Enviar Medição por E-mail", use_container_width=True):  
+if st.button("🚀 Enviar Medição por E-mail", use_container_width=True):  
     if not email_target:
         st.error("Por favor, preencha o e-mail do destinatário.")
     else:
