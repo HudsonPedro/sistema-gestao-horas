@@ -3,9 +3,9 @@
 import streamlit as st
 import base64  # ==novo imagem ao lado no título ===#
 # Trava de segurança: impede o acesso se o usuário não estiver logado no app.py
-if "authentication_status" not in st.session_state or not st.session_state["authentication_status"]:
+if "autenticado" not in st.session_state or not st.session_state["autenticado"]:
     st.error("🔒 Acesso negado. Por favor, faça login na página inicial (Home).")
-    st.stop() # Interrompe a renderização do módulo imediatamente
+    st.stop()
 
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha de código!)
 st.set_page_config(
