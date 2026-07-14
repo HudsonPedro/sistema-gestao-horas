@@ -43,7 +43,13 @@ authenticator = stauth.Authenticate(
 
 # Renderiza o formulário de login centralizado na tela
 # COMO DEVE FICAR SEGUINDO A NOVA DOCUMENTAÇÃO:
-name, authentication_status, username = authenticator.login(location='main', clear_on_submit=False)
+# 1. SUBSTITUA ESTA LINHA (Linha 46):
+# name, authentication_status, username = authenticator.login(location='main', clear_on_submit=False)
+
+# POR ESTA VERSÃO CORRETA DA VERSÃO 0.4.2:
+authentication_status = authenticator.login(location='main')
+username = st.session_state["username"]
+name = st.session_state["name"]
 
 # Validação do status de Login
 if authentication_status is False:
