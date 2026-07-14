@@ -45,7 +45,12 @@ if authentication_status:
     # -------------------------------------------------------------
     # TUDO QUE ESTIVER AQUI DENTRO SÓ APARECE APÓS O LOGIN
     # -------------------------------------------------------------
-
+    st.success(f"Bem-vindo, {name}!")
+    st.title("📊 Seu Sistema Atual")
+    
+    # Exemplo de conteúdo do seu sistema:
+    #st.write("Coloque o restante do seu código antigo aqui dentro.")
+    
     # 1. CONFIGURAÇÃO DA PÁGINA
     st.set_page_config(
         page_title="HPTECH Sistema de Gestão",
@@ -228,11 +233,6 @@ if authentication_status:
     st.info("Sistema integrado HPtech Informática ME.")
 
 #--------------------------------------------------------login
-    st.success(f"Bem-vindo, {name}!")
-    st.title("📊 Seu Sistema Atual")
-    
-    # Exemplo de conteúdo do seu sistema:
-    st.write("Coloque o restante do seu código antigo aqui dentro.")
     
 elif authentication_status is False:
     st.error("Usuário ou senha incorretos.")
