@@ -158,9 +158,6 @@ with st.sidebar:
  </div>
  """, unsafe_allow_html=True)
  st.markdown("---")
-
- # ... Imagem e identificação do usuário (user-block) ...
- st.markdown("---")
  
  # --- NOVO: EXPANDER PARA ALTERAR A PRÓPRIA SENHA ---
  with st.expander("🔐 Alterar Minha Senha"):
@@ -188,10 +185,6 @@ with st.sidebar:
      else:
       st.error("❌ Senha atual incorreta.")
      conn.close()
-
- st.title("Menu Principal")
- # ... Restante dos seus botões originais (Home, Dashboard...) ...
-
     
  st.title("Menu Principal")
  
