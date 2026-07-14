@@ -1,66 +1,94 @@
 import streamlit as st
 import locale
 import base64
+import sqlite3
+import hashlib
 
 # =============================================================================
-# 1. BLOCO DE LOGIN NATIVO NO TOPO (CAIXA COMPACTA E LOGO AMPLIADA)
+# BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE)
+# =============================================================================
+def conectar_banco():
+    conn = sqlite3.connect("usuarios_sistema.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS usuarios (
+            username TEXT PRIMARY KEY,
+            nome TEXT,
+            senha_hash TEXT,
+            email TEXT,
+            status TEXT DEFAULT 'Ativo'
+        )
+    """)
+    conn.commit()
+    return conn, cursor
+
+def criptografar_senha(senha):
+    return hashlib.sha256(senha.encode()).hexdigest()
+
+# Inicializa banco e cria o admin padrão se não existir (Senha: Admin@2026)
+conn, cursor = conectar_banco()
+cursor.execute("SELECT * FROM usuarios WHERE username='admin'")
+if not cursor.fetchone():
+    cursor.execute(
+        "INSERT INTO usuarios (username, nome, senha_hash, email, status) VALUES (?, ?, ?, ?, ?)",
+        ("admin", "Administrador", criptografar_senha("Admin@2026"), "hudsonpedro@gmail.com", "Ativo")
+    )
+    conn.commit()
+conn.close()
+
+# =============================================================================
+# 1. BLOCO DE LOGIN
 # =============================================================================
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
 if not st.session_state["autenticado"]:
-    # Mantém o nome da aba como "Home" antes do login
-    st.set_page_config(page_title="HPTECH Sistema de Gestão", page_icon="hptech.png", layout="wide")
-    
-    # Proporções alteradas para espremer mais a coluna central e reduzir o tamanho da caixa
+    st.set_page_config(page_title="Home - HPTECH Sistema de Gestão", page_icon="hptech.png", layout="wide")
     col_esq, col_centro, col_dir = st.columns([1.5, 1, 1.5])
     
     with col_centro:
-        st.write("") # Espaçador funcional
-        
-        # Carrega a logo hptechICO.png aumentada em 3x (330px)
+        st.write("") 
         try:
             with open("hptechICO.png", "rb") as img_file:
                 img_base64 = base64.b64encode(img_file.read()).decode()
-            st.markdown(
-                f'<div style="text-align: center; margin-bottom: 20px;"><img src="data:image/png;base64,{img_base64}" style="height: 200px;"></div>', 
-                unsafe_allow_html=True
-            )
+            st.markdown(f'<div style="text-align: center; margin-bottom: 20px;"><img src="data:image/png;base64,{img_base64}" style="height: 330px;"></div>', unsafe_allow_html=True)
         except:
             pass 
 
-        st.markdown("<h5 style='text-align: center; margin-bottom: 10px;'>🔑 HPTECH - Controle de Acesso</h5>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; margin-bottom: 20px;'>🔑 HPTECH - Controle de Acesso</h2>", unsafe_allow_html=True)
         
         with st.form("formulario_login"):
-            usuario_input = st.text_input("Usuário")
-            senha_input = st.text_input("Senha", type="password")
+            usuario_input = st.text_input("Username").strip().lower()
+            senha_input = st.text_input("Password", type="password")
             botao_entrar = st.form_submit_button("Login", use_container_width=True)
             
             if botao_entrar:
-                if usuario_input == "admin" and senha_input == "Admin@2026":
-                    st.session_state["autenticado"] = True
-                    st.session_state["u_email"] = "hudsonpedro@gmail.com"
-                    st.rerun()
-                elif usuario_input == "usuario" and senha_input == "Mudar@123":
-                    st.session_state["autenticado"] = True
-                    st.session_state["u_email"] = "hudson.pedro@hotmail.com"
-                    st.rerun()
+                conn, cursor = conectar_banco()
+                cursor.execute("SELECT nome, senha_hash, email, status FROM usuarios WHERE username=?", (usuario_input,))
+                user_data = cursor.fetchone()
+                conn.close()
+                
+                if user_data:
+                    nome, senha_hash_db, email, status = user_data
+                    if status == "Bloqueado":
+                        st.error("❌ Este usuário está bloqueado. Contate o administrador.")
+                    elif criptografar_senha(senha_input) == str(senha_hash_db):
+                        st.session_state["autenticado"] = True
+                        st.session_state["u_email"] = email
+                        st.session_state["u_name"] = nome
+                        st.session_state["u_user"] = usuario_input
+                        st.rerun()
+                    else:
+                        st.error("❌ Usuário ou senha incorretos.")
                 else:
                     st.error("❌ Usuário ou senha incorretos.")
                     
-        # Texto de rodapé solicitado centralizado abaixo do formulário
-        st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Copyright ©2026 HPtech Informática ME</p>", unsafe_allow_html=True)
-       # st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>v1.1 - 14072026</p>", unsafe_allow_html=True)
-        _, col_centro, _ = st.columns([1, 10, 1])
-
-        with col_centro:
-            st.info("v1.0 - 14072026 | Todos os direitos reservados.")
-              
-        
+        st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Hptech Informática ME.</p>", unsafe_allow_html=True)
     st.stop()
 
-# Recupera o e-mail para a sua sidebar original usar dinamicamente
 u_email = st.session_state["u_email"]
+u_name = st.session_state["u_name"]
+u_user = st.session_state["u_user"]
 
 # =============================================================================
 # 2. SEU SISTEMA EM PRODUÇÃO ORIGINAL (RESTAURADO E HIGIENIZADO)
@@ -150,7 +178,15 @@ with st.sidebar:
      st.switch_page("pages/07_🚗_Termo_Treinamento_Presencial.py")
  if st.button("💰 Reembolso de KM", use_container_width=True): 
      st.switch_page("pages/08_💰_Reembolso_KM.py")
- 
+  # --- NOVO: ABA DE ADMINISTRAÇÃO EXCLUSIVA PARA O ADMIN ---
+ if u_user == "admin":
+  st.markdown("---")
+  if st.button("⚙️ Gerenciar Usuários", use_container_width=True):
+   st.session_state["pagina_admin"] = True
+  else:
+   if "pagina_admin" not in st.session_state:
+    st.session_state["pagina_admin"] = False
+       
  st.divider()
  
  if st.button("🚪 Sair", use_container_width=True):
@@ -231,6 +267,74 @@ with col8:
     st.write("Gere o Reembolso KM.")
     if st.button("Novo Reembolso KM", key="btn_reembolso_km"):
         st.switch_page("pages/08_💰_Reembolso_KM.py")
+# =============================================================================
+# INTERFACE VISUAL DE GERENCIAMENTO DE USUÁRIOS
+# =============================================================================
+if u_user == "admin" and st.session_state.get("pagina_admin"):
+    st.markdown("---")
+    st.header("⚙️ Painel de Controle de Usuários")
+    
+    aba1, aba2, aba3 = st.tabs(["🆕 Cadastrar", "✏️ Alterar / Bloquear", "❌ Excluir"])
+    
+    with aba1:
+        with st.form("cadastrar_user"):
+            new_user = st.text_input("Username (Login)").strip().lower()
+            new_name = st.text_input("Nome Completo")
+            new_email = st.text_input("E-mail")
+            new_pass = st.text_input("Senha", type="password")
+            if st.form_submit_button("Salvar Novo Usuário"):
+                if new_user and new_pass:
+                    conn, cursor = conectar_banco()
+                    try:
+                        cursor.execute("INSERT INTO usuarios VALUES (?,?,?,?,?)", (new_user, new_name, criptografar_senha(new_pass), new_email, "Ativo"))
+                        conn.commit()
+                        st.success("Usuário cadastrado com sucesso!")
+                    except:
+                        st.error("Este Username já existe.")
+                    conn.close()
+                else:
+                    st.warning("Preencha o Username e a Senha.")
+
+    with aba2:
+        conn, cursor = conectar_banco()
+        cursor.execute("SELECT username, nome, email, status FROM usuarios")
+        lista_users = cursor.fetchall()
+        conn.close()
+        
+        user_sel = st.selectbox("Selecione o usuário para modificar", [u[0] for u in lista_users if u[0] != 'admin'])
+        
+        if user_sel:
+            curr_data = [u for u in lista_users if u[0] == user_sel][0]
+            with st.form("alterar_user"):
+                alt_name = st.text_input("Nome", value=curr_data[1])
+                alt_email = st.text_input("E-mail", value=curr_data[2])
+                alt_status = st.selectbox("Status", ["Ativo", "Bloqueado"], index=0 if curr_data[3] == "Ativo" else 1)
+                alt_pass = st.text_input("Nova Senha (deixe em branco para não alterar)", type="password")
+                
+                if st.form_submit_button("Atualizar Dados"):
+                    conn, cursor = conectar_banco()
+                    if alt_pass:
+                        cursor.execute("UPDATE usuarios SET nome=?, email=?, status=?, senha_hash=? WHERE username=?", (alt_name, alt_email, alt_status, criptografar_senha(alt_pass), user_sel))
+                    else:
+                        cursor.execute("UPDATE usuarios SET nome=?, email=?, status=? WHERE username=?", (alt_name, alt_email, alt_status, user_sel))
+                    conn.commit()
+                    conn.close()
+                    st.success("Usuário atualizado!")
+
+    with aba3:
+        user_del = st.selectbox("Selecione o usuário para DELETAR permanentemente", [u[0] for u in lista_users if u[0] != 'admin'])
+        if st.button("⚠️ CONFIRMAR EXCLUSÃO DEFINITIVA", type="primary"):
+            if user_del:
+                conn, cursor = conectar_banco()
+                cursor.execute("DELETE FROM usuarios WHERE username=?", (user_del,))
+                conn.commit()
+                conn.close()
+                st.success(f"Usuário {user_del} removido do sistema.")
+                st.rerun()
+
+    if st.button("Voltar para a Home"):
+        st.session_state["pagina_admin"] = False
+        st.rerun()
 
 st.divider()
 st.info("Sistema integrado HPtech Informática ME.")
