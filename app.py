@@ -23,13 +23,13 @@ if not st.session_state["autenticado"]:
             with open("hptechICO.png", "rb") as img_file:
                 img_base64 = base64.b64encode(img_file.read()).decode()
             st.markdown(
-                f'<div style="text-align: center; margin-bottom: 20px;"><img src="data:image/png;base64,{img_base64}" style="height: 330px;"></div>', 
+                f'<div style="text-align: center; margin-bottom: 20px;"><img src="data:image/png;base64,{img_base64}" style="height: 230px;"></div>', 
                 unsafe_allow_html=True
             )
         except:
             pass 
 
-        st.markdown("<h4 style='text-align: center; margin-bottom: 10px;'>🔑 HPTECH - Controle de Acesso</h4>", unsafe_allow_html=True)
+        st.markdown("<h5 style='text-align: center; margin-bottom: 10px;'>🔑 HPTECH - Controle de Acesso</h5>", unsafe_allow_html=True)
         
         with st.form("formulario_login"):
             usuario_input = st.text_input("Username")
@@ -49,9 +49,9 @@ if not st.session_state["autenticado"]:
                     st.error("❌ Usuário ou senha incorretos.")
                     
         # Texto de rodapé solicitado centralizado abaixo do formulário
-        st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema integrado HPtech Informática ME.</p>", unsafe_allow_html=True)
-        st.info("v1.0 - 11052026 | Todos os direitos reservados.")
-        st.caption("Copyright ©2026 HPtech Informática ME")
+        st.info("<p style='text-align: center; color: #777; margin-top: 15px;'>v1.1 - 11072026 | Copyright ©2026 HPtech Informática ME.</p>", unsafe_allow_html=True)
+        #st.info("v1.1 - 11072026 | Copyright ©2026 HPtech Informática ME.")
+       
         
     st.stop()
 
