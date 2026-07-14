@@ -49,8 +49,9 @@ if not st.session_state["autenticado"]:
                     st.error("❌ Usuário ou senha incorretos.")
                     
         # Texto de rodapé solicitado centralizado abaixo do formulário
-        st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Copyright ©2026 HPtech Informática ME      v1.1 - 11072026</p>", unsafe_allow_html=True)
-        #st.info("v1.1 - 11072026 | Copyright ©2026 HPtech Informática ME.")
+        st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Copyright ©2026 HPtech Informática ME</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>v1.1 - 14072026</p>", unsafe_allow_html=True)
+       
        
         
     st.stop()
