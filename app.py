@@ -158,6 +158,41 @@ with st.sidebar:
  </div>
  """, unsafe_allow_html=True)
  st.markdown("---")
+
+ # ... Imagem e identificação do usuário (user-block) ...
+ st.markdown("---")
+ 
+ # --- NOVO: EXPANDER PARA ALTERAR A PRÓPRIA SENHA ---
+ with st.expander("🔐 Alterar Minha Senha"):
+  with st.form("form_trocar_senha", clear_on_submit=True):
+   senha_atual = st.text_input("Senha Atual", type="password")
+   nova_senha = st.text_input("Nova Senha", type="password")
+   confirmar_nova = st.text_input("Confirme a Nova Senha", type="password")
+   
+   if st.form_submit_button("Atualizar Senha", use_container_width=True):
+    if nova_senha != confirmar_nova:
+     st.error("❌ As novas senhas não coincidem.")
+    elif len(nova_senha) < 6:
+     st.error("❌ A senha deve ter no mínimo 6 caracteres.")
+    else:
+     conn, cursor = conectar_banco()
+     # Verifica se a senha atual está correta no banco
+     cursor.execute("SELECT senha_hash FROM usuarios WHERE username=?", (u_user,))
+     senha_db = cursor.fetchone()[0]
+     
+     if criptografar_senha(senha_atual) == senha_db:
+      # Atualiza pela nova senha criptografada em SHA-256
+      cursor.execute("UPDATE usuarios SET senha_hash=? WHERE username=?", (criptografar_senha(nova_senha), u_user))
+      conn.commit()
+      st.success("✅ Senha alterada com sucesso!")
+     else:
+      st.error("❌ Senha atual incorreta.")
+     conn.close()
+
+ st.title("Menu Principal")
+ # ... Restante dos seus botões originais (Home, Dashboard...) ...
+
+    
  st.title("Menu Principal")
  
  # Navegação Atualizada (Mapeamento limpo de caracteres ocultos)
