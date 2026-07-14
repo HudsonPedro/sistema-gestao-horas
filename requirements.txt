@@ -5,8 +5,6 @@ fpdf
 xlsxwriter
 openpyxl
 pillow
-datetime
-timedelta
 requests
 gspread
 google-auth
