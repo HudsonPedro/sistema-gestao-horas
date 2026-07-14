@@ -3,35 +3,59 @@ import locale
 import base64
 
 # =============================================================================
-# 1. BLOCO DE LOGIN NATIVO NO TOPO
+# 1. BLOCO DE LOGIN NATIVO NO TOPO (MELHORADO VISUALMENTE)
 # =============================================================================
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
 if not st.session_state["autenticado"]:
-    st.set_page_config(page_title="HPTECH Sistema de Gestão", page_icon="hptech.png", layout="centered")
-    st.title("🔑 HPTECH - Controle de Acesso")
+    # 1. Ajustado o nome da tela de acesso para "Home"
+    st.set_page_config(page_title="HPTECH Sistema de Gestão", page_icon="hptech.png", layout="wide")
     
-    with st.form("formulario_login"):
-        usuario_input = st.text_input("Username")
-        senha_input = st.text_input("Password", type="password")
-        botao_entrar = st.form_submit_button("Login", use_container_width=True)
+    # Cria colunas para reduzir a largura do formulário pela metade e centralizar
+    col_esq, col_centro, col_dir = st.columns([1, 2, 1])
+    
+    with col_centro:
+        st.write("") # Espaçador funcional
         
-        if botao_entrar:
-            if usuario_input == "admin" and senha_input == "Admin@2026":
-                st.session_state["autenticado"] = True
-                st.session_state["u_email"] = "hudsonpedro@gmail.com"
-                st.rerun()
-            elif usuario_input == "usuario1" and senha_input == "Mudar@123":
-                st.session_state["autenticado"] = True
-                st.session_state["u_email"] = "hudson.pedro@hotmail.com"
-                st.rerun()
-            else:
-                st.error("❌ Usuário ou senha incorretos.")
+        # Tenta carregar e colocar a logo hptechICO.PNG centralizada acima do formulário
+        try:
+            with open("hptechICO.png", "rb") as img_file:
+                img_base64 = base64.b64encode(img_file.read()).decode()
+            st.markdown(
+                f'<div style="text-align: center;"><img src="data:image/png;base64,{img_base64}" style="height: 120px; margin-bottom: -10px;"></div>', 
+                unsafe_allow_html=True
+            )
+        except:
+            pass # Caso a imagem não seja localizada, avança sem quebrar a tela
+
+        st.markdown("<h2 style='text-align: center;'>🔑 HPTECH - Controle de Acesso</h2>", unsafe_allow_html=True)
+        
+        with st.form("formulario_login"):
+            usuario_input = st.text_input("Username")
+            senha_input = st.text_input("Password", type="password")
+            botao_entrar = st.form_submit_button("Login", use_container_width=True)
+            
+            if botao_entrar:
+                if usuario_input == "admin" and senha_input == "Admin@2026":
+                    st.session_state["autenticado"] = True
+                    st.session_state["u_email"] = "hudsonpedro@gmail.com"
+                    st.rerun()
+                elif usuario_input == "usuario" and senha_input == "Mudar@123":
+                    st.session_state["autenticado"] = True
+                    st.session_state["u_email"] = "hudson.pedro@hotmail.com"
+                    st.rerun()
+                else:
+                    st.error("❌ Usuário ou senha incorretos.")
     st.stop()
 
 # Recupera o e-mail para a sua sidebar original usar dinamicamente
 u_email = st.session_state["u_email"]
+
+# =============================================================================
+# 2. SEU SISTEMA EM PRODUÇÃO ORIGINAL (ABSOLUTAMENTE INTACTO ABAIXO DAQUI)
+# =============================================================================
+
 
 # =============================================================================
 # 2. SEU SISTEMA EM PRODUÇÃO ORIGINAL (RESTAURADO E HIGIENIZADO)
