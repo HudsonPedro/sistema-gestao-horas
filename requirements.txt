@@ -1,4 +1,5 @@
 streamlit>=1.30.0
+streamlit-authenticator==0.3.4
 pandas
 plotly
 fpdf
