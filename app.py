@@ -52,7 +52,7 @@ if not st.session_state["autenticado"]:
         except:
             pass 
 
-        st.markdown("<h6 style='text-align: center; margin-bottom: 10px;'>🔑 HPTECH - Controle de Acesso</h6>", unsafe_allow_html=True)
+        st.markdown("<h5 style='text-align: center; margin-bottom: 10px;'>🔑 HPTECH - Controle de Acesso</h5>", unsafe_allow_html=True)
         
         with st.form("formulario_login"):
             usuario_input = st.text_input("Usuário").strip().lower()
@@ -81,7 +81,7 @@ if not st.session_state["autenticado"]:
                     st.error("❌ Usuário ou senha incorretos.")
                     
         st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Integrado Hptech Informática.</p>", unsafe_allow_html=True)
-        _, col_centro, _ = st.columns([1, 25, 1])
+        _, col_centro, _ = st.columns([1, 40, 1])
         with col_centro:
             st.info("v1.1 - 14072026 | Copyright ©2026 HPtech Informática ME.", icon="ℹ️")
 
