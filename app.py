@@ -185,52 +185,52 @@ except:
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
 with col1:
-    st.subheader(" Dashboard")
+    st.subheader("📈 Dashboard")
     st.write("Visualize indicadores e métricas.")
     if st.button("Ir para Dashboards", key="btn_dash"):
-        st.switch_page("pages/01_ _Dashboard.py")
+        st.switch_page("pages/01_📊_Dashboard.py")
 
 with col2:
-    st.subheader(" Lançamento")
+    st.subheader("📝 Lançamento")
     st.write("Insira novos dados na Base.")
     if st.button("Lançamento de Horas", key="btn_input"):
-        st.switch_page("pages/03_ _Lancamento.py")
+        st.switch_page("pages/03_📝_Lancamento.py")
 
 with col3:
-    st.subheader(" Relatórios RA")
+    st.subheader("📄 Relatórios RA")
     st.write("Gere RA e envie o lote por e-mail.")
     if st.button("Gere o RA", key="btn_rel"):
-        st.switch_page("pages/02_ _Relatorios.py")
-
+        st.switch_page("pages/02_📄_Relatorios.py")
+        
 with col4:
-    st.subheader(" Medição")
+    st.subheader("💰 Medição")
     st.write("Fechamento mensal consolidado.")
     if st.button("Nova Medição", key="btn_med"):
-        st.switch_page("pages/04_ _Medicao_Mensal.py")
+        st.switch_page("pages/04_💰_Medicao_Mensal.py")
 
 with col5:
-    st.subheader(" Homologação")
+    st.subheader("📋 Homologação")
     st.write("Gere os Termos de Homologação.")
     if st.button("Novo Termo", key="btn_termo_homolog"):
-        st.switch_page("pages/05_ _Termos.py")
+        st.switch_page("pages/05_📋_Termos.py")
 
 with col6:
-    st.subheader(" Encerramento")
+    st.subheader("📑 Encerramento")
     st.write("Gere os Termos de Encerramento.")
     if st.button("Novo Encerramento", key="btn_termo_encerra"):
-        st.switch_page("pages/06_ _Termo_Encerramento.py")
+        st.switch_page("pages/06_📑_Termo_Encerramento.py")
 
 with col7:
-    st.subheader(" Presencial")
+    st.subheader("🚗 Presencial")
     st.write("Gere o Termo Presencial.")
     if st.button("Novo Termo Presencial", key="btn_termo_presencial"):
-        st.switch_page("pages/07_ _Termo_Treinamento_Presencial.py")
+        st.switch_page("pages/07_🚗_Termo_Treinamento_Presencial.py")
 
 with col8:
-    st.subheader(" Reembolso de KM")
+    st.subheader("💰 Reembolso de KM")
     st.write("Gere o Reembolso KM.")
     if st.button("Novo Reembolso KM", key="btn_reembolso_km"):
-        st.switch_page("pages/08_ _Reembolso_KM.py")
+        st.switch_page("pages/08_💰_Reembolso_KM.py")
 
 st.divider()
 st.info("Sistema integrado HPtech Informática ME.")
