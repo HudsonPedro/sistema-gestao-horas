@@ -14,6 +14,10 @@ import pandas as pd
 import requests
 from datetime import datetime, timedelta
 import base64
+# Trava de segurança: impede o acesso se o usuário não estiver logado no app.py
+if "authentication_status" not in st.session_state or not st.session_state["authentication_status"]:
+    st.error("🔒 Acesso negado. Por favor, faça login na página inicial (Home).")
+    st.stop() # Interrompe a renderização do módulo imediatamente
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
