@@ -80,8 +80,8 @@ if not st.session_state["autenticado"]:
                 else:
                     st.error("❌ Usuário ou senha incorretos.")
                     
-        st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Integrado Hptech Informática.</p>", unsafe_allow_html=True)
-        _, col_centro, _ = st.columns([1, 40, 1])
+        st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Integrado Hptech.</p>", unsafe_allow_html=True)
+        _, col_centro, _ = st.columns([5, 20, 5])
         with col_centro:
             st.info("v1.1 - 14072026 | Copyright ©2026 HPtech Informática ME.", icon="ℹ️")
 
