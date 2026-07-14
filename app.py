@@ -1,9 +1,9 @@
 import streamlit as st
+import streamlit_authenticator as stauth
 import locale
 import base64
 # LOGIN --------------------------------------------------------------------- 
-import streamlit as st
-import streamlit_authenticator as stauth
+
 
 # 1. Configuração da página (DEVE ser a primeira linha do Streamlit)
 st.set_page_config(page_title="Sistema Restrito", layout="centered")
