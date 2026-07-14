@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit_authenticator as stauth
 import locale
 import base64
 
@@ -14,72 +13,48 @@ st.set_page_config(
 )
 
 # =============================================================================
-# 2. SISTEMA DE AUTENTICAÇÃO
-# =============================================================================
-# Cadastro de usuários com senhas criptografadas
-# SUBSTITUA O BLOCO CREDENTIALS ANTIGO POR ESTE EXATO:
-credentials = {
-    "usernames": {
-        "admin": {
-            "name": "Administrador",
-            # Este é o hash correto e atualizado para a versão 0.4.2 (Senha: Admin@2026)
-            "password": "$2b$12$clZ8BUnvRHeHq2tYOnpEbu1g2.zF3M1Gsk9nQZpYv077CgI/oXw/G", 
-            "email": "hudsonpedro@gmail.com"
-        },
-        "usuario1": {
-            "name": "Usuário Padrão",
-            # Este é o hash correto e atualizado para a versão 0.4.2 (Senha: Mudar@123)
-            "password": "$2b$12$Z0Hj9vRF1H7S.mEbe5D3JkHe61m2rV9YfJzE6W1O8mEbe5D3JkHnK",
-            "email": "hudson.pedro@hotmail.com"
-        }
-    }
-}
-
-
-authenticator = stauth.Authenticate(
-    credentials,
-    cookie_name="cookie_sistema_seguro",
-    key="chave_secreta_aleatoria_123",
-    cookie_expiry_days=30
-)
-
-# Renderiza o formulário de login centralizado na tela
-# COMO DEVE FICAR SEGUINDO A NOVA DOCUMENTAÇÃO:
-# 1. SUBSTITUA ESTA LINHA (Linha 46):
-# name, authentication_status, username = authenticator.login(location='main', clear_on_submit=False)
-
-# POR ESTA VERSÃO CORRETA DA VERSÃO 0.4.2:
-# =============================================================================
-# 2. SISTEMA DE AUTENTICAÇÃO
+# 2. SISTEMA DE LOGIN NATIVO (SEM DEPENDÊNCIAS EXTERNAS)
 # =============================================================================
 
-# ... (Mantenha o dicionário 'credentials' e a inicialização do 'authenticator' como estão)
+# Inicializa a sessão de autenticação caso não exista
+if "autenticado" not in st.session_state:
+    st.session_state["autenticado"] = False
 
-# Renderiza o formulário de login centralizado na tela
+# Se não estiver logado, renderiza o formulário e barra a execução
+if not st.session_state["autenticado"]:
+    st.title("🔑 HPTECH - Controle de Acesso")
+    
+    with st.form("formulario_login"):
+        usuario_input = st.text_input("Username")
+        senha_input = st.text_input("Password", type="password")
+        botao_entrar = st.form_submit_button("Login", use_container_width=True)
+        
+        if botao_entrar:
+            # Validação direta e instantânea das credenciais em produção
+            if usuario_input == "admin" and senha_input == "Admin@2026":
+                st.session_state["autenticado"] = True
+                st.session_state["name"] = "Administrador"
+                st.session_state["username"] = "admin"
+                st.rerun()  # Recarrega a página já logado
+            elif usuario_input == "usuario1" and senha_input == "Mudar@123":
+                st.session_state["autenticado"] = True
+                st.session_state["name"] = "Usuário Padrão"
+                st.session_state["username"] = "usuario1"
+                st.rerun()
+            else:
+                st.error("❌ Usuário ou senha incorretos.")
+                
+    st.stop()  # Trava o carregamento do sistema de produção se não logar
+
+# Define as variáveis esperadas pelo resto do seu sistema original
+name = st.session_state["name"]
+username = st.session_state["username"]
+
 # =============================================================================
-# 2. SISTEMA DE AUTENTICAÇÃO
+# 3. SEU SISTEMA EM PRODUÇÃO ORIGINAL (A PARTIR DAQUI SEGUE INALTERADO)
 # =============================================================================
-
-# Renderiza o formulário de login centralizado na tela
-authentication_status = authenticator.login(location='main')
-
-# SEU NOVO BLOCO DE VALIDAÇÃO (Substitua o anterior por este):
-if st.session_state.get("authentication_status") is True:
-    # Login efetuado com sucesso! Salva as variáveis e continua a execução
-    username = st.session_state["username"]
-    name = st.session_state["name"]
-else:
-    # Se falhar ou estiver em branco, exibe a mensagem apropriada e trava a tela
-    if st.session_state.get("authentication_status") is False:
-        st.error("Usuário ou senha incorretos.")
-    else:
-        st.warning("Por favor, digite seu usuário e senha para acessar.")
-    st.stop()
-
-
 
 # Se o código passar daqui, significa que o usuário está LOGADO com sucesso!
-
 
 # =============================================================================
 # 3. SEU SISTEMA EM PRODUÇÃO ORIGINAL (INALTERADO)
@@ -181,7 +156,9 @@ with st.sidebar:
         
     st.divider()
     # Adiciona botão de Logout nativo no rodapé do menu lateral
-    authenticator.logout('Sair do Sistema', 'sidebar')
+    if st.button("🚪 Sair do Sistema", use_container_width=True):
+    st.session_state["autenticado"] = False
+    st.rerun()
 
 # 4. CONTEÚDO DA HOME COM NOVO CARD
 def get_image_base64(path):
