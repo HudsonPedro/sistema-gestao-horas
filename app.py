@@ -51,7 +51,7 @@ if not st.session_state["autenticado"]:
         # Texto de rodapé solicitado centralizado abaixo do formulário
         st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Copyright ©2026 HPtech Informática ME</p>", unsafe_allow_html=True)
        # st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>v1.1 - 14072026</p>", unsafe_allow_html=True)
-        _, col_centro, _ = st.columns([1, 8, 1])
+        _, col_centro, _ = st.columns([2, 8, 2])
 
         with col_centro:
             st.info("v1.0 - 14072026 | Todos os direitos reservados.")
