@@ -3,7 +3,7 @@ import locale
 import base64
 
 # =============================================================================
-# 1. BLOCO DE LOGIN NATIVO (ADICIONADO NO TOPO DO ARQUIVO)
+# 1. BLOCO DE LOGIN NATIVO NO TOPO
 # =============================================================================
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
@@ -28,11 +28,13 @@ if not st.session_state["autenticado"]:
                 st.rerun()
             else:
                 st.error("❌ Usuário ou senha incorretos.")
-    st.stop()  # Trava o carregamento se não estiver autenticado
+    st.stop()
 
+# Recupera o e-mail para a sua sidebar original usar dinamicamente
+u_email = st.session_state["u_email"]
 
 # =============================================================================
-# 2. SEU SISTEMA EM PRODUÇÃO ORIGINAL (ABSOLUTAMENTE INTACTO A PARTIR DAQUI)
+# 2. SEU SISTEMA EM PRODUÇÃO ORIGINAL (RESTAURADO E HIGIENIZADO)
 # =============================================================================
 
 # 1. CONFIGURAÇÃO DA PÁGINA
@@ -42,12 +44,12 @@ st.set_page_config(
  layout="wide",
  initial_sidebar_state="expanded",
 )
+
 st.markdown("""
  <style>
  [data-testid="stSidebarNav"] {display: none;}
  [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
  
- /* O BLOCO QUE VOCÊ PERGUNTOU ENTRA AQUI */
  .user-block {
  background-color: #f0f2f6;
  padding: 10px;
@@ -58,47 +60,39 @@ st.markdown("""
  }
  </style>
 """, unsafe_allow_html=True)
+
 # 2. CSS PARA OCULTAR O MENU E FORÇAR A LOGO NO TOPO
 st.markdown("""
  <style>
- /* Esconde o menu de páginas padrão do Streamlit */
  [data-testid="stSidebarNav"] {display: none;}
- 
- /* Zera o espaçamento do topo para a logo subir */
  [data-testid="stSidebarContent"] {padding-top: 0rem !important;}
- 
- /* Cor do título para o padrão azul CRTI */
- h1 { color: #b0231d; } /*#004a87 = AZUL CRTI*/
+ h1 { color: #b0231d; }
  </style>
 """, unsafe_allow_html=True)
+
 st.markdown("""
  <style>
- /* Esconde o menu nativo */
  [data-testid="stSidebarNav"] {display: none;}
- 
- /* FORÇA A LOGO PARA O TOPO ABSOLUTO */
  [data-testid="stSidebarContent"] {
  padding-top: 0rem !important;
  }
- /* Ajuste da logo para não encostar nas laterais */
  [data-testid="stSidebarHeader"] {
  padding-top: 0rem !important;
  }
- /* Estilo da caixinha de usuário */
  .user-block {
  background-color: #f0f2f6;
  padding: 8px;
  border-radius: 8px;
- margin-top: -10px; /* Puxa a caixinha um pouco para cima */
+ margin-top: -10px;
  }
  </style>
 """, unsafe_allow_html=True)
+
 # 3. SIDEBAR COM NOVO BOTÃO
 with st.sidebar:
  st.image("hptechNova.png", use_container_width=True)
  st.markdown("---")
- # Identificação do Usuário
- u_email = st.session_state.get("u_email") or "hudson.valente@crti.com.br"
+ 
  st.markdown(f"""
  <div class="user-block">
  <span style='font-size: 14px;'> 👤 <b>Usuário Logado</b></span><br>
@@ -108,7 +102,7 @@ with st.sidebar:
  st.markdown("---")
  st.title("Menu Principal")
  
- # Navegação Atualizada
+ # Navegação Atualizada (Mapeamento limpo de caracteres ocultos)
  if st.button("🏠 Home", use_container_width=True):
   st.switch_page("app.py")
  if st.button("📊 Dashboard", use_container_width=True):
@@ -142,13 +136,13 @@ with st.sidebar:
 def get_image_base64(path):
  with open(path, "rb") as img_file:
   return base64.b64encode(img_file.read()).decode()
-# Tenta carregar a imagem que está no repositório GitHub
+
 try:
  img_base64 = get_image_base64("hptechICO.png")
  st.markdown(
  f"""
  <div style="display: flex; align-items: center;">
- <h1 style="margin: 0; font-size: 2.5rem;">Ben-vindo ao Sistema de Gestão</h1>
+ <h1 style="margin: 0; font-size: 2.5rem;">Bem-vindo ao Sistema de Gestão</h1>
  <img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 180px;">
  </div>
  """, 
@@ -156,8 +150,7 @@ try:
  )
  st.markdown("Selecione uma das seções abaixo para começar.")
 except:
- # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
-    st.title("Bem-vindo ao Sistema de Gestão HPTECH")
+ st.title("Bem-vindo ao Sistema de Gestão HPTECH")
 st.markdown("---")
 
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
