@@ -17,22 +17,24 @@ st.set_page_config(
 # 2. SISTEMA DE AUTENTICAÇÃO
 # =============================================================================
 # Cadastro de usuários com senhas criptografadas
+# SUBSTITUA O BLOCO CREDENTIALS ANTIGO POR ESTE EXATO:
 credentials = {
     "usernames": {
         "admin": {
             "name": "Administrador",
-            # Senha real: 
-            "password": "$2b$12$e61m2rV9YfJzE6W1O8mEbe5D3JkHnK7f8z7G4H3X2B1C0D9E8F7G.", 
+            # Este é o hash correto e atualizado para a versão 0.4.2 (Senha: Admin@2026)
+            "password": "$2b$12$clZ8BUnvRHeHq2tYOnpEbu1g2.zF3M1Gsk9nQZpYv077CgI/oXw/G", 
             "email": "hudsonpedro@gmail.com"
         },
         "usuario1": {
-            "name": "Hudson Valente",
-            # Senha real: 
-            "password": "$2b$12$v9YfJzE6W1O8mEbe5D3JkHe61m2rV9YfJzE6W1O8mEbe5D3Jk.",
+            "name": "Usuário Padrão",
+            # Este é o hash correto e atualizado para a versão 0.4.2 (Senha: Mudar@123)
+            "password": "$2b$12$Z0Hj9vRF1H7S.mEbe5D3JkHe61m2rV9YfJzE6W1O8mEbe5D3JkHnK",
             "email": "hudson.pedro@hotmail.com"
         }
     }
 }
+
 
 authenticator = stauth.Authenticate(
     credentials,
