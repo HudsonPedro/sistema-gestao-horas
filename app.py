@@ -81,7 +81,7 @@ if not st.session_state["autenticado"]:
                     st.error("❌ Usuário ou senha incorretos.")
                     
         st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Integrado HPtech Informática ME.</p>", unsafe_allow_html=True)
-        _, col_centro, _ = st.columns([1, 50, 1])
+        _, col_centro, _ = st.columns([1, 20, 1])
         with col_centro:
             st.info("v1.1 - 14072026 | Copyright ©2026.", icon="ℹ️")
 
