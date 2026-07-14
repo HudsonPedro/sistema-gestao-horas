@@ -2,9 +2,10 @@
 #("v1.0 - 27042026") #16:43 sem alterações
 import streamlit as st
 import base64
-
-# 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha!)
-#st.set_page_config(page_title="Dashboard HPTECH", page_icon="📊", layout="wide")
+# Trava de segurança: impede o acesso se o usuário não estiver logado no app.py
+if "authentication_status" not in st.session_state or not st.session_state["authentication_status"]:
+    st.error("🔒 Acesso negado. Por favor, faça login na página inicial (Home).")
+    st.stop() # Interrompe a renderização do módulo imediatamente
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
