@@ -16,6 +16,10 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email.encoders import encode_base64
+# Trava de segurança: impede o acesso se o usuário não estiver logado no app.py
+if "authentication_status" not in st.session_state or not st.session_state["authentication_status"]:
+    st.error("🔒 Acesso negado. Por favor, faça login na página inicial (Home).")
+    st.stop() # Interrompe a renderização do módulo imediatamente
 
 # Descobre a pasta raiz do projeto de forma segura para o Linux
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
