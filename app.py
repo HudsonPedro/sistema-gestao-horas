@@ -83,7 +83,7 @@ if not st.session_state["autenticado"]:
         #st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Integrado HPtech Informática ME.</p>", unsafe_allow_html=True)
         _, col_centro, _ = st.columns([1, 40, 1])
         with col_centro:
-            st.info("Sistema Integrado HPtech Informática\n V1.1|14072026|Copyright ©2026.", icon="ℹ️")
+            st.info("Sistema Integrado HPtech Informática\n v1.1|14072026|Copyright ©2026.", icon="ℹ️")
 
     st.stop()
 
