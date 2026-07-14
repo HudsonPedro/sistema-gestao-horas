@@ -43,7 +43,7 @@ if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
 if not st.session_state["autenticado"]:
-    st.set_page_config(page_title="Home - HPTECH Sistema de Gestão", page_icon="hptech.png", layout="wide")
+    st.set_page_config(page_title="HPTECH Sistema de Gestão", page_icon="hptech.png", layout="wide")
     col_esq, col_centro, col_dir = st.columns([1.5, 1, 1.5])
     
     with col_centro:
@@ -51,15 +51,15 @@ if not st.session_state["autenticado"]:
         try:
             with open("hptechICO.png", "rb") as img_file:
                 img_base64 = base64.b64encode(img_file.read()).decode()
-            st.markdown(f'<div style="text-align: center; margin-bottom: 20px;"><img src="data:image/png;base64,{img_base64}" style="height: 330px;"></div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="text-align: center; margin-bottom: 20px;"><img src="data:image/png;base64,{img_base64}" style="height: 200px;"></div>', unsafe_allow_html=True)
         except:
             pass 
 
-        st.markdown("<h2 style='text-align: center; margin-bottom: 20px;'>🔑 HPTECH - Controle de Acesso</h2>", unsafe_allow_html=True)
+        st.markdown("<h5 style='text-align: center; margin-bottom: 20px;'>🔑 HPTECH - Controle de Acesso</h5>", unsafe_allow_html=True)
         
         with st.form("formulario_login"):
-            usuario_input = st.text_input("Username").strip().lower()
-            senha_input = st.text_input("Password", type="password")
+            usuario_input = st.text_input("Usuário").strip().lower()
+            senha_input = st.text_input("Senha", type="password")
             botao_entrar = st.form_submit_button("Login", use_container_width=True)
             
             if botao_entrar:
@@ -84,6 +84,10 @@ if not st.session_state["autenticado"]:
                     st.error("❌ Usuário ou senha incorretos.")
                     
         st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Hptech Informática ME.</p>", unsafe_allow_html=True)
+        _, col_centro, _ = st.columns([1, 12, 1])
+        with col_centro:
+            st.info("v1.1 - 14072026 | Todos os direitos reservados.", icon="ℹ️")
+
     st.stop()
 
 u_email = st.session_state["u_email"]
@@ -278,7 +282,7 @@ if u_user == "admin" and st.session_state.get("pagina_admin"):
     
     with aba1:
         with st.form("cadastrar_user"):
-            new_user = st.text_input("Username (Login)").strip().lower()
+            new_user = st.text_input("Usuário (Login)").strip().lower()
             new_name = st.text_input("Nome Completo")
             new_email = st.text_input("E-mail")
             new_pass = st.text_input("Senha", type="password")
@@ -290,10 +294,10 @@ if u_user == "admin" and st.session_state.get("pagina_admin"):
                         conn.commit()
                         st.success("Usuário cadastrado com sucesso!")
                     except:
-                        st.error("Este Username já existe.")
+                        st.error("Este Usuário já existe.")
                     conn.close()
                 else:
-                    st.warning("Preencha o Username e a Senha.")
+                    st.warning("Preencha o Usuário e a Senha.")
 
     with aba2:
         conn, cursor = conectar_banco()
