@@ -157,8 +157,8 @@ with st.sidebar:
     st.divider()
     # Adiciona botão de Logout nativo no rodapé do menu lateral
     if st.button("🚪 Sair do Sistema", use_container_width=True):
-    st.session_state["autenticado"] = False
-    st.rerun()
+        st.session_state["autenticado"] = False
+        st.rerun()
 
 # 4. CONTEÚDO DA HOME COM NOVO CARD
 def get_image_base64(path):
