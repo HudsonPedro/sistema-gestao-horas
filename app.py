@@ -7,6 +7,9 @@ import hashlib
 # =============================================================================
 # BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE)
 # =============================================================================
+# =============================================================================
+# BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE) - LIMPO SEM CREDENCIAIS EXPOSTAS
+# =============================================================================
 def conectar_banco():
     conn = sqlite3.connect("usuarios_sistema.db")
     cursor = conn.cursor()
@@ -25,16 +28,10 @@ def conectar_banco():
 def criptografar_senha(senha):
     return hashlib.sha256(senha.encode()).hexdigest()
 
-# Inicializa banco e cria o admin padrão se não existir (Senha: Admin@2026)
+# Inicializa apenas a estrutura da tabela em produção (Sem injetar dados via código)
 conn, cursor = conectar_banco()
-cursor.execute("SELECT * FROM usuarios WHERE username='admin'")
-if not cursor.fetchone():
-    cursor.execute(
-        "INSERT INTO usuarios (username, nome, senha_hash, email, status) VALUES (?, ?, ?, ?, ?)",
-        ("admin", "Administrador", criptografar_senha("Admin@2026"), "hudsonpedro@gmail.com", "Ativo")
-    )
-    conn.commit()
 conn.close()
+
 
 # =============================================================================
 # 1. BLOCO DE LOGIN
