@@ -1,6 +1,59 @@
 import streamlit as st
 import locale
 import base64
+# LOGIN --------------------------------------------------------------------- 
+import streamlit as st
+import streamlit_authenticator as stauth
+
+# 1. Configuração da página (deve ser o primeiro comando Streamlit)
+st.set_page_config(page_title="Sistema Restrito", layout="centered")
+
+# 2. Cadastro de usuários (substitua pelas suas credenciais e use senhas fortes)
+# Dica: Em produção, o ideal é salvar essas senhas já criptografadas.
+credentials = {
+    "usernames": {
+        "admin": {
+            "name": "Administrador",
+            "password": "SenhaCriptografadaAqui123",  # O componente vai criptografar automaticamente
+            "email": "admin@email.com"
+        },
+        "usuario1": {
+            "name": "João Silva",
+            "password": "OutraSenhaSegura456",
+            "email": "joao@email.com"
+        }
+    }
+}
+
+# 3. Inicializa o autenticador
+authenticator = stauth.Authenticate(
+    credentials,
+    cookie_name="cookie_do_sistema",
+    key="chave_secreta_para_o_cookie",
+    cookie_expiry_days=30
+)
+
+# 4. Renderiza a tela de login na barra lateral ou na tela principal
+# Mudamos para 'main' para aparecer no centro da tela
+name, authentication_status, username = authenticator.login(location='main')
+
+# 5. Tratamento do status de autenticação
+if authentication_status:
+    # --- LOGADO COM SUCESSO ---
+    # Cria um botão de logout na barra lateral
+    authenticator.logout('Sair do Sistema', 'sidebar')
+    
+    st.success(f"Bem-vindo(a), {name}!")
+    st.title("🛡️ Painel de Controle Restrito")
+    
+    # ---------------------------------------------------------
+    # COLOQUE O CÓDIGO DO SEU SISTEMA ATUAL AQUI DENTRO
+    # st.write("Seu sistema atual roda aqui dentro com total segurança.")
+    # ---------------------------------------------------------
+
+
+#--------------------------------------------------------------------- LOGIN
+
 
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
@@ -182,3 +235,19 @@ with col8:
 
 st.divider()
 st.info("Sistema integrado HPtech Informática ME.")
+
+#--------------------------------------------------------login
+
+elif authentication_status is False:
+    st.error("Usuário ou senha incorretos.")
+
+elif authentication_status is None:
+    st.warning("Por favor, insira seu usuário e senha para acessar.")
+import streamlit_authenticator as stauth
+
+# Digite a senha em texto limpo para gerar o código seguro
+senha_segura = "SuaSenhaAqui"
+hash_da_senha = stauth.Hasher([senha_segura]).generate()[0]
+
+print(hash_da_senha)
+# Copie o resultado gerado e cole no campo "password" do dicionário do seu app.py
