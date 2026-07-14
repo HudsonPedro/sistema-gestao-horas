@@ -32,8 +32,8 @@ if not st.session_state["autenticado"]:
         st.markdown("<h5 style='text-align: center; margin-bottom: 10px;'>🔑 HPTECH - Controle de Acesso</h5>", unsafe_allow_html=True)
         
         with st.form("formulario_login"):
-            usuario_input = st.text_input("Username")
-            senha_input = st.text_input("Password", type="password")
+            usuario_input = st.text_input("Usuário")
+            senha_input = st.text_input("Senha", type="password")
             botao_entrar = st.form_submit_button("Login", use_container_width=True)
             
             if botao_entrar:
