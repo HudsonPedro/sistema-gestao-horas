@@ -14,13 +14,13 @@ credentials = {
     "usernames": {
         "admin": {
             "name": "Administrador",
-            "password": "SenhaCriptografadaAqui123",  # O componente vai criptografar automaticamente
-            "email": "admin@email.com"
+            "password": "SenhaAqui123",  # O componente vai criptografar automaticamente
+            "email": "hudsonpedro@gmail.com"
         },
         "usuario1": {
-            "name": "João Silva",
+            "name": "Hudson Valente",
             "password": "OutraSenhaSegura456",
-            "email": "joao@email.com"
+            "email": "hudson.pedro@hotmail.com"
         }
     }
 }
