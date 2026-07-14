@@ -47,17 +47,27 @@ authenticator = stauth.Authenticate(
 # name, authentication_status, username = authenticator.login(location='main', clear_on_submit=False)
 
 # POR ESTA VERSÃO CORRETA DA VERSÃO 0.4.2:
+# =============================================================================
+# 2. SISTEMA DE AUTENTICAÇÃO
+# =============================================================================
+
+# ... (Mantenha o dicionário 'credentials' e a inicialização do 'authenticator' como estão)
+
+# Renderiza o formulário de login centralizado na tela
 authentication_status = authenticator.login(location='main')
+
+# CORREÇÃO DA VALIDAÇÃO DO STATUS:
+if st.session_state.get("authentication_status") is False:
+    st.error("Usuário ou senha incorretos.")
+    st.stop()
+elif st.session_state.get("authentication_status") is None:
+    st.warning("Por favor, digite seu usuário e senha para acessar.")
+    st.stop()
+
+# Se chegou aqui, o login foi bem-sucedido!
 username = st.session_state["username"]
 name = st.session_state["name"]
 
-# Validação do status de Login
-if authentication_status is False:
-    st.error("Usuário ou senha incorretos.")
-    st.stop()  # Trava o app aqui e impede de carregar o sistema de produção
-elif authentication_status is None:
-    st.warning("Por favor, digite seu usuário e senha para acessar.")
-    st.stop()  # Trava o app aqui e impede de carregar o sistema de produção
 
 # Se o código passar daqui, significa que o usuário está LOGADO com sucesso!
 
