@@ -157,7 +157,7 @@ try:
  st.markdown("Selecione uma das seções abaixo para começar.")
 except:
  # Caso a imagem mude de nome ou não seja encontrada, mantém apenas o texto
-st.title("Bem-vindo ao Sistema de Gestão HPTECH")
+    st.title("Bem-vindo ao Sistema de Gestão HPTECH")
 st.markdown("---")
 
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
