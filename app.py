@@ -50,7 +50,8 @@ if not st.session_state["autenticado"]:
                     
         # Texto de rodapé solicitado centralizado abaixo do formulário
         st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Copyright ©2026 HPtech Informática ME</p>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>v1.1 - 14072026</p>", unsafe_allow_html=True)
+       # st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>v1.1 - 14072026</p>", unsafe_allow_html=True)
+        st.info("v1.0 - 14072026 | Todos os direitos reservados.")
        
        
         
@@ -231,5 +232,5 @@ with col8:
 
 st.divider()
 st.info("Sistema integrado HPtech Informática ME.")
-st.info("v1.0 - 11052026 | Todos os direitos reservados.")
+st.info("v1.0 - 14072026 | Todos os direitos reservados.")
 st.caption("Copyright ©2026 HPtech Informática ME")
