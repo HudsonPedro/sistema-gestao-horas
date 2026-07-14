@@ -29,7 +29,7 @@ if not st.session_state["autenticado"]:
         except:
             pass 
 
-        st.markdown("<h2 style='text-align: center; margin-bottom: 20px;'>🔑 HPTECH - Controle de Acesso</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; margin-bottom: 10px;'>🔑 HPTECH - Controle de Acesso</h2>", unsafe_allow_html=True)
         
         with st.form("formulario_login"):
             usuario_input = st.text_input("Username")
