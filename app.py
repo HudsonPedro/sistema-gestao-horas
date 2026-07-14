@@ -3,27 +3,27 @@ import locale
 import base64
 
 # =============================================================================
-# 1. BLOCO DE LOGIN NATIVO NO TOPO (TELA ENCOLHIDA E CENTRALIZADA)
+# 1. BLOCO DE LOGIN NATIVO NO TOPO (CAIXA COMPACTA E LOGO AMPLIADA)
 # =============================================================================
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
 if not st.session_state["autenticado"]:
-    # Define o nome da aba como "Home" antes do login
+    # Mantém o nome da aba como "Home" antes do login
     st.set_page_config(page_title="HPTECH Sistema de Gestão", page_icon="hptech.png", layout="wide")
     
-    # Define proporções específicas para forçar o encolhimento da coluna central
-    col_esq, col_centro, col_dir = st.columns([1, 1.5, 1])
+    # Proporções alteradas para espremer mais a coluna central e reduzir o tamanho da caixa
+    col_esq, col_centro, col_dir = st.columns([1.5, 1, 1.5])
     
     with col_centro:
         st.write("") # Espaçador funcional
         
-        # Carrega a logo hptechICO.png centralizada
+        # Carrega a logo hptechICO.png aumentada em 3x (330px)
         try:
             with open("hptechICO.png", "rb") as img_file:
                 img_base64 = base64.b64encode(img_file.read()).decode()
             st.markdown(
-                f'<div style="text-align: center; margin-bottom: 15px;"><img src="data:image/png;base64,{img_base64}" style="height: 110px;"></div>', 
+                f'<div style="text-align: center; margin-bottom: 20px;"><img src="data:image/png;base64,{img_base64}" style="height: 330px;"></div>', 
                 unsafe_allow_html=True
             )
         except:
@@ -48,23 +48,15 @@ if not st.session_state["autenticado"]:
                 else:
                     st.error("❌ Usuário ou senha incorretos.")
                     
-        # Texto de rodapé solicitado adicionado e centralizado abaixo do formulário
-        st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Hptech Informática ME.</p>", unsafe_allow_html=True)
+        # Texto de rodapé solicitado centralizado abaixo do formulário
+        st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema integrado HPtech Informática ME.</p>", unsafe_allow_html=True)
+        st.info("v1.0 - 11052026 | Todos os direitos reservados.")
+        st.caption("Copyright ©2026 HPtech Informática ME")
         
     st.stop()
 
 # Recupera o e-mail para a sua sidebar original usar dinamicamente
 u_email = st.session_state["u_email"]
-
-# =============================================================================
-# 2. SEU SISTEMA EM PRODUÇÃO ORIGINAL (ABSOLUTAMENTE INTACTO ABAIXO DAQUI)
-# =============================================================================
-
-
-# =============================================================================
-# 2. SEU SISTEMA EM PRODUÇÃO ORIGINAL (ABSOLUTAMENTE INTACTO ABAIXO DAQUI)
-# =============================================================================
-
 
 # =============================================================================
 # 2. SEU SISTEMA EM PRODUÇÃO ORIGINAL (RESTAURADO E HIGIENIZADO)
