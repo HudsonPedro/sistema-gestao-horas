@@ -23,7 +23,7 @@ if not st.session_state["autenticado"]:
             with open("hptechICO.png", "rb") as img_file:
                 img_base64 = base64.b64encode(img_file.read()).decode()
             st.markdown(
-                f'<div style="text-align: center; margin-bottom: 20px;"><img src="data:image/png;base64,{img_base64}" style="height: 230px;"></div>', 
+                f'<div style="text-align: center; margin-bottom: 20px;"><img src="data:image/png;base64,{img_base64}" style="height: 200px;"></div>', 
                 unsafe_allow_html=True
             )
         except:
@@ -51,9 +51,11 @@ if not st.session_state["autenticado"]:
         # Texto de rodapé solicitado centralizado abaixo do formulário
         st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Copyright ©2026 HPtech Informática ME</p>", unsafe_allow_html=True)
        # st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>v1.1 - 14072026</p>", unsafe_allow_html=True)
-        st.info("v1.0 - 14072026 | Todos os direitos reservados.")
-       
-       
+        _, col_centro, _ = st.columns([1, 8, 1])
+
+        with col_centro:
+            st.info("v1.0 - 14072026 | Todos os direitos reservados.")
+              
         
     st.stop()
 
