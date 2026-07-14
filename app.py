@@ -56,19 +56,26 @@ authenticator = stauth.Authenticate(
 # ... (Mantenha o dicionário 'credentials' e a inicialização do 'authenticator' como estão)
 
 # Renderiza o formulário de login centralizado na tela
+# =============================================================================
+# 2. SISTEMA DE AUTENTICAÇÃO
+# =============================================================================
+
+# Renderiza o formulário de login centralizado na tela
 authentication_status = authenticator.login(location='main')
 
-# CORREÇÃO DA VALIDAÇÃO DO STATUS:
-if st.session_state.get("authentication_status") is False:
-    st.error("Usuário ou senha incorretos.")
-    st.stop()
-elif st.session_state.get("authentication_status") is None:
-    st.warning("Por favor, digite seu usuário e senha para acessar.")
+# SEU NOVO BLOCO DE VALIDAÇÃO (Substitua o anterior por este):
+if st.session_state.get("authentication_status") is True:
+    # Login efetuado com sucesso! Salva as variáveis e continua a execução
+    username = st.session_state["username"]
+    name = st.session_state["name"]
+else:
+    # Se falhar ou estiver em branco, exibe a mensagem apropriada e trava a tela
+    if st.session_state.get("authentication_status") is False:
+        st.error("Usuário ou senha incorretos.")
+    else:
+        st.warning("Por favor, digite seu usuário e senha para acessar.")
     st.stop()
 
-# Se chegou aqui, o login foi bem-sucedido!
-username = st.session_state["username"]
-name = st.session_state["name"]
 
 
 # Se o código passar daqui, significa que o usuário está LOGADO com sucesso!
