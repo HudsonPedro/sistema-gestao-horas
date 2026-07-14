@@ -17,10 +17,12 @@ st.set_page_config(
 # =============================================================================
 
 # Inicializa a sessão de autenticação caso não exista
+# =============================================================================
+# 2. SISTEMA DE LOGIN NATIVO (SEM DEPENDÊNCIAS QUE QUEBRAM)
+# =============================================================================
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
-# Se não estiver logado, renderiza o formulário e barra a execução
 if not st.session_state["autenticado"]:
     st.title("🔑 HPTECH - Controle de Acesso")
     
@@ -30,25 +32,21 @@ if not st.session_state["autenticado"]:
         botao_entrar = st.form_submit_button("Login", use_container_width=True)
         
         if botao_entrar:
-            # Validação direta e instantânea das credenciais em produção
             if usuario_input == "admin" and senha_input == "Admin@2026":
                 st.session_state["autenticado"] = True
-                st.session_state["name"] = "Administrador"
-                st.session_state["username"] = "admin"
-                st.rerun()  # Recarrega a página já logado
+                st.session_state["u_email"] = "hudsonpedro@gmail.com"
+                st.rerun()
             elif usuario_input == "usuario1" and senha_input == "Mudar@123":
                 st.session_state["autenticado"] = True
-                st.session_state["name"] = "Usuário Padrão"
-                st.session_state["username"] = "usuario1"
+                st.session_state["u_email"] = "hudson.pedro@hotmail.com"
                 st.rerun()
             else:
                 st.error("❌ Usuário ou senha incorretos.")
                 
-    st.stop()  # Trava o carregamento do sistema de produção se não logar
+    st.stop()  # Bloqueia tudo se não estiver logado
 
-# Define as variáveis esperadas pelo resto do seu sistema original
-name = st.session_state["name"]
-username = st.session_state["username"]
+# Recupera o e-mail para a sua sidebar original usar dinamicamente
+u_email = st.session_state["u_email"]
 
 # =============================================================================
 # 3. SEU SISTEMA EM PRODUÇÃO ORIGINAL (A PARTIR DAQUI SEGUE INALTERADO)
