@@ -11,7 +11,9 @@ import hashlib
 # BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE) - LIMPO SEM CREDENCIAIS EXPOSTAS
 # =============================================================================
 def conectar_banco():
-    conn = sqlite3.connect("usuarios_sistema.db")
+    conn = psycopg2.connect(
+    os.environ["DATABASE_URL"]
+)
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
