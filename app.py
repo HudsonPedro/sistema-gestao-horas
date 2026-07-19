@@ -18,10 +18,45 @@ def conectar_banco():
     cursor = conn.cursor()
 
     return conn, cursor
-
+    
 def criptografar_senha(senha):
-    return hashlib.sha256(senha.encode()).hexdigest()
+    return hashlib.sha256(senha.encode()).hexdigest()    
+    
+# ------log de acesso ----------------
+def registrar_log(username, evento, descricao=""):
 
+    try:
+
+        conn, cursor = conectar_banco()
+
+        cursor.execute(
+            """
+            INSERT INTO logs_auditoria
+            (
+                username,
+                evento,
+                descricao
+            )
+            VALUES
+            (%s,%s,%s)
+            """,
+            (
+                username,
+                evento,
+                descricao
+            )
+        )
+
+        conn.commit()
+        conn.close()
+
+    except Exception as e:
+
+        print(
+            "Erro ao gravar log:",
+            e
+        )
+        
 # =============================================================================
 # 1. BLOCO DE LOGIN
 # =============================================================================
@@ -62,6 +97,11 @@ if not st.session_state["autenticado"]:
                     if status == "Bloqueado":
                         st.error("❌ Este usuário está bloqueado. Contate o administrador.")
                     elif criptografar_senha(senha_input) == str(senha_hash_db):
+                        registrar_log(
+                            usuario_input,
+                            "LOGIN",
+                            "Login realizado com sucesso"
+                        )
                         st.session_state["autenticado"] = True
                         st.session_state["u_email"] = email
                         st.session_state["u_name"] = nome
@@ -366,7 +406,12 @@ if u_user == "admin" and st.session_state.get("pagina_admin"):
                         )
 
                         conn.commit()
-
+                        
+                        registrar_log(
+                            u_user,
+                            "CRIACAO_USUARIO",
+                            f"Usuário criado: {new_user}"
+                        )
                         st.success(
                             "Usuário cadastrado com sucesso!"
                         )
@@ -525,7 +570,12 @@ if u_user == "admin" and st.session_state.get("pagina_admin"):
 
                     conn.commit()
                     conn.close()
-
+                    
+                    registrar_log(
+                        u_user,
+                        "ALTERACAO_USUARIO",
+                        f"Usuário alterado: {user_sel}"
+                    )
 
                     st.success(
                         "Usuário atualizado!"
@@ -601,7 +651,12 @@ if u_user == "admin" and st.session_state.get("pagina_admin"):
                 conn.commit()
                 conn.close()
 
-
+                registrar_log(
+                    u_user,
+                    "EXCLUSAO_USUARIO",
+                    f"Usuário removido: {user_del}"
+                )
+                
                 st.success(
                     f"Usuário {user_del} removido."
                 )
