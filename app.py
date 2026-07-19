@@ -1,8 +1,9 @@
 import streamlit as st
 import locale
 import base64
-import sqlite3
 import hashlib
+import psycopg2
+import os
 
 # =============================================================================
 # BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE)
