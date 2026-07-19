@@ -1,24 +1,16 @@
 import streamlit as st
-import psycopg2
+import hashlib
 
-st.title("Teste conexão Neon")
+st.title("Gerar Hash")
 
-try:
-    conn = psycopg2.connect(
-        st.secrets["neon"]["DATABASE_URL"]
-    )
+senha = st.text_input(
+    "Digite a senha do admin",
+    type="password"
+)
 
-    cursor = conn.cursor()
+if st.button("Gerar"):
+    hash_senha = hashlib.sha256(
+        senha.encode()
+    ).hexdigest()
 
-    cursor.execute("SELECT NOW();")
-    resultado = cursor.fetchone()
-
-    st.success("Conectado ao Neon com sucesso!")
-    st.write("Data do servidor:")
-    st.write(resultado)
-
-    conn.close()
-
-except Exception as e:
-    st.error("Erro na conexão:")
-    st.write(e)
+    st.write(hash_senha)
