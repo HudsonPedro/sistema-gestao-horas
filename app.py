@@ -10,17 +10,20 @@ import hashlib
 # =============================================================================
 # BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE) - LIMPO SEM CREDENCIAIS EXPOSTAS
 # =============================================================================
+# =============================================================================
+# BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE) - AUTO-GERAÇÃO DO ADMIN NO BANCO
+# =============================================================================
 def conectar_banco():
     conn = sqlite3.connect("usuarios_sistema.db")
     cursor = conn.cursor()
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS usuarios (
-            username TEXT PRIMARY KEY,
-            nome TEXT,
-            senha_hash TEXT,
-            email TEXT,
-            status TEXT DEFAULT 'Ativo'
-        )
+    CREATE TABLE IF NOT EXISTS usuarios (
+    username TEXT PRIMARY KEY,
+    nome TEXT,
+    senha_hash TEXT,
+    email TEXT,
+    status TEXT DEFAULT 'Ativo'
+    )
     """)
     conn.commit()
     return conn, cursor
@@ -28,25 +31,17 @@ def conectar_banco():
 def criptografar_senha(senha):
     return hashlib.sha256(senha.encode()).hexdigest()
 
-# Inicializa apenas a estrutura da tabela em produção (Sem injetar dados via código)
+# Inicializa o banco de dados e injeta o admin na tabela caso esteja vazia
 conn, cursor = conectar_banco()
-# =============================================================================
-# TRECHO ATUAL DO SEU CODIGO:
-# conn, cursor = conectar_banco()
-# =============================================================================
-
-# INJETE APENAS ESTAS 3 LINHAS EXATAMENTE AQUI NO MEIO:
-hash_novo_sistema = "27a08b5f3ee6bda02b489bcbc8fa98e4d2919aa53ca839d33b49ee7d605bc0db"
-cursor.execute("INSERT OR REPLACE INTO usuarios (username, nome, senha_hash, email, status) VALUES ('admin', 'Administrador', ?, 'hudsonpedro@gmail.com', 'Ativo')", (hash_novo_sistema,))
-conn.commit()
-
-# =============================================================================
-# CONTINUAÇÃO DO SEU CÓDIGO ORIGINAL:
-# conn.close()
-# =============================================================================
-
+cursor.execute("SELECT * FROM usuarios WHERE username='admin'")
+if not cursor.fetchone():
+    # Insere as credenciais diretamente na tabela do arquivo .db do servidor
+    cursor.execute(
+        "INSERT INTO usuarios (username, nome, senha_hash, email, status) VALUES (?, ?, ?, ?, ?)",
+        ("admin", "Administrador", criptografar_senha("Admin@2026"), "hudsonpedro@gmail.com", "Ativo")
+    )
+    conn.commit()
 conn.close()
-
 
 # =============================================================================
 # 1. BLOCO DE LOGIN
