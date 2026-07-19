@@ -9,7 +9,7 @@ sqlite_cursor = sqlite.cursor()
 
 # Neon PostgreSQL
 postgres = psycopg2.connect(
-    "SUA_CONNECTION_STRING_DO_NEON"
+    "postgresql://neondb_owner:npg_XdU6cRYoJpi9@ep-restless-term-au36ashx-pooler.c-10.us-east-1.aws.neon.tech/neondb?sslmode=require"
 )
 
 pg_cursor = postgres.cursor()
