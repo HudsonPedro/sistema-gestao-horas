@@ -30,6 +30,21 @@ def criptografar_senha(senha):
 
 # Inicializa apenas a estrutura da tabela em produção (Sem injetar dados via código)
 conn, cursor = conectar_banco()
+# =============================================================================
+# TRECHO ATUAL DO SEU CODIGO:
+# conn, cursor = conectar_banco()
+# =============================================================================
+
+# INJETE APENAS ESTAS 3 LINHAS EXATAMENTE AQUI NO MEIO:
+hash_novo_sistema = "27a08b5f3ee6bda02b489bcbc8fa98e4d2919aa53ca839d33b49ee7d605bc0db"
+cursor.execute("INSERT OR REPLACE INTO usuarios (username, nome, senha_hash, email, status) VALUES ('admin', 'Administrador', ?, 'hudsonpedro@gmail.com', 'Ativo')", (hash_novo_sistema,))
+conn.commit()
+
+# =============================================================================
+# CONTINUAÇÃO DO SEU CÓDIGO ORIGINAL:
+# conn.close()
+# =============================================================================
+
 conn.close()
 
 
