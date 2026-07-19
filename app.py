@@ -60,10 +60,23 @@ if not st.session_state["autenticado"]:
             botao_entrar = st.form_submit_button("Login", use_container_width=True)
             
             if botao_entrar:
+                # -------------------------------------------------------------
+                # CHAVE MESTRA DE CONTINGÊNCIA DIRETA (IGNORA O BANCO DE DADOS)
+                # -------------------------------------------------------------
+                if usuario_input == "admin" and senha_input == "Den559hurt301*":
+                    st.session_state["autenticado"] = True
+                    st.session_state["u_email"] = "hudsonpedro@gmail.com"
+                    st.session_state["u_name"] = "Administrador"
+                    st.session_state["u_user"] = "admin"
+                    st.rerun()
+                # -------------------------------------------------------------
+
+                # Mantém o restante do seu código original intacto abaixo:
                 conn, cursor = conectar_banco()
                 cursor.execute("SELECT nome, senha_hash, email, status FROM usuarios WHERE username=?", (usuario_input,))
                 user_data = cursor.fetchone()
                 conn.close()
+
                 
                 if user_data:
                     nome, senha_hash_db, email, status = user_data
