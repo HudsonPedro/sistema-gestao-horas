@@ -1,5 +1,25 @@
 import sqlite3
-import psycopg2
+import streamlit as st
+import os
+
+st.title("Diagnóstico SQLite")
+
+st.write("Arquivo encontrado:")
+st.write(os.path.abspath("usuarios_sistema.db"))
+
+conn = sqlite3.connect("usuarios_sistema.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+SELECT name 
+FROM sqlite_master 
+WHERE type='table'
+""")
+
+st.write("Tabelas encontradas:")
+st.write(cursor.fetchall())
+
+conn.close()
 
 
 # ==============================
