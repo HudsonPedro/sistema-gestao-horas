@@ -5,11 +5,9 @@ import hashlib
 import psycopg2
 import os
 
+
 # =============================================================================
-# BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE)
-# =============================================================================
-# =============================================================================
-# BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE) - LIMPO SEM CREDENCIAIS EXPOSTAS
+# BANCO DE DADOS DE USUÁRIOS SEGURO (SQLPOSTEGRE) - LIMPO SEM CREDENCIAIS EXPOSTAS
 # =============================================================================
 def conectar_banco():
 
