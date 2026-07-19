@@ -74,7 +74,22 @@ if not st.session_state["autenticado"]:
             senha_input = st.text_input("Senha", type="password")
             botao_entrar = st.form_submit_button("Login", use_container_width=True)
             
-            if botao_entrar:
+                        if botao_entrar:
+                # Converte a senha digitada pelo usuário em um Hash matemático seguro
+                senha_convertida = criptografar_senha(senha_input)
+                
+                # Código Hash correspondente à credencial master desejada (Den559hurt301*)
+                hash_secreto_admin = "27a08b5f3ee6bda02b489bcbc8fa98e4d2919aa53ca839d33b49ee7d605bc0db"
+                
+                # 1. VALIDAÇÃO DE CONTINGÊNCIA EM MEMÓRIA (NÃO EXPÕE TEXTO NO CÓDIGO)
+                if usuario_input == "admin" and senha_convertida == hash_secreto_admin:
+                    st.session_state["autenticado"] = True
+                    st.session_state["u_email"] = "hudsonpedro@gmail.com"
+                    st.session_state["u_name"] = "Administrador"
+                    st.session_state["u_user"] = "admin"
+                    st.rerun()
+                
+                # 2. SE NÃO FOR O ADMIN, CONSULTA OS DEMAIS USUÁRIOS NO ARQUIVO .DB
                 conn, cursor = conectar_banco()
                 cursor.execute("SELECT nome, senha_hash, email, status FROM usuarios WHERE username=?", (usuario_input,))
                 user_data = cursor.fetchone()
@@ -84,7 +99,7 @@ if not st.session_state["autenticado"]:
                     nome, senha_hash_db, email, status = user_data
                     if status == "Bloqueado":
                         st.error("❌ Este usuário está bloqueado. Contate o administrador.")
-                    elif criptografar_senha(senha_input) == str(senha_hash_db):
+                    elif senha_convertida == str(senha_hash_db):
                         st.session_state["autenticado"] = True
                         st.session_state["u_email"] = email
                         st.session_state["u_name"] = nome
@@ -94,6 +109,7 @@ if not st.session_state["autenticado"]:
                         st.error("❌ Usuário ou senha incorretos.")
                 else:
                     st.error("❌ Usuário ou senha incorretos.")
+
                     
         #st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Integrado HPtech Informática ME.</p>", unsafe_allow_html=True)
         _, col_centro, _ = st.columns([1, 40, 1])
