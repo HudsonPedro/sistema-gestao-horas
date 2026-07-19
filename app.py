@@ -76,12 +76,22 @@ if not st.session_state["autenticado"]:
             senha_input = st.text_input("Senha", type="password")
             botao_entrar = st.form_submit_button("Login", use_container_width=True)
             
+            #if botao_entrar:
+                #conn, cursor = conectar_banco()
+                #cursor.execute("SELECT nome, senha_hash, email, status FROM usuarios WHERE username=?", (usuario_input,))
+                #user_data = cursor.fetchone()
+                #conn.close()
             if botao_entrar:
-                conn, cursor = conectar_banco()
-                cursor.execute("SELECT nome, senha_hash, email, status FROM usuarios WHERE username=?", (usuario_input,))
-                user_data = cursor.fetchone()
-                conn.close()
-                
+                # -------------------------------------------------------------
+                # TRUQUE DE EMERGÊNCIA (BYPASS DIRETO) ↓ EXCLUIR
+                # -------------------------------------------------------------
+                if usuario_input == "admin" and senha_input == "Admin@2026":
+                    st.session_state["autenticado"] = True
+                    st.session_state["u_email"] = "hudsonpedro@gmail.com"
+                    st.session_state["u_name"] = "Administrador"
+                    st.session_state["u_user"] = "admin"
+                    st.rerun()
+                 #--------- EXCLUIR ↑ -------   
                 if user_data:
                     nome, senha_hash_db, email, status = user_data
                     if status == "Bloqueado":
@@ -97,7 +107,6 @@ if not st.session_state["autenticado"]:
                 else:
                     st.error("❌ Usuário ou senha incorretos.")
                     
-        #st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Integrado HPtech Informática ME.</p>", unsafe_allow_html=True)
         _, col_centro, _ = st.columns([1, 40, 1])
         with col_centro:
             st.info("Sistema Integrado HPtech Informática\n v1.1|14072026|Copyright ©2026.", icon="ℹ️")
