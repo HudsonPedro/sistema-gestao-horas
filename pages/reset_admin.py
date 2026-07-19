@@ -1,28 +1,27 @@
 import streamlit as st
 import sqlite3
-import hashlib
+import pandas as pd
+import os
 
-def criptografar_senha(senha):
-    return hashlib.sha256(senha.encode()).hexdigest()
+st.write("Banco:", os.path.abspath("usuarios_sistema.db"))
 
-if st.button("Criar administrador"):
+conn = sqlite3.connect("usuarios_sistema.db")
+cursor = conn.cursor()
 
-    conn = sqlite3.connect("usuarios_sistema.db")
-    cursor = conn.cursor()
+cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+st.write("Tabelas:", cursor.fetchall())
 
-    cursor.execute("""
-        INSERT INTO usuarios
-        (username,nome,senha_hash,email,status)
-        VALUES (?,?,?,?,?)
-    """, (
-        "admin",
-        "Administrador",
-        criptografar_senha("Admin@123"),
-        "admin@hptech.com",
-        "Ativo"
-    ))
+cursor.execute("SELECT username, nome, email, status FROM usuarios")
+dados = cursor.fetchall()
 
-    conn.commit()
-    conn.close()
+st.write(f"Total de usuários: {len(dados)}")
 
-    st.success("Administrador criado!")
+if dados:
+    st.dataframe(
+        pd.DataFrame(
+            dados,
+            columns=["username", "nome", "email", "status"]
+        )
+    )
+
+conn.close()
