@@ -288,30 +288,73 @@ with col8:
     st.write("Gere o Reembolso KM.")
     if st.button("Novo Reembolso KM", key="btn_reembolso_km"):
         st.switch_page("pages/08_💰_Reembolso_KM.py")
+        
 # =============================================================================
-# INTERFACE VISUAL DE GERENCIAMENTO DE USUÁRIOS
+# INTERFACE VISUAL DE GERENCIAMENTO DE USUÁRIOS - POSTGRESQL
 # =============================================================================
+
 if u_user == "admin" and st.session_state.get("pagina_admin"):
+
     st.markdown("---")
     st.header("⚙️ Painel de Controle de Usuários")
-    
-    aba1, aba2, aba3 = st.tabs(["🆕 Cadastrar", "✏️ Alterar / Bloquear", "❌ Excluir"])
-    
+
+    aba1, aba2, aba3 = st.tabs(
+        [
+            "🆕 Cadastrar",
+            "✏️ Alterar / Bloquear",
+            "❌ Excluir"
+        ]
+    )
+
+
+    # ==========================================================
+    # CADASTRAR USUÁRIO
+    # ==========================================================
+
     with aba1:
+
         with st.form("cadastrar_user"):
-            new_user = st.text_input("Usuário (Login)").strip().lower()
-            new_name = st.text_input("Nome Completo")
-            new_email = st.text_input("E-mail")
-            new_pass = st.text_input("Senha", type="password")
-            if st.form_submit_button("Salvar Novo Usuário"):
+
+            new_user = st.text_input(
+                "Usuário (Login)"
+            ).strip().lower()
+
+            new_name = st.text_input(
+                "Nome Completo"
+            )
+
+            new_email = st.text_input(
+                "E-mail"
+            )
+
+            new_pass = st.text_input(
+                "Senha",
+                type="password"
+            )
+
+
+            if st.form_submit_button(
+                "Salvar Novo Usuário"
+            ):
+
                 if new_user and new_pass:
+
                     conn, cursor = conectar_banco()
+
                     try:
+
                         cursor.execute(
                             """
                             INSERT INTO usuarios
-                            (username, nome, senha_hash, email, status)
-                            VALUES (%s,%s,%s,%s,%s)
+                            (
+                                username,
+                                nome,
+                                senha_hash,
+                                email,
+                                status
+                            )
+                            VALUES
+                            (%s,%s,%s,%s,%s)
                             """,
                             (
                                 new_user,
@@ -321,55 +364,267 @@ if u_user == "admin" and st.session_state.get("pagina_admin"):
                                 "Ativo"
                             )
                         )
+
                         conn.commit()
-                        st.success("Usuário cadastrado com sucesso!")
-                    except:
-                        st.error("Este Usuário já existe.")
-                    conn.close()
+
+                        st.success(
+                            "Usuário cadastrado com sucesso!"
+                        )
+
+                    except Exception as e:
+
+                        conn.rollback()
+
+                        st.error(
+                            "Erro ao cadastrar usuário."
+                        )
+
+                        st.write(e)
+
+
+                    finally:
+
+                        conn.close()
+
                 else:
-                    st.warning("Preencha o Usuário e a Senha.")
+
+                    st.warning(
+                        "Preencha usuário e senha."
+                    )
+
+
+
+    # ==========================================================
+    # ALTERAR USUÁRIO
+    # ==========================================================
 
     with aba2:
+
+
         conn, cursor = conectar_banco()
-        cursor.execute("SELECT username, nome, email, status FROM usuarios")
+
+        cursor.execute(
+            """
+            SELECT username,nome,email,status
+            FROM usuarios
+            ORDER BY username
+            """
+        )
+
         lista_users = cursor.fetchall()
+
         conn.close()
-        
-        user_sel = st.selectbox("Selecione o usuário para modificar", [u[0] for u in lista_users if u[0] != 'admin'])
-        
-        if user_sel:
-            curr_data = [u for u in lista_users if u[0] == user_sel][0]
+
+
+
+        usuarios = [
+            u[0]
+            for u in lista_users
+            if u[0] != "admin"
+        ]
+
+
+        if usuarios:
+
+
+            user_sel = st.selectbox(
+                "Selecione o usuário",
+                usuarios
+            )
+
+
+            curr_data = [
+                u for u in lista_users
+                if u[0] == user_sel
+            ][0]
+
+
             with st.form("alterar_user"):
-                alt_name = st.text_input("Nome", value=curr_data[1])
-                alt_email = st.text_input("E-mail", value=curr_data[2])
-                alt_status = st.selectbox("Status", ["Ativo", "Bloqueado"], index=0 if curr_data[3] == "Ativo" else 1)
-                alt_pass = st.text_input("Nova Senha (deixe em branco para não alterar)", type="password")
-                
-                if st.form_submit_button("Atualizar Dados"):
-                    conn, cursor = conectar_banco()
+
+
+                alt_name = st.text_input(
+                    "Nome",
+                    value=curr_data[1]
+                )
+
+
+                alt_email = st.text_input(
+                    "E-mail",
+                    value=curr_data[2]
+                )
+
+
+                alt_status = st.selectbox(
+                    "Status",
+                    [
+                        "Ativo",
+                        "Bloqueado"
+                    ],
+                    index=
+                    0 if curr_data[3]=="Ativo" else 1
+                )
+
+
+                alt_pass = st.text_input(
+                    "Nova Senha",
+                    type="password"
+                )
+
+
+                if st.form_submit_button(
+                    "Atualizar Dados"
+                ):
+
+
+                    conn,cursor = conectar_banco()
+
+
                     if alt_pass:
-                        cursor.execute("UPDATE usuarios SET nome=%s, email=%s, status=%s, senha_hash=%s WHERE username=%s", (alt_name, alt_email, alt_status, criptografar_senha(alt_pass), user_sel))
+
+
+                        cursor.execute(
+                            """
+                            UPDATE usuarios
+                            SET
+                            nome=%s,
+                            email=%s,
+                            status=%s,
+                            senha_hash=%s
+                            WHERE username=%s
+                            """,
+                            (
+                                alt_name,
+                                alt_email,
+                                alt_status,
+                                criptografar_senha(alt_pass),
+                                user_sel
+                            )
+                        )
+
+
                     else:
-                        cursor.execute("UPDATE usuarios SET nome=%s, email=%s, status=%s WHERE username=%s", (alt_name, alt_email, alt_status, user_sel))
+
+
+                        cursor.execute(
+                            """
+                            UPDATE usuarios
+                            SET
+                            nome=%s,
+                            email=%s,
+                            status=%s
+                            WHERE username=%s
+                            """,
+                            (
+                                alt_name,
+                                alt_email,
+                                alt_status,
+                                user_sel
+                            )
+                        )
+
+
                     conn.commit()
                     conn.close()
-                    st.success("Usuário atualizado!")
+
+
+                    st.success(
+                        "Usuário atualizado!"
+                    )
+
+
+
+        else:
+
+            st.info(
+                "Nenhum usuário disponível."
+            )
+
+
+
+    # ==========================================================
+    # EXCLUIR USUÁRIO
+    # ==========================================================
 
     with aba3:
-        user_del = st.selectbox("Selecione o usuário para DELETAR permanentemente", [u[0] for u in lista_users if u[0] != 'admin'])
-        if st.button("⚠️ CONFIRMAR EXCLUSÃO DEFINITIVA", type="primary"):
-            if user_del:
-                conn, cursor = conectar_banco()
-                cursor.execute("DELETE FROM usuarios WHERE username=%s", (user_del,))
+
+
+        conn,cursor = conectar_banco()
+
+
+        cursor.execute(
+            """
+            SELECT username
+            FROM usuarios
+            WHERE username <> 'admin'
+            ORDER BY username
+            """
+        )
+
+
+        usuarios_delete = [
+            u[0]
+            for u in cursor.fetchall()
+        ]
+
+
+        conn.close()
+
+
+
+        if usuarios_delete:
+
+
+            user_del = st.selectbox(
+                "Usuário para excluir",
+                usuarios_delete
+            )
+
+
+            if st.button(
+                "⚠️ CONFIRMAR EXCLUSÃO",
+                type="primary"
+            ):
+
+
+                conn,cursor = conectar_banco()
+
+
+                cursor.execute(
+                    """
+                    DELETE FROM usuarios
+                    WHERE username=%s
+                    """,
+                    (user_del,)
+                )
+
+
                 conn.commit()
                 conn.close()
-                st.success(f"Usuário {user_del} removido do sistema.")
+
+
+                st.success(
+                    f"Usuário {user_del} removido."
+                )
+
+
                 st.rerun()
 
-    if st.button("Voltar para a Home"):
-        st.session_state["pagina_admin"] = False
-        st.rerun()
 
+        else:
+
+            st.info(
+                "Nenhum usuário cadastrado."
+            )
+
+
+
+    if st.button(
+        "Voltar para Home"
+    ):
+
+        st.session_state["pagina_admin"] = False
+
+        st.rerun()
 st.divider()
 st.info("Sistema integrado HPtech Informática ME.")
 st.info("v1.0 - 14072026 | Todos os direitos reservados.")
