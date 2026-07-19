@@ -7,17 +7,17 @@ import hashlib
 # =============================================================================
 # SCRIPT TEMPORÁRIO DE RECUPERAÇÃO DE SENHA (APAGUE DEPOIS)
 # =============================================================================
-try:
-    conn = sqlite3.connect("usuarios_sistema.db")
-    cursor = conn.cursor()
-    # Gera o hash SHA-256 para a nova senha padrão: Admin@2026
-    nova_senha_padrao = hashlib.sha256("Admin@2026".encode()).hexdigest()
+#try:
+    #conn = sqlite3.connect("usuarios_sistema.db")
+    #cursor = conn.cursor()
+    ## Gera o hash SHA-256 para a nova senha padrão: Admin@2026
+    #nova_senha_padrao = hashlib.sha256("Admin@2026".encode()).hexdigest()
     # Força a atualização do admin de forma cirúrgica
-    cursor.execute("UPDATE usuarios SET senha_hash=?, status='Ativo' WHERE username='admin'", (nova_senha_padrao,))
-    conn.commit()
-    conn.close()
-except Exception as e:
-    pass
+    #cursor.execute("UPDATE usuarios SET senha_hash=?, status='Ativo' WHERE username='admin'", (nova_senha_padrao,))
+    #conn.commit()
+    #conn.close()
+#except Exception as e:
+    #pass
 # =============================================================================
 
 
@@ -76,21 +76,22 @@ if not st.session_state["autenticado"]:
             senha_input = st.text_input("Senha", type="password")
             botao_entrar = st.form_submit_button("Login", use_container_width=True)
             
-            #if botao_entrar:
-                #conn, cursor = conectar_banco()
-                #cursor.execute("SELECT nome, senha_hash, email, status FROM usuarios WHERE username=?", (usuario_input,))
-                #user_data = cursor.fetchone()
-                #conn.close()
             if botao_entrar:
+                conn, cursor = conectar_banco()
+                cursor.execute("SELECT nome, senha_hash, email, status FROM usuarios WHERE username=?", (usuario_input,))
+                user_data = cursor.fetchone()
+                conn.close()
+            
+            #if botao_entrar:
                 # -------------------------------------------------------------
                 # TRUQUE DE EMERGÊNCIA (BYPASS DIRETO) ↓ EXCLUIR
                 # -------------------------------------------------------------
-                if usuario_input == "admin" and senha_input == "Admin@2026":
-                    st.session_state["autenticado"] = True
-                    st.session_state["u_email"] = "hudsonpedro@gmail.com"
-                    st.session_state["u_name"] = "Administrador"
-                    st.session_state["u_user"] = "admin"
-                    st.rerun()
+                #if usuario_input == "admin" and senha_input == "Admin@2026":
+                    #st.session_state["autenticado"] = True
+                    #st.session_state["u_email"] = "hudsonpedro@gmail.com"
+                    #st.session_state["u_name"] = "Administrador"
+                    #st.session_state["u_user"] = "admin"
+                    #st.rerun()
                  #--------- EXCLUIR ↑ -------   
                 if user_data:
                     nome, senha_hash_db, email, status = user_data
