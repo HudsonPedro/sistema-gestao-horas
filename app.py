@@ -14,7 +14,7 @@ import os
 def conectar_banco():
 
     conn = psycopg2.connect(
-        st.secrets["DATABASE_URL"]
+        st.secrets["neon"]["DATABASE_URL"]
     )
 
     cursor = conn.cursor()
