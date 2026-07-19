@@ -2,45 +2,76 @@ import sqlite3
 import psycopg2
 
 
-# SQLite atual
-sqlite = sqlite3.connect("usuarios_sistema.db")
-sqlite_cursor = sqlite.cursor()
+# ==============================
+# SQLite antigo
+# ==============================
+
+sqlite_conn = sqlite3.connect(
+    "usuarios_sistema.db"
+)
+
+sqlite_cursor = sqlite_conn.cursor()
 
 
+# ==============================
 # Neon PostgreSQL
-postgres = psycopg2.connect(
+# ==============================
+
+postgres_conn = psycopg2.connect(
     "postgresql://neondb_owner:npg_XdU6cRYoJpi9@ep-restless-term-au36ashx-pooler.c-10.us-east-1.aws.neon.tech/neondb?sslmode=require"
 )
 
-pg_cursor = postgres.cursor()
+postgres_cursor = postgres_conn.cursor()
 
 
-# Buscar usuários antigos
+# ==============================
+# Buscar usuários
+# ==============================
+
 sqlite_cursor.execute("""
-SELECT username, nome, senha_hash, email, status
+SELECT 
+    username,
+    nome,
+    senha_hash,
+    email,
+    status
 FROM usuarios
 """)
 
 usuarios = sqlite_cursor.fetchall()
 
 
+print("Usuários encontrados:", len(usuarios))
+
+
+# ==============================
+# Inserir no Neon
+# ==============================
+
 for usuario in usuarios:
 
-    pg_cursor.execute("""
+    postgres_cursor.execute("""
     INSERT INTO usuarios
-    (username, nome, senha_hash, email, status)
+    (
+        username,
+        nome,
+        senha_hash,
+        email,
+        status
+    )
     VALUES (%s,%s,%s,%s,%s)
-    ON CONFLICT (username)
+
+    ON CONFLICT(username)
     DO NOTHING
+
     """, usuario)
 
 
-postgres.commit()
-
-sqlite.close()
-postgres.close()
+postgres_conn.commit()
 
 
-print(
-    f"{len(usuarios)} usuários migrados com sucesso."
-)
+sqlite_conn.close()
+postgres_conn.close()
+
+
+print("Migração concluída!")
