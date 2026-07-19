@@ -5,21 +5,8 @@ import sqlite3
 import hashlib
 
 # =============================================================================
-# SCRIPT TEMPORÁRIO DE RECUPERAÇÃO DE SENHA (APAGUE DEPOIS)
+# BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE)
 # =============================================================================
-try:
-    conn = sqlite3.connect("usuarios_sistema.db")
-    cursor = conn.cursor()
-    # Gera o hash SHA-256 para a nova senha padrão: Admin@2026
-    nova_senha_padrao = hashlib.sha256("Admin@2026".encode()).hexdigest()
-    # Força a atualização do admin de forma cirúrgica
-    cursor.execute("UPDATE usuarios SET senha_hash=?, status='Ativo' WHERE username='admin'", (nova_senha_padrao,))
-    conn.commit()
-    conn.close()
-except Exception as e:
-    pass
-# =============================================================================
-
 # =============================================================================
 # BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE) - LIMPO SEM CREDENCIAIS EXPOSTAS
 # =============================================================================
@@ -72,23 +59,12 @@ if not st.session_state["autenticado"]:
             senha_input = st.text_input("Senha", type="password")
             botao_entrar = st.form_submit_button("Login", use_container_width=True)
             
-            #if botao_entrar:
-                #conn, cursor = conectar_banco()
-                #cursor.execute("SELECT nome, senha_hash, email, status FROM usuarios WHERE username=?", (usuario_input,))
-                #user_data = cursor.fetchone()
-                #conn.close()
-                
-                # -------------------------------------------------------------
-                # TRUQUE DE EMERGÊNCIA (BYPASS DIRETO) - EXCLUIR/COMENTAR
-                # -------------------------------------------------------------      
             if botao_entrar:
-                if usuario_input == "admin" and senha_input == "Admin@2026":
-                    st.session_state["autenticado"] = True
-                    st.session_state["u_email"] = "hudsonpedro@gmail.com"
-                    st.session_state["u_name"] = "Administrador"
-                    st.session_state["u_user"] = "admin"
-                    st.rerun()
-                # -----------------------EXCLUIT/COMENTAR-------------------------------------- 
+                conn, cursor = conectar_banco()
+                cursor.execute("SELECT nome, senha_hash, email, status FROM usuarios WHERE username=?", (usuario_input,))
+                user_data = cursor.fetchone()
+                conn.close()
+                
                 if user_data:
                     nome, senha_hash_db, email, status = user_data
                     if status == "Bloqueado":
@@ -104,6 +80,7 @@ if not st.session_state["autenticado"]:
                 else:
                     st.error("❌ Usuário ou senha incorretos.")
                     
+        #st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Integrado HPtech Informática ME.</p>", unsafe_allow_html=True)
         _, col_centro, _ = st.columns([1, 40, 1])
         with col_centro:
             st.info("Sistema Integrado HPtech Informática\n v1.1|14072026|Copyright ©2026.", icon="ℹ️")
@@ -196,35 +173,18 @@ with st.sidebar:
      st.error("❌ A senha deve ter no mínimo 6 caracteres.")
     else:
      conn, cursor = conectar_banco()
+     # Verifica se a senha atual está correta no banco
+     cursor.execute("SELECT senha_hash FROM usuarios WHERE username=?", (u_user,))
+     senha_db = cursor.fetchone()[0]
      
-     # 1. Busca o registro isolando em uma variável para evitar o erro de NoneType
-     cursor.execute("SELECT senha_hash FROM usuarios WHERE LOWER(username) = LOWER(?)", (u_user,))
-     resultado_banco = cursor.fetchone()
-     
-     # 2. SE O USUÁRIO EXISTE NO BANCO DE DADOS
-     if resultado_banco is not None:
-      senha_db = resultado_banco[0]
-      
-      if criptografar_senha(senha_atual) == senha_db:
-       cursor.execute("UPDATE usuarios SET senha_hash=? WHERE LOWER(username) = LOWER(?)", (criptografar_senha(nova_senha), u_user))
-       conn.commit()
-       st.success("✅ Senha alterada com sucesso!")
-      else:
-       st.error("❌ Senha atual incorreta.")
-       
-     # 3. CONTINGÊNCIA: SE O ADMIN NÃO OPERA NO BANCO, FORÇA A ATUALIZAÇÃO/INSERÇÃO
-     elif u_user.lower() == "admin":
-      cursor.execute(
-       "INSERT OR REPLACE INTO usuarios (username, nome, senha_hash, email, status) VALUES (?, ?, ?, ?, ?)",
-       ("admin", "Administrador", criptografar_senha(nova_senha), "hudsonpedro@gmail.com", "Ativo")
-      )
+     if criptografar_senha(senha_atual) == senha_db:
+      # Atualiza pela nova senha criptografada em SHA-256
+      cursor.execute("UPDATE usuarios SET senha_hash=? WHERE username=?", (criptografar_senha(nova_senha), u_user))
       conn.commit()
-      st.success("✅ Usuário admin reconfigurado no banco com a nova senha!")
+      st.success("✅ Senha alterada com sucesso!")
      else:
-      st.error("❌ Usuário não localizado na base.")
-      
+      st.error("❌ Senha atual incorreta.")
      conn.close()
-
     
  st.title("Menu Principal")
  
