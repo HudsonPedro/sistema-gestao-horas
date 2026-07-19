@@ -189,7 +189,7 @@ with st.sidebar:
    nova_senha = st.text_input("Nova Senha", type="password")
    confirmar_nova = st.text_input("Confirme a Nova Senha", type="password")
    
-      if st.form_submit_button("Atualizar Senha", use_container_width=True):
+   if st.form_submit_button("Atualizar Senha", use_container_width=True):
     if nova_senha != confirmar_nova:
      st.error("❌ As novas senhas não coincidem.")
     elif len(nova_senha) < 6:
@@ -197,13 +197,13 @@ with st.sidebar:
     else:
      conn, cursor = conectar_banco()
      
-     # Busca tratando minúsculas/maiúsculas no banco
+     # 1. Busca o registro isolando em uma variável para evitar o erro de NoneType
      cursor.execute("SELECT senha_hash FROM usuarios WHERE LOWER(username) = LOWER(?)", (u_user,))
-     resultado = cursor.fetchone()
+     resultado_banco = cursor.fetchone()
      
-     # SE O USUÁRIO EXISTIR NO BANCO:
-     if resultado is not None:
-      senha_db = resultado[0]
+     # 2. SE O USUÁRIO EXISTE NO BANCO DE DADOS
+     if resultado_banco is not None:
+      senha_db = resultado_banco[0]
       
       if criptografar_senha(senha_atual) == senha_db:
        cursor.execute("UPDATE usuarios SET senha_hash=? WHERE LOWER(username) = LOWER(?)", (criptografar_senha(nova_senha), u_user))
@@ -212,17 +212,16 @@ with st.sidebar:
       else:
        st.error("❌ Senha atual incorreta.")
        
-     # SE FOR O ADMIN DE EMERGÊNCIA OPERANDO SEM REGISTRO NO BANCO:
-     elif u_user.lower() == "admin" and senha_atual == "Admin@2026":
-      # Cria o registro definitivo do admin no banco com a nova senha escolhida
+     # 3. CONTINGÊNCIA: SE O ADMIN NÃO OPERA NO BANCO, FORÇA A ATUALIZAÇÃO/INSERÇÃO
+     elif u_user.lower() == "admin":
       cursor.execute(
        "INSERT OR REPLACE INTO usuarios (username, nome, senha_hash, email, status) VALUES (?, ?, ?, ?, ?)",
        ("admin", "Administrador", criptografar_senha(nova_senha), "hudsonpedro@gmail.com", "Ativo")
       )
       conn.commit()
-      st.success("✅ Conta Admin recriada e senha atualizada com sucesso!")
+      st.success("✅ Usuário admin reconfigurado no banco com a nova senha!")
      else:
-      st.error("❌ Usuário não encontrado no banco ou dados inválidos.")
+      st.error("❌ Usuário não localizado na base.")
       
      conn.close()
 
