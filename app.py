@@ -74,7 +74,7 @@ if not st.session_state["autenticado"]:
             senha_input = st.text_input("Senha", type="password")
             botao_entrar = st.form_submit_button("Login", use_container_width=True)
             
-                        if botao_entrar:
+            if botao_entrar:
                 # Converte a senha digitada pelo usuário em um Hash matemático seguro
                 senha_convertida = criptografar_senha(senha_input)
                 
