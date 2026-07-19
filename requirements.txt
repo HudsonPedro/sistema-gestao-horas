@@ -10,3 +10,6 @@ gspread
 google-auth
 docxtpl
 docxcompose
+psycopg2-binary
+bcrypt
+python-dotenv
