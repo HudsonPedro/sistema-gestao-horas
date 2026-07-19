@@ -1,20 +1,28 @@
+import streamlit as st
 import sqlite3
 import hashlib
 
-conn = sqlite3.connect("usuarios_sistema.db")
-cursor = conn.cursor()
+def criptografar_senha(senha):
+    return hashlib.sha256(senha.encode()).hexdigest()
 
-cursor.execute("""
-INSERT INTO usuarios
-(username, nome, senha_hash, email, status)
-VALUES (?,?,?,?,?)
-""", (
-    "admin",
-    "Administrador",
-    hashlib.sha256("Admin@123".encode()).hexdigest(),
-    "admin@empresa.com",
-    "Ativo"
-))
+if st.button("Criar administrador"):
 
-conn.commit()
-conn.close()
+    conn = sqlite3.connect("usuarios_sistema.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO usuarios
+        (username,nome,senha_hash,email,status)
+        VALUES (?,?,?,?,?)
+    """, (
+        "admin",
+        "Administrador",
+        criptografar_senha("Admin@123"),
+        "admin@hptech.com",
+        "Ativo"
+    ))
+
+    conn.commit()
+    conn.close()
+
+    st.success("Administrador criado!")
