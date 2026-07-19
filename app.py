@@ -24,11 +24,6 @@ def conectar_banco():
 def criptografar_senha(senha):
     return hashlib.sha256(senha.encode()).hexdigest()
 
-# Inicializa apenas a estrutura da tabela em produção (Sem injetar dados via código)
-conn, cursor = conectar_banco()
-conn.close()
-
-
 # =============================================================================
 # 1. BLOCO DE LOGIN
 # =============================================================================
@@ -57,7 +52,10 @@ if not st.session_state["autenticado"]:
             
             if botao_entrar:
                 conn, cursor = conectar_banco()
-                cursor.execute("SELECT nome, senha_hash, email, status FROM usuarios WHERE username=?", (usuario_input,))
+                cursor.execute(
+                    "SELECT nome, senha_hash, email, status FROM usuarios WHERE username=%s",
+                    (usuario_input,)
+                )
                 user_data = cursor.fetchone()
                 conn.close()
                 
@@ -170,12 +168,12 @@ with st.sidebar:
     else:
      conn, cursor = conectar_banco()
      # Verifica se a senha atual está correta no banco
-     cursor.execute("SELECT senha_hash FROM usuarios WHERE username=?", (u_user,))
+     cursor.execute("SELECT senha_hash FROM usuarios WHERE username=%s", (u_user,))
      senha_db = cursor.fetchone()[0]
      
      if criptografar_senha(senha_atual) == senha_db:
       # Atualiza pela nova senha criptografada em SHA-256
-      cursor.execute("UPDATE usuarios SET senha_hash=? WHERE username=?", (criptografar_senha(nova_senha), u_user))
+      cursor.execute("UPDATE usuarios SET senha_hash=%s WHERE username=%s", (criptografar_senha(nova_senha), u_user))
       conn.commit()
       st.success("✅ Senha alterada com sucesso!")
      else:
@@ -311,7 +309,20 @@ if u_user == "admin" and st.session_state.get("pagina_admin"):
                 if new_user and new_pass:
                     conn, cursor = conectar_banco()
                     try:
-                        cursor.execute("INSERT INTO usuarios VALUES (?,?,?,?,?)", (new_user, new_name, criptografar_senha(new_pass), new_email, "Ativo"))
+                        cursor.execute(
+                            """
+                            INSERT INTO usuarios
+                            (username, nome, senha_hash, email, status)
+                            VALUES (%s,%s,%s,%s,%s)
+                            """,
+                            (
+                                new_user,
+                                new_name,
+                                criptografar_senha(new_pass),
+                                new_email,
+                                "Ativo"
+                            )
+                        )
                         conn.commit()
                         st.success("Usuário cadastrado com sucesso!")
                     except:
@@ -339,9 +350,9 @@ if u_user == "admin" and st.session_state.get("pagina_admin"):
                 if st.form_submit_button("Atualizar Dados"):
                     conn, cursor = conectar_banco()
                     if alt_pass:
-                        cursor.execute("UPDATE usuarios SET nome=?, email=?, status=?, senha_hash=? WHERE username=?", (alt_name, alt_email, alt_status, criptografar_senha(alt_pass), user_sel))
+                        cursor.execute("UPDATE usuarios SET nome=%s, email=%s, status=%s, senha_hash=%s WHERE username=%s", (alt_name, alt_email, alt_status, criptografar_senha(alt_pass), user_sel))
                     else:
-                        cursor.execute("UPDATE usuarios SET nome=?, email=?, status=? WHERE username=?", (alt_name, alt_email, alt_status, user_sel))
+                        cursor.execute("UPDATE usuarios SET nome=%s, email=%s, status=%s WHERE username=%s", (alt_name, alt_email, alt_status, user_sel))
                     conn.commit()
                     conn.close()
                     st.success("Usuário atualizado!")
@@ -351,7 +362,7 @@ if u_user == "admin" and st.session_state.get("pagina_admin"):
         if st.button("⚠️ CONFIRMAR EXCLUSÃO DEFINITIVA", type="primary"):
             if user_del:
                 conn, cursor = conectar_banco()
-                cursor.execute("DELETE FROM usuarios WHERE username=?", (user_del,))
+                cursor.execute("DELETE FROM usuarios WHERE username=%s", (user_del,))
                 conn.commit()
                 conn.close()
                 st.success(f"Usuário {user_del} removido do sistema.")
