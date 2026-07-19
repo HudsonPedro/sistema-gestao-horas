@@ -196,6 +196,12 @@ with st.sidebar:
      st.error("❌ A senha deve ter no mínimo 6 caracteres.")
     else:
      conn, cursor = conectar_banco()
+        
+     # CORREÇÃO DA BUSCA: Garante que busque independente de maiúsculas/minúsculas
+     cursor.execute("SELECT senha_hash FROM usuarios WHERE LOWER(username) = LOWER(?)", (u_user,))
+     linha_banco = cursor.fetchone()
+     #--------------------excluir--------------------------------------------------   
+        
      # Verifica se a senha atual está correta no banco
      cursor.execute("SELECT senha_hash FROM usuarios WHERE username=?", (u_user,))
      senha_db = cursor.fetchone()[0]
