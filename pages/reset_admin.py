@@ -1,31 +1,27 @@
 import streamlit as st
 import sqlite3
-import hashlib
+import pandas as pd
 import os
-
-st.title("Reset da senha do Admin")
 
 st.write("Banco:", os.path.abspath("usuarios_sistema.db"))
 
-def criptografar_senha(senha):
-    return hashlib.sha256(senha.encode()).hexdigest()
+conn = sqlite3.connect("usuarios_sistema.db")
+cursor = conn.cursor()
 
-if st.button("Redefinir senha do admin para Admin@123"):
+cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+st.write("Tabelas:", cursor.fetchall())
 
-    try:
-        conn = sqlite3.connect("usuarios_sistema.db")
-        cursor = conn.cursor()
+cursor.execute("SELECT username, nome, email, status FROM usuarios")
+dados = cursor.fetchall()
 
-        cursor.execute(
-            "UPDATE usuarios SET senha_hash=? WHERE username='admin'",
-            (criptografar_senha("Admin@123"),)
+st.write(f"Total de usuários: {len(dados)}")
+
+if dados:
+    st.dataframe(
+        pd.DataFrame(
+            dados,
+            columns=["username", "nome", "email", "status"]
         )
+    )
 
-        conn.commit()
-
-        st.success(f"Linhas alteradas: {cursor.rowcount}")
-
-        conn.close()
-
-    except Exception as e:
-        st.error(e)
+conn.close()
