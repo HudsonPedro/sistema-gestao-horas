@@ -73,18 +73,18 @@ st.markdown("""
 
 
 # 3. SIDEBAR COM NOVO BOTÃO
-# 3. SIDEBAR COM NOVO BOTÃO
 with st.sidebar:
- st.image("hptechNova.png", use_container_width=True)
- st.markdown("---")
- 
- st.markdown(f"""
- <div class="user-block">
- <span style='font-size: 14px;'> 👤 <b>Usuário Logado</b></span><br>
- <span style='font-size: 11px; color: #555;'>{u_email}</span>
- </div>
- """, unsafe_allow_html=True)
- st.markdown("---")
+    st.image("hptechNova.png", use_container_width=True)
+    st.markdown("---")
+    # Identificação do Usuário
+    u_email = st.user.get("email") or "hudson.valente@crti.com.br"
+    st.markdown(f"""
+        <div class="user-block">
+            <span style='font-size: 14px;'>👤 <b>Usuário Logado</b></span><br>
+            <span style='font-size: 11px; color: #555;'>{u_email}</span>
+        </div>
+    """, unsafe_allow_html=True)  
+    st.markdown("---")
         
      # Navegação Atualizada
     if st.button("🏠 Home", use_container_width=True):
