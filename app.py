@@ -10,9 +10,6 @@ import hashlib
 # =============================================================================
 # BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE) - LIMPO SEM CREDENCIAIS EXPOSTAS
 # =============================================================================
-# =============================================================================
-# BANCO DE DADOS DE USUÁRIOS (RESET COMPLETO DA SENHA DO ADMIN VIA CÓDIGO)
-# =============================================================================
 def conectar_banco():
     conn = sqlite3.connect("usuarios_sistema.db")
     cursor = conn.cursor()
@@ -31,22 +28,9 @@ def conectar_banco():
 def criptografar_senha(senha):
     return hashlib.sha256(senha.encode()).hexdigest()
 
-# FORÇA A REDEFINIÇÃO DA SENHA DO ADMIN DIRETO NO BANCO DE DADOS
-try:
-    conn, cursor = conectar_banco()
-    # Remove qualquer vestígio do admin antigo para evitar conflitos de chave
-    cursor.execute("DELETE FROM usuarios WHERE LOWER(username) = 'admin'")
-    
-    # Injeta o usuário admin com a senha limpa e descriptografada redefinida para Admin@2026
-    senha_resetada = criptografar_senha("Admin@2026")
-    cursor.execute(
-        "INSERT INTO usuarios (username, nome, senha_hash, email, status) VALUES (?, ?, ?, ?, ?)",
-        ("admin", "Administrador", senha_resetada, "hudsonpedro@gmail.com", "Ativo")
-    )
-    conn.commit()
-    conn.close()
-except Exception as e:
-    pass
+# Inicializa apenas a estrutura da tabela em produção (Sem injetar dados via código)
+conn, cursor = conectar_banco()
+conn.close()
 
 
 # =============================================================================
