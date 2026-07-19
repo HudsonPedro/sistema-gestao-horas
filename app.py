@@ -189,31 +189,43 @@ with st.sidebar:
    nova_senha = st.text_input("Nova Senha", type="password")
    confirmar_nova = st.text_input("Confirme a Nova Senha", type="password")
    
-   if st.form_submit_button("Atualizar Senha", use_container_width=True):
+      if st.form_submit_button("Atualizar Senha", use_container_width=True):
     if nova_senha != confirmar_nova:
      st.error("❌ As novas senhas não coincidem.")
     elif len(nova_senha) < 6:
      st.error("❌ A senha deve ter no mínimo 6 caracteres.")
     else:
      conn, cursor = conectar_banco()
-        
-     # CORREÇÃO DA BUSCA: Garante que busque independente de maiúsculas/minúsculas
-     cursor.execute("SELECT senha_hash FROM usuarios WHERE LOWER(username) = LOWER(?)", (u_user,))
-     linha_banco = cursor.fetchone()
-     #--------------------excluir--------------------------------------------------   
-        
-     # Verifica se a senha atual está correta no banco
-     cursor.execute("SELECT senha_hash FROM usuarios WHERE username=?", (u_user,))
-     senha_db = cursor.fetchone()[0]
      
-     if criptografar_senha(senha_atual) == senha_db:
-      # Atualiza pela nova senha criptografada em SHA-256
-      cursor.execute("UPDATE usuarios SET senha_hash=? WHERE username=?", (criptografar_senha(nova_senha), u_user))
+     # Busca tratando minúsculas/maiúsculas no banco
+     cursor.execute("SELECT senha_hash FROM usuarios WHERE LOWER(username) = LOWER(?)", (u_user,))
+     resultado = cursor.fetchone()
+     
+     # SE O USUÁRIO EXISTIR NO BANCO:
+     if resultado is not None:
+      senha_db = resultado[0]
+      
+      if criptografar_senha(senha_atual) == senha_db:
+       cursor.execute("UPDATE usuarios SET senha_hash=? WHERE LOWER(username) = LOWER(?)", (criptografar_senha(nova_senha), u_user))
+       conn.commit()
+       st.success("✅ Senha alterada com sucesso!")
+      else:
+       st.error("❌ Senha atual incorreta.")
+       
+     # SE FOR O ADMIN DE EMERGÊNCIA OPERANDO SEM REGISTRO NO BANCO:
+     elif u_user.lower() == "admin" and senha_atual == "Admin@2026":
+      # Cria o registro definitivo do admin no banco com a nova senha escolhida
+      cursor.execute(
+       "INSERT OR REPLACE INTO usuarios (username, nome, senha_hash, email, status) VALUES (?, ?, ?, ?, ?)",
+       ("admin", "Administrador", criptografar_senha(nova_senha), "hudsonpedro@gmail.com", "Ativo")
+      )
       conn.commit()
-      st.success("✅ Senha alterada com sucesso!")
+      st.success("✅ Conta Admin recriada e senha atualizada com sucesso!")
      else:
-      st.error("❌ Senha atual incorreta.")
+      st.error("❌ Usuário não encontrado no banco ou dados inválidos.")
+      
      conn.close()
+
     
  st.title("Menu Principal")
  
