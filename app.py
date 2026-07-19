@@ -12,20 +12,13 @@ import os
 # BANCO DE DADOS DE USUÁRIOS SEGURO (SQLITE) - LIMPO SEM CREDENCIAIS EXPOSTAS
 # =============================================================================
 def conectar_banco():
+
     conn = psycopg2.connect(
-    os.environ["DATABASE_URL"]
-)
+        st.secrets["DATABASE_URL"]
+    )
+
     cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS usuarios (
-            username TEXT PRIMARY KEY,
-            nome TEXT,
-            senha_hash TEXT,
-            email TEXT,
-            status TEXT DEFAULT 'Ativo'
-        )
-    """)
-    conn.commit()
+
     return conn, cursor
 
 def criptografar_senha(senha):
