@@ -19,26 +19,7 @@ def conectar_banco():
     cursor = conn.cursor()
 
     return conn, cursor
-    
-def criptografar_senha(senha):
 
-    senha_bytes = senha.encode("utf-8")
-
-    hash_senha = bcrypt.hashpw(
-        senha_bytes,
-        bcrypt.gensalt()
-    )
-
-    return hash_senha.decode("utf-8")
-
-
-def verificar_senha(senha_digitada, senha_hash):
-
-    return bcrypt.checkpw(
-        senha_digitada.encode("utf-8"),
-        senha_hash.encode("utf-8")
-    )    
-    
 # ------log de acesso ----------------
 def registrar_log(username, evento, descricao=""):
 
@@ -74,6 +55,27 @@ def registrar_log(username, evento, descricao=""):
             e
         )
         
+
+def criptografar_senha(senha):
+
+    senha_bytes = senha.encode("utf-8")
+
+    hash_senha = bcrypt.hashpw(
+        senha_bytes,
+        bcrypt.gensalt()
+    )
+
+    return hash_senha.decode("utf-8")
+
+
+def verificar_senha(senha_digitada, senha_hash):
+
+    return bcrypt.checkpw(
+        senha_digitada.encode("utf-8"),
+        senha_hash.encode("utf-8")
+    )    
+    
+
 # =============================================================================
 # 1. BLOCO DE LOGIN
 # =============================================================================
