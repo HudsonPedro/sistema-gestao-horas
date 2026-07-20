@@ -54,6 +54,7 @@ def registrar_log(username, evento, descricao=""):
             "Erro ao gravar log:",
             e
         )
+        
 
 def criptografar_senha(senha):
     return hashlib.sha256(
@@ -128,31 +129,33 @@ if not st.session_state["autenticado"]:
                         senha_input,
                         str(senha_hash_db)
                     ):
-                        
+                        if senha_hash_db.startswith("$2")
+                        else criptografar_senha(senha_input) == senha_hash_db
+                    ):
+                    
                         # Migra SHA-256 antigo para bcrypt
-                    if not str(senha_hash_db).startswith("$2"):
-                    
-                        novo_hash = criar_hash_bcrypt(
-                            senha_input
-                        )
-                    
-                        conn, cursor = conectar_banco()
-                    
-                        cursor.execute(
-                            """
-                            UPDATE usuarios
-                            SET senha_hash=%s
-                            WHERE username=%s
-                            """,
-                            (
-                                novo_hash,
-                                usuario_input
+                        if not str(senha_hash_db).startswith("$2"):
+                        
+                            novo_hash = criar_hash_bcrypt(
+                                senha_input
                             )
-                        )
-                    
-                        conn.commit()
-                        conn.close()
-                    
+                        
+                            conn, cursor = conectar_banco()
+                        
+                            cursor.execute(
+                                """
+                                UPDATE usuarios
+                                SET senha_hash=%s
+                                WHERE username=%s
+                                """,
+                                (
+                                    novo_hash,
+                                    usuario_input
+                                )
+                            )
+                        
+                            conn.commit()
+                            conn.close()
                     
                         registrar_log(
                             usuario_input,
