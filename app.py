@@ -274,19 +274,35 @@ if not st.session_state["autenticado"]:
                     codigo = gerar_codigo()
         
         
+                    from datetime import datetime, timedelta
+                    # invalida códigos anteriores
+                    cursor.execute(
+                        """
+                        UPDATE recuperacao_senha
+                        SET utilizado=TRUE
+                        WHERE username=%s
+                        """,
+                        (
+                            usuario[0],
+                        )
+                    )
+                    
+                    
                     cursor.execute(
                         """
                         INSERT INTO recuperacao_senha
                         (
                             username,
-                            codigo
+                            codigo,
+                            expiracao
                         )
                         VALUES
-                        (%s,%s)
+                        (%s,%s,%s)
                         """,
                         (
                             usuario[0],
-                            codigo
+                            codigo,
+                            datetime.now() + timedelta(minutes=15)
                         )
                     )
         
@@ -358,8 +374,9 @@ if not st.session_state["autenticado"]:
                         FROM recuperacao_senha
                         WHERE codigo=%s
                         AND utilizado=FALSE
+                        AND expiracao > CURRENT_TIMESTAMP
                         ORDER BY id DESC
-                        LIMIT 1
+                        LIMIT 1 
                         """,
                         (
                             codigo_digitado,
@@ -427,8 +444,8 @@ if not st.session_state["autenticado"]:
         
                             registrar_log(
                                 dados[0],
-                                "RESET_SENHA",
-                                "Senha redefinida por recuperação de e-mail"
+                                "RESET_SENHA_EMAIL",
+                                "Usuário redefiniu senha através do código enviado por e-mail"
                             )
         
         
