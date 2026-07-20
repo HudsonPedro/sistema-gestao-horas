@@ -55,6 +55,55 @@ def registrar_log(username, evento, descricao=""):
             e
         )
         
+import random
+import smtplib
+from email.mime.text import MIMEText
+from datetime import datetime, timedelta
+
+
+def gerar_codigo():
+
+    return str(
+        random.randint(100000,999999)
+    )
+
+
+def enviar_email_recuperacao(email_destino, codigo):
+
+    mensagem = f"""
+HPTECH - Recuperação de senha
+
+Seu código para redefinir sua senha é:
+
+{codigo}
+
+Este código é válido por 15 minutos.
+
+Se você não solicitou esta alteração, ignore este e-mail.
+"""
+
+    msg = MIMEText(mensagem)
+
+    msg["Subject"] = "HPTECH - Recuperação de Senha"
+    msg["From"] = st.secrets["smtp"]["usuario"]
+    msg["To"] = email_destino
+
+
+    servidor = smtplib.SMTP(
+        st.secrets["smtp"]["servidor"],
+        st.secrets["smtp"]["porta"]
+    )
+
+    servidor.starttls()
+
+    servidor.login(
+        st.secrets["smtp"]["usuario"],
+        st.secrets["smtp"]["senha"]
+    )
+
+    servidor.send_message(msg)
+
+    servidor.quit()
 
 def criptografar_senha(senha):
     return hashlib.sha256(
@@ -111,6 +160,12 @@ if not st.session_state["autenticado"]:
             usuario_input = st.text_input("Usuário").strip().lower()
             senha_input = st.text_input("Senha", type="password")
             botao_entrar = st.form_submit_button("Login", use_container_width=True)
+            if st.button(
+                "🔑 Esqueci minha senha",
+                use_container_width=True
+            ):
+
+                st.session_state["recuperar"] = True
             
             if botao_entrar:
                 conn, cursor = conectar_banco()
@@ -177,6 +232,79 @@ if not st.session_state["autenticado"]:
         with col_centro:
             st.info("Sistema Integrado HPtech Informática\n v1.1|14072026|Copyright ©2026.", icon="ℹ️")
 
+        if st.session_state.get("recuperar"):
+        
+            st.subheader(
+                "Recuperação de senha"
+            )
+        
+            email = st.text_input(
+                "Informe seu e-mail cadastrado"
+            )
+        
+        
+            if st.button(
+                "Enviar código"
+            ):
+        
+                conn,cursor = conectar_banco()
+        
+                cursor.execute(
+                    """
+                    SELECT username
+                    FROM usuarios
+                    WHERE email=%s
+                    """,
+                    (email,)
+                )
+        
+                usuario = cursor.fetchone()
+        
+        
+                if usuario:
+        
+                    codigo = gerar_codigo()
+        
+        
+                    cursor.execute(
+                        """
+                        INSERT INTO recuperacao_senha
+                        (
+                            username,
+                            codigo
+                        )
+                        VALUES
+                        (%s,%s)
+                        """,
+                        (
+                            usuario[0],
+                            codigo
+                        )
+                    )
+        
+        
+                    conn.commit()
+        
+                    enviar_email_recuperacao(
+                        email,
+                        codigo
+                    )
+        
+        
+                    st.success(
+                        "Código enviado para seu e-mail."
+                    )
+        
+        
+                else:
+        
+                    st.error(
+                        "E-mail não encontrado."
+                    )
+        
+        
+                conn.close()
+    
     st.stop()
 
 u_email = st.session_state["u_email"]
