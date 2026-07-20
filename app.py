@@ -154,7 +154,7 @@ if not st.session_state["autenticado"]:
                             conn.close()     
                         if senha_hash_db.startswith("$2")
                         else criptografar_senha(senha_input) == senha_hash_db
-                    ):
+                    #):
                     
                         # Migração automática SHA256 -> bcrypt
                     
