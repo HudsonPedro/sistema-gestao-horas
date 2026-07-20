@@ -54,26 +54,35 @@ def registrar_log(username, evento, descricao=""):
             "Erro ao gravar log:",
             e
         )
-        
 
 def criptografar_senha(senha):
+    return hashlib.sha256(
+        senha.encode("utf-8")
+    ).hexdigest()
 
-    senha_bytes = senha.encode("utf-8")
 
-    hash_senha = bcrypt.hashpw(
-        senha_bytes,
+def criar_hash_bcrypt(senha):
+
+    return bcrypt.hashpw(
+        senha.encode("utf-8"),
         bcrypt.gensalt()
-    )
-
-    return hash_senha.decode("utf-8")
+    ).decode("utf-8")
 
 
-def verificar_senha(senha_digitada, senha_hash):
+def verificar_senha(senha, hash_banco):
 
-    return bcrypt.checkpw(
-        senha_digitada.encode("utf-8"),
-        senha_hash.encode("utf-8")
-    )    
+    # Usuário já migrado para bcrypt
+    if hash_banco.startswith("$2"):
+
+        return bcrypt.checkpw(
+            senha.encode("utf-8"),
+            hash_banco.encode("utf-8")
+        )
+
+    # Usuário antigo SHA-256
+    else:
+
+        return criptografar_senha(senha) == hash_banco    
     
 
 # =============================================================================
@@ -115,36 +124,34 @@ if not st.session_state["autenticado"]:
                     nome, senha_hash_db, email, status = user_data
                     if status == "Bloqueado":
                         st.error("❌ Este usuário está bloqueado. Contate o administrador.")
-                    elif (
-                        verificar_senha(senha_input, senha_hash_db)
-                        if senha_hash_db.startswith("$2")
-                        else criptografar_senha(senha_input) == senha_hash_db
+                    elif verificar_senha(
+                        senha_input,
+                        str(senha_hash_db)
                     ):
+                        
+                        # Migra SHA-256 antigo para bcrypt
+                    if not str(senha_hash_db).startswith("$2"):
                     
-                        # Migração automática SHA256 -> bcrypt
+                        novo_hash = criar_hash_bcrypt(
+                            senha_input
+                        )
                     
-                        if not senha_hash_db.startswith("$2"):
+                        conn, cursor = conectar_banco()
                     
-                            novo_hash = criptografar_senha(
-                                senha_input
+                        cursor.execute(
+                            """
+                            UPDATE usuarios
+                            SET senha_hash=%s
+                            WHERE username=%s
+                            """,
+                            (
+                                novo_hash,
+                                usuario_input
                             )
+                        )
                     
-                            conn, cursor = conectar_banco()
-                    
-                            cursor.execute(
-                                """
-                                UPDATE usuarios
-                                SET senha_hash=%s
-                                WHERE username=%s
-                                """,
-                                (
-                                    novo_hash,
-                                    usuario_input
-                                )
-                            )
-                    
-                            conn.commit()
-                            conn.close()
+                        conn.commit()
+                        conn.close()
                     
                     
                         registrar_log(
