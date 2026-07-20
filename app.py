@@ -57,33 +57,23 @@ def registrar_log(username, evento, descricao=""):
         
 
 def criptografar_senha(senha):
-    return hashlib.sha256(
-        senha.encode("utf-8")
-    ).hexdigest()
 
+    senha_bytes = senha.encode("utf-8")
 
-def criar_hash_bcrypt(senha):
-
-    return bcrypt.hashpw(
-        senha.encode("utf-8"),
+    hash_senha = bcrypt.hashpw(
+        senha_bytes,
         bcrypt.gensalt()
-    ).decode("utf-8")
+    )
+
+    return hash_senha.decode("utf-8")
 
 
-def verificar_senha(senha, hash_banco):
+def verificar_senha(senha_digitada, senha_hash):
 
-    # Usuário já migrado para bcrypt
-    if hash_banco.startswith("$2"):
-
-        return bcrypt.checkpw(
-            senha.encode("utf-8"),
-            hash_banco.encode("utf-8")
-        )
-
-    # Usuário antigo SHA-256
-    else:
-
-        return criptografar_senha(senha) == hash_banco
+    return bcrypt.checkpw(
+        senha_digitada.encode("utf-8"),
+        senha_hash.encode("utf-8")
+    )    
     
 
 # =============================================================================
@@ -125,33 +115,8 @@ if not st.session_state["autenticado"]:
                     nome, senha_hash_db, email, status = user_data
                     if status == "Bloqueado":
                         st.error("❌ Este usuário está bloqueado. Contate o administrador.")
-                    elif verificar_senha(
-                        senha_input,
-                        str(senha_hash_db)
-                    ):
-                        # Migra SHA-256 antigo para bcrypt
-                        if not str(senha_hash_db).startswith("$2"):
-                        
-                            novo_hash = criar_hash_bcrypt(
-                                senha_input
-                            )
-                        
-                            conn, cursor = conectar_banco()
-                        
-                            cursor.execute(
-                                """
-                                UPDATE usuarios
-                                SET senha_hash=%s
-                                WHERE username=%s
-                                """,
-                                (
-                                    novo_hash,
-                                    usuario_input
-                                )
-                            )
-                        
-                            conn.commit()
-                            conn.close()     
+                    elif (
+                        verificar_senha(senha_input, senha_hash_db)
                         if senha_hash_db.startswith("$2")
                         else criptografar_senha(senha_input) == senha_hash_db
                     ):
