@@ -4,6 +4,7 @@ import base64
 import hashlib
 import psycopg2
 import os
+import bcrypt
 
 
 # =============================================================================
@@ -20,7 +21,23 @@ def conectar_banco():
     return conn, cursor
     
 def criptografar_senha(senha):
-    return hashlib.sha256(senha.encode()).hexdigest()    
+
+    senha_bytes = senha.encode("utf-8")
+
+    hash_senha = bcrypt.hashpw(
+        senha_bytes,
+        bcrypt.gensalt()
+    )
+
+    return hash_senha.decode("utf-8")
+
+
+def verificar_senha(senha_digitada, senha_hash):
+
+    return bcrypt.checkpw(
+        senha_digitada.encode("utf-8"),
+        senha_hash.encode("utf-8")
+    )    
     
 # ------log de acesso ----------------
 def registrar_log(username, evento, descricao=""):
@@ -96,16 +113,49 @@ if not st.session_state["autenticado"]:
                     nome, senha_hash_db, email, status = user_data
                     if status == "Bloqueado":
                         st.error("❌ Este usuário está bloqueado. Contate o administrador.")
-                    elif criptografar_senha(senha_input) == str(senha_hash_db):
+                    elif (
+                        verificar_senha(senha_input, senha_hash_db)
+                        if senha_hash_db.startswith("$2")
+                        else criptografar_senha(senha_input) == senha_hash_db
+                    ):
+                    
+                        # Migração automática SHA256 -> bcrypt
+                    
+                        if not senha_hash_db.startswith("$2"):
+                    
+                            novo_hash = criptografar_senha(
+                                senha_input
+                            )
+                    
+                            conn, cursor = conectar_banco()
+                    
+                            cursor.execute(
+                                """
+                                UPDATE usuarios
+                                SET senha_hash=%s
+                                WHERE username=%s
+                                """,
+                                (
+                                    novo_hash,
+                                    usuario_input
+                                )
+                            )
+                    
+                            conn.commit()
+                            conn.close()
+                    
+                    
                         registrar_log(
                             usuario_input,
                             "LOGIN",
-                            "Login realizado com sucesso"
+                            "Login realizado com sucesso!"
                         )
+                                
                         st.session_state["autenticado"] = True
                         st.session_state["u_email"] = email
                         st.session_state["u_name"] = nome
                         st.session_state["u_user"] = usuario_input
+                    
                         st.rerun()
                     else:
                         st.error("❌ Usuário ou senha incorretos.")
