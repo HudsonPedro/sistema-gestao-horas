@@ -633,10 +633,220 @@ with st.sidebar:
  if st.button("💰 Reembolso de KM", use_container_width=True): 
      st.switch_page("pages/08_💰_Reembolso_KM.py")
   # --- NOVO: ABA DE ADMINISTRAÇÃO EXCLUSIVA PARA O ADMIN ---
+ 
+ # ==============================
+ # ADMINISTRAÇÃO
+ # ==============================
+ 
  if u_user == "admin":
-  st.markdown("---")
-  if st.button("⚙️ Gerenciar Usuários", use_container_width=True):
-   st.session_state["pagina_admin"] = True
+    st.markdown("---")
+    st.subheader("⚙️ Administração")
+
+    if st.button(
+        "👥 Usuários",
+        use_container_width=True
+    ):
+        st.session_state["pagina_admin"] = True
+        st.session_state["pagina_auditoria"] = False
+
+    if st.button(
+        "📋 Auditoria",
+        use_container_width=True
+    ):
+        st.session_state["pagina_auditoria"] = True
+        st.session_state["pagina_admin"] = False
+
+ # ==========================================================
+ # CONSULTA DE AUDITORIA - SOMENTE ADMIN
+ # ==========================================================
+
+ if (
+    u_user == "admin"
+    and st.session_state.get("pagina_auditoria")
+ ):
+
+    st.markdown("---")
+
+    st.header(
+        "📋 Auditoria do Sistema"
+    )
+
+
+    conn, cursor = conectar_banco()
+
+
+    # Buscar filtros
+
+    cursor.execute(
+        """
+        SELECT DISTINCT username
+        FROM logs_auditoria
+        ORDER BY username
+        """
+    )
+
+    usuarios_log = [
+        x[0]
+        for x in cursor.fetchall()
+    ]
+
+
+    cursor.execute(
+        """
+        SELECT DISTINCT evento
+        FROM logs_auditoria
+        ORDER BY evento
+        """
+    )
+
+    eventos_log = [
+        x[0]
+        for x in cursor.fetchall()
+    ]
+
+
+    conn.close()
+
+
+
+    col1, col2 = st.columns(2)
+
+
+    with col1:
+
+        filtro_usuario = st.selectbox(
+            "Usuário",
+            ["Todos"] + usuarios_log
+        )
+
+
+    with col2:
+
+        filtro_evento = st.selectbox(
+            "Evento",
+            ["Todos"] + eventos_log
+        )
+
+
+
+    data_inicio = st.date_input(
+        "Data inicial"
+    )
+
+
+    data_fim = st.date_input(
+        "Data final"
+    )
+
+
+
+    if st.button(
+        "🔎 Pesquisar",
+        type="primary"
+    ):
+
+
+        conn, cursor = conectar_banco()
+
+
+        sql = """
+        SELECT
+            id,
+            username,
+            evento,
+            descricao,
+            data_hora
+
+        FROM logs_auditoria
+
+        WHERE
+        data_hora::date BETWEEN %s AND %s
+        """
+
+
+        parametros = [
+            data_inicio,
+            data_fim
+        ]
+
+
+
+        if filtro_usuario != "Todos":
+
+            sql += """
+            AND username=%s
+            """
+
+            parametros.append(
+                filtro_usuario
+            )
+
+
+
+        if filtro_evento != "Todos":
+
+            sql += """
+            AND evento=%s
+            """
+
+            parametros.append(
+                filtro_evento
+            )
+
+
+        sql += """
+        ORDER BY data_hora DESC
+        """
+
+
+
+        cursor.execute(
+            sql,
+            parametros
+        )
+
+
+        dados = cursor.fetchall()
+
+
+        conn.close()
+
+
+
+        if dados:
+
+            st.success(
+                f"{len(dados)} registros encontrados."
+            )
+
+
+            st.dataframe(
+                dados,
+                use_container_width=True,
+                column_config={
+                    "data_hora":
+                    st.column_config.DatetimeColumn(
+                        "Data/Hora"
+                    )
+                }
+            )
+
+        else:
+
+            st.info(
+                "Nenhum registro encontrado."
+            )
+
+
+
+    if st.button(
+        "⬅️ Voltar"
+    ):
+
+        st.session_state["pagina_auditoria"] = False
+        st.rerun()
+        
+  # ---- ate aqui ---↑   
   else:
    if "pagina_admin" not in st.session_state:
     st.session_state["pagina_admin"] = False
