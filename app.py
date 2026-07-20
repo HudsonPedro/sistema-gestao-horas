@@ -152,7 +152,7 @@ if not st.session_state["autenticado"]:
                         
                             conn.commit()
                             conn.close()     
-                       
+                        if senha_hash_db.startswith("$2")
                         else criptografar_senha(senha_input) == senha_hash_db
                     ):
                     
