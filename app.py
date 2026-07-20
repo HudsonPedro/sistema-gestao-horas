@@ -25,7 +25,11 @@ def registrar_log(username, evento, descricao=""):
 
     try:
 
+        ip, navegador = obter_dados_cliente()
+
+
         conn, cursor = conectar_banco()
+
 
         cursor.execute(
             """
@@ -33,26 +37,55 @@ def registrar_log(username, evento, descricao=""):
             (
                 username,
                 evento,
-                descricao
+                descricao,
+                ip_usuario,
+                navegador
             )
             VALUES
-            (%s,%s,%s)
+            (%s,%s,%s,%s,%s)
             """,
             (
                 username,
                 evento,
-                descricao
+                descricao,
+                ip,
+                navegador
             )
         )
 
+
         conn.commit()
         conn.close()
+
 
     except Exception as e:
 
         print(
             "Erro ao gravar log:",
             e
+        )
+def obter_dados_cliente():
+
+    try:
+
+        ip = st.context.headers.get(
+            "X-Forwarded-For",
+            "desconhecido"
+        )
+
+        navegador = st.context.headers.get(
+            "User-Agent",
+            "desconhecido"
+        )
+
+        return ip, navegador
+
+
+    except Exception:
+
+        return (
+            "desconhecido",
+            "desconhecido"
         )
         
 import random
@@ -226,9 +259,15 @@ if not st.session_state["autenticado"]:
                     
                         st.rerun()
                     else:
-                        st.error("❌ Usuário ou senha incorretos.")
-                else:
-                    st.error("❌ Usuário ou senha incorretos.")
+                        registrar_log(
+                            usuario_input,
+                            "LOGIN_FALHA",
+                            "Usuário ou senha incorretos"
+                        )
+                    
+                        st.error(
+                            "❌ Usuário ou senha incorretos."
+                        )
                     
         #st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Integrado HPtech Informática ME.</p>", unsafe_allow_html=True)
         _, col_centro, _ = st.columns([1, 40, 1])
@@ -605,8 +644,14 @@ with st.sidebar:
  st.divider()
  
  if st.button("🚪 Sair", use_container_width=True):
-  st.session_state["autenticado"] = False
-  st.rerun()
+    registrar_log(
+        u_user,
+        "LOGOUT",
+        "Usuário encerrou a sessão"
+    )
+
+    st.session_state["autenticado"] = False
+    st.rerun()
   
  st.caption("v1.0 - 11052026")
  st.caption("Todos os direitos reservados")
