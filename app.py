@@ -163,7 +163,7 @@ if not st.session_state["autenticado"]:
             usuario_input = st.text_input("Usuário").strip().lower()
             senha_input = st.text_input("Senha", type="password")
             botao_entrar = st.form_submit_button("Login", use_container_width=True)
-            if st.button(
+         if st.button(
                 "🔑 Esqueci minha senha",
                 use_container_width=True
             ):
