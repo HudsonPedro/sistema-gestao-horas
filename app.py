@@ -125,23 +125,21 @@ if not st.session_state["autenticado"]:
                     nome, senha_hash_db, email, status = user_data
                     if status == "Bloqueado":
                         st.error("❌ Este usuário está bloqueado. Contate o administrador.")
+                        
                     elif verificar_senha(
                         senha_input,
                         str(senha_hash_db)
                     ):
-                        if senha_hash_db.startswith("$2")
-                        else criptografar_senha(senha_input) == senha_hash_db
-                    ):
                     
-                        # Migra SHA-256 antigo para bcrypt
+                        # Migração automática SHA-256 -> bcrypt
                         if not str(senha_hash_db).startswith("$2"):
-                        
+                    
                             novo_hash = criar_hash_bcrypt(
                                 senha_input
                             )
-                        
+                    
                             conn, cursor = conectar_banco()
-                        
+                    
                             cursor.execute(
                                 """
                                 UPDATE usuarios
@@ -153,7 +151,7 @@ if not st.session_state["autenticado"]:
                                     usuario_input
                                 )
                             )
-                        
+                    
                             conn.commit()
                             conn.close()
                     
@@ -273,7 +271,10 @@ with st.sidebar:
      
      if criptografar_senha(senha_atual) == senha_db:
       # Atualiza pela nova senha criptografada em SHA-256
-      cursor.execute("UPDATE usuarios SET senha_hash=%s WHERE username=%s", (criptografar_senha(nova_senha), u_user))
+      cursor.execute(
+        "UPDATE usuarios SET senha_hash=%s WHERE username=%s",
+        (criar_hash_bcrypt(nova_senha), u_user)
+      )
       conn.commit()
       st.success("✅ Senha alterada com sucesso!")
      else:
@@ -603,7 +604,8 @@ if u_user == "admin" and st.session_state.get("pagina_admin"):
                                 alt_name,
                                 alt_email,
                                 alt_status,
-                                criptografar_senha(alt_pass),
+                                criar_hash_bcrypt(new_pass),
+                                criar_hash_bcrypt(alt_pass),
                                 user_sel
                             )
                         )
