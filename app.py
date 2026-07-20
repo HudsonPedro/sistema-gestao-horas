@@ -170,7 +170,7 @@ if not st.session_state["autenticado"]:
 
                 st.session_state["recuperar"] = True
             
-            if botao_entrar:
+        if botao_entrar:
                 conn, cursor = conectar_banco()
                 cursor.execute(
                     "SELECT nome, senha_hash, email, status FROM usuarios WHERE username=%s",
