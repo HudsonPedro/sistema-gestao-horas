@@ -847,7 +847,7 @@ with st.sidebar:
         st.rerun()
         
   # ---- ate aqui ---↑   
-  else:
+ else:
    if "pagina_admin" not in st.session_state:
     st.session_state["pagina_admin"] = False
        
