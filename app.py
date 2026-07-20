@@ -141,6 +141,9 @@ def verificar_senha(senha, hash_banco):
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
+if "recuperacao_email" not in st.session_state:
+    st.session_state["recuperacao_email"] = None
+
 if not st.session_state["autenticado"]:
     st.set_page_config(page_title="HPTECH Sistema de Gestão", page_icon="hptech.png", layout="wide")
     col_esq, col_centro, col_dir = st.columns([1.5, 1, 1.5])
@@ -232,14 +235,15 @@ if not st.session_state["autenticado"]:
         with col_centro:
             st.info("Sistema Integrado HPtech Informática\n v1.1|14072026|Copyright ©2026.", icon="ℹ️")
 
-        if st.session_state.get("recuperar"):
-        
+       if st.session_state.get("recuperar"):
+
             st.subheader(
-                "Recuperação de senha"
+                "🔑 Recuperação de Senha"
             )
         
+        
             email = st.text_input(
-                "Informe seu e-mail cadastrado"
+                "E-mail cadastrado"
             )
         
         
@@ -247,7 +251,9 @@ if not st.session_state["autenticado"]:
                 "Enviar código"
             ):
         
+        
                 conn,cursor = conectar_banco()
+        
         
                 cursor.execute(
                     """
@@ -258,10 +264,12 @@ if not st.session_state["autenticado"]:
                     (email,)
                 )
         
+        
                 usuario = cursor.fetchone()
         
         
                 if usuario:
+        
         
                     codigo = gerar_codigo()
         
@@ -285,14 +293,18 @@ if not st.session_state["autenticado"]:
         
                     conn.commit()
         
+        
                     enviar_email_recuperacao(
                         email,
                         codigo
                     )
         
         
+                    st.session_state["recuperacao_email"] = email
+        
+        
                     st.success(
-                        "Código enviado para seu e-mail."
+                        "Código enviado. Verifique seu e-mail."
                     )
         
         
@@ -304,6 +316,140 @@ if not st.session_state["autenticado"]:
         
         
                 conn.close()
+        
+        
+        
+            # ============================
+            # VALIDAR CÓDIGO
+            # ============================
+        
+        
+            if st.session_state.get("recuperacao_email"):
+        
+        
+                codigo_digitado = st.text_input(
+                    "Código recebido"
+                )
+        
+        
+                nova_senha = st.text_input(
+                    "Nova senha",
+                    type="password"
+                )
+        
+        
+                confirmar = st.text_input(
+                    "Confirmar nova senha",
+                    type="password"
+                )
+        
+        
+                if st.button(
+                    "Alterar senha"
+                ):
+        
+        
+                    conn,cursor = conectar_banco()
+        
+        
+                    cursor.execute(
+                        """
+                        SELECT username
+                        FROM recuperacao_senha
+                        WHERE codigo=%s
+                        AND utilizado=FALSE
+                        ORDER BY id DESC
+                        LIMIT 1
+                        """,
+                        (
+                            codigo_digitado,
+                        )
+                    )
+        
+        
+                    dados = cursor.fetchone()
+        
+        
+        
+                    if dados:
+        
+        
+                        if nova_senha != confirmar:
+        
+                            st.error(
+                                "As senhas não coincidem."
+                            )
+        
+        
+                        elif len(nova_senha) < 6:
+        
+                            st.error(
+                                "A senha deve ter no mínimo 6 caracteres."
+                            )
+        
+        
+                        else:
+        
+        
+                            novo_hash = criar_hash_bcrypt(
+                                nova_senha
+                            )
+        
+        
+                            cursor.execute(
+                                """
+                                UPDATE usuarios
+                                SET senha_hash=%s
+                                WHERE username=%s
+                                """,
+                                (
+                                    novo_hash,
+                                    dados[0]
+                                )
+                            )
+        
+        
+                            cursor.execute(
+                                """
+                                UPDATE recuperacao_senha
+                                SET utilizado=TRUE
+                                WHERE codigo=%s
+                                """,
+                                (
+                                    codigo_digitado,
+                                )
+                            )
+        
+        
+                            conn.commit()
+        
+        
+        
+                            registrar_log(
+                                dados[0],
+                                "RESET_SENHA",
+                                "Senha redefinida por recuperação de e-mail"
+                            )
+        
+        
+                            st.success(
+                                "Senha alterada com sucesso! Faça login novamente."
+                            )
+        
+        
+                            st.session_state["recuperar"] = False
+                            st.session_state["recuperacao_email"] = None
+        
+        
+        
+                    else:
+        
+                        st.error(
+                            "Código inválido."
+                        )
+        
+        
+                    conn.close()
     
     st.stop()
 
