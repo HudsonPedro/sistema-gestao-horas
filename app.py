@@ -235,7 +235,7 @@ if not st.session_state["autenticado"]:
         with col_centro:
             st.info("Sistema Integrado HPtech Informática\n v1.1|14072026|Copyright ©2026.", icon="ℹ️")
 
-       if st.session_state.get("recuperar"):
+        if st.session_state.get("recuperar"):
 
             st.subheader(
                 "🔑 Recuperação de Senha"
