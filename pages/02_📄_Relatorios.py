@@ -142,41 +142,17 @@ PASTA_SAIDA = "relatorios"
 LOGO = "crti.jpg"
 os.makedirs(PASTA_SAIDA, exist_ok=True)
 
-def normalizar_texto_pdf(texto):
-    """Normaliza texto para ser compatível com PDF UTF-8"""
-    if not isinstance(texto, str):
-        texto = str(texto)
-    # Manter acentos - fpdf2 suporta UTF-8 nativo
-    return texto
-
 class PDF(FPDF):
     def __init__(self):
-        # Usar UTF-8 para suportar caracteres portugueses (ç, ã, é, à, etc)
         super().__init__()
         self.ra_numero = None
-        self.set_auto_page_break(auto=True, margin=15)
-    
-    def cell(self, w, h, text="", border=0, ln=0, align="", fill=False, link=""):
-        """Sobrescreve cell para suportar UTF-8"""
-        text = normalizar_texto_pdf(text)
-        return super().cell(w, h, text, border, ln, align, fill, link)
-    
-    def multi_cell(self, w, h, text="", border=0, align="", fill=False):
-        """Sobrescreve multi_cell para suportar UTF-8"""
-        text = normalizar_texto_pdf(text)
-        return super().multi_cell(w, h, text, border, align, fill)
-    
-    def text(self, x, y, text=""):
-        """Sobrescreve text para suportar UTF-8"""
-        text = normalizar_texto_pdf(text)
-        return super().text(x, y, text)
 
     def header(self):
         if os.path.exists(LOGO):
             self.image(LOGO, x=160, y=10, w=40)
-        self.set_font("Helvetica", "B", 12)
+        self.set_font("Arial", "B", 12)
         ra_mostrar = str(self.ra_numero) if self.ra_numero != 0 else "S/N"
-        self.cell(0, 15, normalizar_texto_pdf(f"RELATÓRIO DE ATENDIMENTO Nº {ra_mostrar}"), ln=True, align="L")
+        self.cell(0, 15, f"RELATÓRIO DE ATENDIMENTO Nº {ra_mostrar}", ln=True, align="L")
 
 def enviar_relatorio_email(arquivos_anexos, servidor_smtp, porta, email_remetente, senha, destinatario):
     if not arquivos_anexos:
@@ -605,7 +581,6 @@ if btn_gerar:
                     pdf.set_y(pdf.get_y() + 2)
                     pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
 
-            # --- NOVO BLOCO 3: f_ye HISTÓRICAS NO PDF (ORDEM CORRIGIDA E FUNDO AMARELO) ---
             # --- NOVO BLOCO 3: f_ye HISTÓRICAS NO PDF (TABELA UNIFICADA IGUAL ATIVIDADES) AJUSTE DAS LINHAS DO QUADRO---
             if tem_pendencias:
                 if pdf.get_y() > 220:
@@ -656,23 +631,6 @@ if btn_gerar:
                 pdf.rect(x_i, y_inicio_bloco, 190, pdf.get_y() - y_inicio_bloco)
                 pdf.set_y(pdf.get_y() + 2)
                
-             #--- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF ULTRA REVISADO) ---
-            # 1. Validação estrita: Só entra se a aba com o nome exato do cliente existir no documento
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF BLINDADO E CORRIGIDO) ---
-            # Verifica se o cliente possui uma aba dedicada na planilha
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VERSÃO FLEXÍVEL MULTI-CLIENTE) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE CONVERSÃO DE DATA) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORRIGIDO PARA MÚLTIPLAS LINHAS) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VERSÃO ANTI-TRAVAMENTO MULTI-CLIENTE) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (RESOLVIDO PARA DADOS ESPALHADOS) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE MÚLTIPLAS LINHAS) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (RESOLVIDO COM PROPAGAÇÃO DE LINHAS) ---
-                   # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE VALIDAÇÃO DE COLUNA) ---
-                   # Como os nomes estão idênticos, a busca direta por chave funciona perfeitamente
-            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE VALIDAÇÃO DE COLUNA) ---
-            # Como os nomes estão idênticos, a busca direta por chave funciona perfeitamente
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (COMPARAÇÃO COM ABA LEGENDAS) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VALIDAÇÃO INDEPENDENTE DIRETA) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (SOLUÇÃO DEFINITIVA DE CORRESPONDÊNCIA) ---
             import re
             import unicodedata
@@ -815,21 +773,19 @@ if btn_gerar:
             pdf.ln(10)
             pdf.set_text_color(0, 0, 0)
             pdf.cell(90, 8, "__________________________________", align="C")
-            pdf.cell(10, 8, '', border=0, ln=0)
+            pdf.cell(10)
             pdf.cell(90, 8, "__________________________________", align="C", ln=True)
             pdf.cell(90, 2, consultor, align="C")
-            pdf.cell(7, 2)
+            pdf.cell(7)
             pdf.cell(90, 2, solicitante, align="C", ln=True)
             pdf.set_font("Arial", "", 8)
             pdf.cell(90, 7, "CRTI", align="C")
-            pdf.cell(7, 7)
+            pdf.cell(7)
             pdf.cell(90, 7, cliente, align="C", ln=True)
             pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", align="C")
-            pdf.cell(7, 2)
+            pdf.cell(7)
             pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", ln=True, align="C")
-            # Corrigido: fpdf2 suporta UTF-8 nativo, output() retorna bytes
-            with open(file_pdf, 'wb') as f:
-                f.write(pdf.output())
+            pdf.output(file_pdf)
             arquivos_saida.append(file_pdf)
             # --- 2. GERAÇÃO EXCEL ---
             wb = xlsxwriter.Workbook(file_xlsx)
@@ -993,24 +949,6 @@ if btn_gerar:
                     ws.set_row(row - 1, 18)
                     row += 1
 
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel REPLICADO E CORRIGIDO) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL DEFINITIVO E AUTOCONTIDO) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL CORRIGIDO E SEGURO) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL COM ESTILOS EXISTENTES) ---
-                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL COM ESTILOS EXISTENTES) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - CORREÇÃO DE BORDAS INTERNAS) ---
-                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - CORREÇÃO DE BORDAS INTERNAS) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX DE BORDAS MERGE DEFINITIVO) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - SEGUINDO ESTILO DO BLOCO DE CIMA) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - GRID TOTALMENTE FECHADO) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - REMOÇÃO DE MERGES EM DADOS) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX TOTAL DE BORDAS VERTICAIS) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - LÓGICA DO PDF REPLICADA) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - MODIFICAÇÃO DE FORMATO ATIVO) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX DE ALINHAMENTO E CENTRALIZAÇÃO) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - INSTANCIAÇÃO SEGURA DE FORMATOS) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - ACESSO DIRETO AO WORKBOOK) ---
-                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX TOTAL DE BORDAS COM LOOPS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FECHAMENTO EM LOTE DE GRIDS) ---
             import re
             import unicodedata
@@ -1048,7 +986,6 @@ if btn_gerar:
                     f_cab = f_T_b if 'f_T_b' in locals() else f_comum
                     f_lat = f_TL if 'f_TL' in locals() else f_comum
                     
-                    # --- INTEGRAÇÃO DA LÓGICA DE PENDÊNCIAS: Ativação forçada de paredes verticais ---
                     # Modifica as propriedades internas de bordas para fechar os quadradinhos (Sem recriar objetos)
                     if f_comum:
                         f_comum.set_left(1)
