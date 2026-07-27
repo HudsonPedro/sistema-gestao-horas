@@ -757,7 +757,7 @@ if btn_gerar:
                                 pdf.cell(100, 8, str(linha[col_ativ]), border=1, ln=True)
                             pdf.ln(2)
                 except Exception as e:
-                    import streamlit as st
+                    #import streamlit as st
                     st.warning(f"Aviso técnico: Erro ao processar dados da aba {aba_encontrada}: {e}")
                     
             if pdf.get_y() > 220:
@@ -1108,7 +1108,7 @@ if btn_gerar:
                                 row += 1
                             row += 1
                 except Exception as e:
-                    import streamlit as st
+                    #import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
      
 
