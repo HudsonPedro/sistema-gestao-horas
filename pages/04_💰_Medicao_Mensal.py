@@ -303,35 +303,8 @@ col_m1.metric("Total de Horas Encontradas", total_horas_faturar)
 col_m2.metric("Preço Unitário da Hora", f"R$ {formatar_br(valor_hora)}")
 col_m3.metric("Preço Total Calculado", f"R$ {formatar_br(preco_total_calculado)}")
 
-# --- FUNÇÃO PARA NORMALIZAR TEXTO EM PDF ---
-def normalizar_texto_pdf(texto):
-    """Normaliza texto para ser compatível com PDF UTF-8"""
-    if not isinstance(texto, str):
-        texto = str(texto)
-    return texto
-
 # --- CLASSE DO PDF REVISADA (SEM RECUO, SEM VERMELHO, SEM CAIXA EMBAIXO) ---
 class PDFMedicaoNovo(FPDF):
-    def __init__(self):
-        # Usar UTF-8 para suportar caracteres portugueses (ç, ã, é, à, etc)
-        super().__init__()
-        self.set_auto_page_break(auto=True, margin=15)
-    
-    def cell(self, w, h, text="", border=0, ln=0, align="", fill=False, link=""):
-        """Sobrescreve cell para suportar UTF-8"""
-        text = normalizar_texto_pdf(text)
-        return super().cell(w, h, text, border, ln, align, fill, link)
-    
-    def multi_cell(self, w, h, text="", border=0, align="", fill=False):
-        """Sobrescreve multi_cell para suportar UTF-8"""
-        text = normalizar_texto_pdf(text)
-        return super().multi_cell(w, h, text, border, align, fill)
-    
-    def text(self, x, y, text=""):
-        """Sobrescreve text para suportar UTF-8"""
-        text = normalizar_texto_pdf(text)
-        return super().text(x, y, text)
-    
     def moldura_topo(self, x, y, w, h, dados):
         self.set_draw_color(180, 180, 180)  
         self.set_line_width(0.4)
@@ -404,8 +377,7 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_draw_color(180, 180, 180)
     pdf.line(15, 142, 85, 142); pdf.line(125, 142, 195, 142)
     pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Informática ME"); pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
-    # Corrigido: fpdf2 suporta UTF-8 nativo, output() retorna bytes
-    return pdf.output()
+    return pdf.output(dest="S").encode("latin1")
 
 # --- GERADOR PLANILHA EXCEL CORRIGIDO (FIM DOS CORTES VERTICAIS) ---
 def gerar_xlsx_medicao_nova(dados):
