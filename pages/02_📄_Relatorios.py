@@ -805,6 +805,8 @@ if btn_gerar:
             pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", ln=True, align="C")
             # Corrigido: salvar PDF com tratamento de encoding UTF-8 compatível com Linux
             pdf_content = pdf.output()
+            if isinstance(pdf_content, str):
+                pdf_content = pdf_content.encode('utf-8')
             with open(file_pdf, 'wb') as f:
                 f.write(pdf_content)
             arquivos_saida.append(file_pdf)

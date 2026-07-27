@@ -378,8 +378,11 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.text(15, 15, "COMPROVANTE DE ABASTECIMENTO ANEXADO")
                     pdf.image(caminho_imagem_disco, x=20, y=27, w=115) #x=15, y=22, w=110)
                 
-                # Corrigido: retornar bytes diretamente sem encoding explícito para evitar UnicodeEncodeError
-                st.session_state["km_pdf_p04"] = pdf.output()
+                # Corrigido: converter para bytes com UTF-8 se retornar string
+                pdf_content = pdf.output()
+                if isinstance(pdf_content, str):
+                    pdf_content = pdf_content.encode('utf-8')
+                st.session_state["km_pdf_p04"] = pdf_content
                 
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                     try: os.remove(caminho_imagem_disco)

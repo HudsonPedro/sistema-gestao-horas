@@ -377,8 +377,11 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_draw_color(180, 180, 180)
     pdf.line(15, 142, 85, 142); pdf.line(125, 142, 195, 142)
     pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Informática ME"); pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
-    # Corrigido: retornar bytes diretamente sem encoding explícito para evitar UnicodeEncodeError
-    return pdf.output()
+    # Corrigido: retornar bytes com encoding UTF-8 compatível com Linux
+    pdf_content = pdf.output()
+    if isinstance(pdf_content, str):
+        return pdf_content.encode('utf-8')
+    return pdf_content
 
 # --- GERADOR PLANILHA EXCEL CORRIGIDO (FIM DOS CORTES VERTICAIS) ---
 def gerar_xlsx_medicao_nova(dados):
