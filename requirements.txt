@@ -1,7 +1,7 @@
 streamlit>=1.30.0
 pandas
 plotly
-fpdf
+fpdf2
 xlsxwriter
 openpyxl
 pillow

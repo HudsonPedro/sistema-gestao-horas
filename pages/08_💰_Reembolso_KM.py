@@ -50,6 +50,12 @@ def formatar_br(valor):
 
 # --- CLASSE PDF LIMPA SEM QUADROS (ORIENTAÇÃO PAISAGEM JÁ VALIDADA) ---
 class PDFReembolsoKM(FPDF):
+    def __init__(self, *args, **kwargs):
+        # Usar UTF-8 para suportar caracteres portugueses (ç, ã, é, à, etc)
+        kwargs['char_width_cache'] = True
+        super().__init__(*args, **kwargs)
+        self.set_auto_page_break(auto=True, margin=15)
+    
     def header(self):
         pass
     def footer(self):
@@ -378,11 +384,8 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.text(15, 15, "COMPROVANTE DE ABASTECIMENTO ANEXADO")
                     pdf.image(caminho_imagem_disco, x=20, y=27, w=115) #x=15, y=22, w=110)
                 
-                # Corrigido: converter para bytes com UTF-8 se retornar string
-                pdf_content = pdf.output()
-                if isinstance(pdf_content, str):
-                    pdf_content = pdf_content.encode('utf-8')
-                st.session_state["km_pdf_p04"] = pdf_content
+                # Corrigido: fpdf2 suporta UTF-8 nativo, output() retorna bytes
+                st.session_state["km_pdf_p04"] = pdf.output()
                 
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                     try: os.remove(caminho_imagem_disco)

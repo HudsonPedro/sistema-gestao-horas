@@ -144,8 +144,10 @@ os.makedirs(PASTA_SAIDA, exist_ok=True)
 
 class PDF(FPDF):
     def __init__(self):
-        super().__init__()
+        # Usar UTF-8 para suportar caracteres portugueses (ç, ã, é, à, etc)
+        super().__init__(char_width_cache=True)
         self.ra_numero = None
+        self.set_auto_page_break(auto=True, margin=15)
 
     def header(self):
         if os.path.exists(LOGO):
@@ -803,12 +805,9 @@ if btn_gerar:
             pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", align="C")
             pdf.cell(7)
             pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", ln=True, align="C")
-            # Corrigido: salvar PDF com tratamento de encoding UTF-8 compatível com Linux
-            pdf_content = pdf.output()
-            if isinstance(pdf_content, str):
-                pdf_content = pdf_content.encode('utf-8')
+            # Corrigido: fpdf2 suporta UTF-8 nativo, output() retorna bytes
             with open(file_pdf, 'wb') as f:
-                f.write(pdf_content)
+                f.write(pdf.output())
             arquivos_saida.append(file_pdf)
             # --- 2. GERAÇÃO EXCEL ---
             wb = xlsxwriter.Workbook(file_xlsx)

@@ -305,6 +305,11 @@ col_m3.metric("Preço Total Calculado", f"R$ {formatar_br(preco_total_calculado)
 
 # --- CLASSE DO PDF REVISADA (SEM RECUO, SEM VERMELHO, SEM CAIXA EMBAIXO) ---
 class PDFMedicaoNovo(FPDF):
+    def __init__(self):
+        # Usar UTF-8 para suportar caracteres portugueses (ç, ã, é, à, etc)
+        super().__init__(char_width_cache=True)
+        self.set_auto_page_break(auto=True, margin=15)
+    
     def moldura_topo(self, x, y, w, h, dados):
         self.set_draw_color(180, 180, 180)  
         self.set_line_width(0.4)
@@ -377,11 +382,8 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_draw_color(180, 180, 180)
     pdf.line(15, 142, 85, 142); pdf.line(125, 142, 195, 142)
     pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Informática ME"); pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
-    # Corrigido: retornar bytes com encoding UTF-8 compatível com Linux
-    pdf_content = pdf.output()
-    if isinstance(pdf_content, str):
-        return pdf_content.encode('utf-8')
-    return pdf_content
+    # Corrigido: fpdf2 suporta UTF-8 nativo, output() retorna bytes
+    return pdf.output()
 
 # --- GERADOR PLANILHA EXCEL CORRIGIDO (FIM DOS CORTES VERTICAIS) ---
 def gerar_xlsx_medicao_nova(dados):
