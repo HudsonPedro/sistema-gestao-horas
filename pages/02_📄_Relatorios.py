@@ -508,13 +508,24 @@ if btn_gerar:
                 pdf.set_font("Arial", "B", 10)
                 pdf.cell(22, 5, "Atividade: ", ln=False)
                 pdf.set_font("Arial", "", 10)
-                pdf.multi_cell(0, 5, ob if ob else "-")
+                 
+                # Tratamento preventivo contra quebras de caracteres especiais
+                texto_seguro = str(ob) if ob else "-"
+                texto_seguro = texto_seguro.encode("latin-1", "ignore").decode("latin-1")
+                 
+                pdf.multi_cell(0, 5, texto_seguro)
+
                 
                 pdf.set_x(x_i + 2)
                 pdf.set_font("Arial", "B", 10)
                 pdf.cell(22, 5, "Participante: ", ln=False)
                 pdf.set_font("Arial", "", 10)
-                pdf.multi_cell(0, 5, str(linha["PARTICIPANTE"]).strip() or participante_padrao)
+                 
+                part_seguro = str(linha["PARTICIPANTE"]).strip() or participante_padrao
+                part_seguro = part_seguro.encode("latin-1", "ignore").decode("latin-1")
+                 
+                pdf.multi_cell(0, 5, part_seguro)
+
                 
                 pdf.set_y(pdf.get_y() + 2)
                 pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
@@ -614,6 +625,7 @@ if btn_gerar:
                         dp_data = str(dados_p["DATA"])[0:10] if str(dados_p["DATA"]).strip() != "" else data_inicio_rel
                         
                     desc_p = str(dados_p["DESCRICAO_P"]).strip()
+                    desc_p = desc_p.encode("latin-1", "ignore").decode("latin-1")
                     resp_p = str(dados_p["RESPONSAVEL_P"]).strip()
                     status_p = str(dados_p["STATUS_P"]).strip()
                     
