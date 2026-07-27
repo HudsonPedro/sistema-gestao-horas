@@ -581,6 +581,7 @@ if btn_gerar:
                     pdf.set_y(pdf.get_y() + 2)
                     pdf.rect(x_i, y_i, 190, pdf.get_y() - y_i)
 
+            # --- NOVO BLOCO 3: f_ye HISTÓRICAS NO PDF (ORDEM CORRIGIDA E FUNDO AMARELO) ---
             # --- NOVO BLOCO 3: f_ye HISTÓRICAS NO PDF (TABELA UNIFICADA IGUAL ATIVIDADES) AJUSTE DAS LINHAS DO QUADRO---
             if tem_pendencias:
                 if pdf.get_y() > 220:
@@ -631,6 +632,23 @@ if btn_gerar:
                 pdf.rect(x_i, y_inicio_bloco, 190, pdf.get_y() - y_inicio_bloco)
                 pdf.set_y(pdf.get_y() + 2)
                
+             #--- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF ULTRA REVISADO) ---
+            # 1. Validação estrita: Só entra se a aba com o nome exato do cliente existir no documento
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (PDF BLINDADO E CORRIGIDO) ---
+            # Verifica se o cliente possui uma aba dedicada na planilha
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VERSÃO FLEXÍVEL MULTI-CLIENTE) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE CONVERSÃO DE DATA) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORRIGIDO PARA MÚLTIPLAS LINHAS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VERSÃO ANTI-TRAVAMENTO MULTI-CLIENTE) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (RESOLVIDO PARA DADOS ESPALHADOS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE MÚLTIPLAS LINHAS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (RESOLVIDO COM PROPAGAÇÃO DE LINHAS) ---
+                   # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE VALIDAÇÃO DE COLUNA) ---
+                   # Como os nomes estão idênticos, a busca direta por chave funciona perfeitamente
+            # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (CORREÇÃO DE VALIDAÇÃO DE COLUNA) ---
+            # Como os nomes estão idênticos, a busca direta por chave funciona perfeitamente
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (COMPARAÇÃO COM ABA LEGENDAS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (VALIDAÇÃO INDEPENDENTE DIRETA) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (SOLUÇÃO DEFINITIVA DE CORRESPONDÊNCIA) ---
             import re
             import unicodedata
@@ -757,7 +775,7 @@ if btn_gerar:
                                 pdf.cell(100, 8, str(linha[col_ativ]), border=1, ln=True)
                             pdf.ln(2)
                 except Exception as e:
-                    #import streamlit as st
+                    import streamlit as st
                     st.warning(f"Aviso técnico: Erro ao processar dados da aba {aba_encontrada}: {e}")
                     
             if pdf.get_y() > 220:
@@ -949,6 +967,24 @@ if btn_gerar:
                     ws.set_row(row - 1, 18)
                     row += 1
 
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (Excel REPLICADO E CORRIGIDO) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL DEFINITIVO E AUTOCONTIDO) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL CORRIGIDO E SEGURO) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL COM ESTILOS EXISTENTES) ---
+                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL COM ESTILOS EXISTENTES) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - CORREÇÃO DE BORDAS INTERNAS) ---
+                # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - CORREÇÃO DE BORDAS INTERNAS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX DE BORDAS MERGE DEFINITIVO) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - SEGUINDO ESTILO DO BLOCO DE CIMA) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - GRID TOTALMENTE FECHADO) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - REMOÇÃO DE MERGES EM DADOS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX TOTAL DE BORDAS VERTICAIS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - LÓGICA DO PDF REPLICADA) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - MODIFICAÇÃO DE FORMATO ATIVO) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX DE ALINHAMENTO E CENTRALIZAÇÃO) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - INSTANCIAÇÃO SEGURA DE FORMATOS) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - ACESSO DIRETO AO WORKBOOK) ---
+                    # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FIX TOTAL DE BORDAS COM LOOPS) ---
                     # --- NOVO BLOCO: CRONOGRAMA e ATIVIDADES (EXCEL - FECHAMENTO EM LOTE DE GRIDS) ---
             import re
             import unicodedata
@@ -986,6 +1022,7 @@ if btn_gerar:
                     f_cab = f_T_b if 'f_T_b' in locals() else f_comum
                     f_lat = f_TL if 'f_TL' in locals() else f_comum
                     
+                    # --- INTEGRAÇÃO DA LÓGICA DE PENDÊNCIAS: Ativação forçada de paredes verticais ---
                     # Modifica as propriedades internas de bordas para fechar os quadradinhos (Sem recriar objetos)
                     if f_comum:
                         f_comum.set_left(1)
@@ -1108,7 +1145,7 @@ if btn_gerar:
                                 row += 1
                             row += 1
                 except Exception as e:
-                    #import streamlit as st
+                    import streamlit as st
                     st.write(f"DEBUG EXCEL: Erro estrutural na geração de {cliente}: {e}")
      
 
