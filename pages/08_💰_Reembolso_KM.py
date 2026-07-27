@@ -48,35 +48,8 @@ def formatar_br(valor):
     except: 
         return "0,00"
 
-# --- FUNÇÃO PARA NORMALIZAR TEXTO EM PDF ---
-def normalizar_texto_pdf(texto):
-    """Normaliza texto para ser compatível com PDF UTF-8"""
-    if not isinstance(texto, str):
-        texto = str(texto)
-    return texto
-
 # --- CLASSE PDF LIMPA SEM QUADROS (ORIENTAÇÃO PAISAGEM JÁ VALIDADA) ---
 class PDFReembolsoKM(FPDF):
-    def __init__(self, *args, **kwargs):
-        # Usar UTF-8 para suportar caracteres portugueses (ç, ã, é, à, etc)
-        super().__init__(*args, **kwargs)
-        self.set_auto_page_break(auto=True, margin=15)
-    
-    def cell(self, w, h, text="", border=0, ln=0, align="", fill=False, link=""):
-        """Sobrescreve cell para suportar UTF-8"""
-        text = normalizar_texto_pdf(text)
-        return super().cell(w, h, text, border, ln, align, fill, link)
-    
-    def multi_cell(self, w, h, text="", border=0, align="", fill=False):
-        """Sobrescreve multi_cell para suportar UTF-8"""
-        text = normalizar_texto_pdf(text)
-        return super().multi_cell(w, h, text, border, align, fill)
-    
-    def text(self, x, y, text=""):
-        """Sobrescreve text para suportar UTF-8"""
-        text = normalizar_texto_pdf(text)
-        return super().text(x, y, text)
-    
     def header(self):
         pass
     def footer(self):
@@ -405,8 +378,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.text(15, 15, "COMPROVANTE DE ABASTECIMENTO ANEXADO")
                     pdf.image(caminho_imagem_disco, x=20, y=27, w=115) #x=15, y=22, w=110)
                 
-                # Corrigido: fpdf2 suporta UTF-8 nativo, output() retorna bytes
-                st.session_state["km_pdf_p04"] = pdf.output()
+                st.session_state["km_pdf_p04"] = pdf.output(dest="S").encode("latin1")
                 
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                     try: os.remove(caminho_imagem_disco)
