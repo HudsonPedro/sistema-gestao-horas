@@ -307,7 +307,7 @@ col_m3.metric("Preço Total Calculado", f"R$ {formatar_br(preco_total_calculado)
 class PDFMedicaoNovo(FPDF):
     def __init__(self):
         # Usar UTF-8 para suportar caracteres portugueses (ç, ã, é, à, etc)
-        super().__init__(char_width_cache=True)
+        super().__init__()
         self.set_auto_page_break(auto=True, margin=15)
     
     def moldura_topo(self, x, y, w, h, dados):

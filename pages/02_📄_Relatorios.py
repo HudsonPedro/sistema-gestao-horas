@@ -145,7 +145,7 @@ os.makedirs(PASTA_SAIDA, exist_ok=True)
 class PDF(FPDF):
     def __init__(self):
         # Usar UTF-8 para suportar caracteres portugueses (ç, ã, é, à, etc)
-        super().__init__(char_width_cache=True)
+        super().__init__()
         self.ra_numero = None
         self.set_auto_page_break(auto=True, margin=15)
 

@@ -52,7 +52,6 @@ def formatar_br(valor):
 class PDFReembolsoKM(FPDF):
     def __init__(self, *args, **kwargs):
         # Usar UTF-8 para suportar caracteres portugueses (ç, ã, é, à, etc)
-        kwargs['char_width_cache'] = True
         super().__init__(*args, **kwargs)
         self.set_auto_page_break(auto=True, margin=15)
     
