@@ -803,7 +803,10 @@ if btn_gerar:
             pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", align="C")
             pdf.cell(7)
             pdf.cell(90, 2, f"RELATÓRIO DE ATENDIMENTO Nº {ra_str}", ln=True, align="C")
-            pdf.output(file_pdf)
+            # Corrigido: salvar PDF com tratamento de encoding UTF-8 compatível com Linux
+            pdf_content = pdf.output()
+            with open(file_pdf, 'wb') as f:
+                f.write(pdf_content)
             arquivos_saida.append(file_pdf)
             # --- 2. GERAÇÃO EXCEL ---
             wb = xlsxwriter.Workbook(file_xlsx)
