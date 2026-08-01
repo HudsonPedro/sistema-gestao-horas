@@ -535,7 +535,7 @@ if btn_gerar:
                     pdf.add_page()
                 pdf.ln(2)
                 pdf.set_font("Arial", "B", 10)
-                pdf.set_fill_color(0, 112, 192)
+                pdf.set_fill_color(4, 36, 100)
                 pdf.set_text_color(255, 255, 255)
                 pdf.cell(190, 10, "DESLOCAMENTOS", border=1, ln=True, fill=True, align="C")
                 pdf.set_text_color(0, 0, 0)
