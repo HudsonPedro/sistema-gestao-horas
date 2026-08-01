@@ -379,10 +379,11 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Informática ME"); pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
     pdf_bytes = pdf.output(dest="S")
 
-if isinstance(pdf_bytes, str):
-    pdf_bytes = pdf_bytes.encode("latin1")
+    if isinstance(pdf_bytes, str):
+        pdf_bytes = pdf_bytes.encode("latin1")
 
-return pdf_bytes
+    return pdf_bytes
+
 # --- GERADOR PLANILHA EXCEL CORRIGIDO (FIM DOS CORTES VERTICAIS) ---
 def gerar_xlsx_medicao_nova(dados):
     output = io.BytesIO()
