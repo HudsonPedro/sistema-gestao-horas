@@ -334,41 +334,24 @@ class PDFMedicaoNovo(FPDF):
 def gerar_pdf_medicao_nova(dados):
     pdf = PDFMedicaoNovo(orientation="P", unit="mm", format="A4")
     pdf.add_page()
-
+    
     ARQUIVO_LOGO = "crti.jpg"
     if os.path.exists(ARQUIVO_LOGO):
         pdf.image(ARQUIVO_LOGO, x=150, y=10, w=45)
-
+        
     pdf.set_font("Arial", "B", 15)
     pdf.text(15, 20, "Medição Mensal de Prestação de Serviços")
     pdf.moldura_topo(15, 28, 180, 32, dados)
-
+    
     pdf.set_font("Arial", "B", 10)
     pdf.text(15, 70, "* Serviços Executados")
-    pdf.set_y(74)
-    pdf.set_x(15)
-
-    pdf.set_draw_color(180, 180, 180)
-    pdf.set_fill_color(245, 245, 245)
-    pdf.set_font("Arial", "B", 8)
-
-    headers = [
-        ("Mês/Ano", 18),
-        ("Item", 10),
-        ("Descrição", 72),
-        ("Unidade", 15),
-        ("Qtd", 20),
-        ("Preço Unitário", 22),
-        ("Preço Total", 23),
-    ]
-
-    for txt, w in headers:
-        pdf.cell(w, 7, txt, border=1, align="C", fill=True)
-
-    pdf.set_y(81)
-    pdf.set_x(15)
-    pdf.set_font("Arial", "", 8)
-
+    pdf.set_y(74); pdf.set_x(15)
+    pdf.set_draw_color(180, 180, 180); pdf.set_fill_color(245, 245, 245); pdf.set_font("Arial", "B", 8)
+    
+    headers = [("Mês/Ano", 18), ("Item", 10), ("Descrição", 72), ("Unidade", 15), ("Qtd", 20), ("Preço Unitário", 22), ("Preço Total", 23)]
+    for txt, w in headers: pdf.cell(w, 7, txt, border=1, align="C", fill=True)
+    
+    pdf.set_y(81); pdf.set_x(15); pdf.set_font("Arial", "", 8)
     pdf.cell(18, 10, dados["mes_ano"], border=1, align="C")
     pdf.cell(10, 10, "1", border=1, align="C")
     pdf.cell(72, 10, dados["descricao_servico"], border=1, align="L")
@@ -376,52 +359,25 @@ def gerar_pdf_medicao_nova(dados):
     pdf.cell(20, 10, dados["qtd_horas"], border=1, align="C")
     pdf.cell(22, 10, formatar_br(dados["preco_unitario"]), border=1, align="C")
     pdf.cell(23, 10, formatar_br(dados["preco_total"]), border=1, align="C")
-
-    pdf.set_y(91)
-    pdf.set_x(15)
-    pdf.cell(28, 7, "", border=0)
-    pdf.set_font("Arial", "B", 8)
-    pdf.cell(72, 7, "TOTAL", border=1, align="L", fill=True)
-    pdf.cell(57, 7, "", border=0)
+    
+    pdf.set_y(91); pdf.set_x(15)
+    pdf.cell(28, 7, "", border=0); pdf.set_font("Arial", "B", 8)
+    pdf.cell(72, 7, "TOTAL", border=1, align="L", fill=True); pdf.cell(57, 7, "", border=0)
     pdf.cell(23, 7, formatar_br(dados["preco_total"]), border=1, align="C")
-
-    pdf.set_text_color(100, 100, 100)
-    pdf.set_font("Arial", "I", 7)
+    
+    pdf.set_text_color(100, 100, 100); pdf.set_font("Arial", "I", 7)
     pdf.text(115, 104, "* Duplicatas a serem emitidas")
     pdf.text(115, 107, f"HPtech Informática ME, valor total de R$ {formatar_br(dados['preco_total'])}")
     pdf.text(115, 110, "Banco: Santander Ag. 0809 CC: 01055895-8")
     pdf.text(115, 113, "Pix: hudsonpedro@gmail.com")
-
-    pdf.set_text_color(0, 0, 0)
-    pdf.set_font("Arial", "B", 9)
+    
+    # ASSINATURAS LIMPAS
+    pdf.set_text_color(0, 0, 0); pdf.set_font("Arial", "B", 9)
     pdf.text(15, 122, "* De acordo com a Medição Mensal")
-
     pdf.set_draw_color(180, 180, 180)
-    pdf.line(15, 142, 85, 142)
-    pdf.line(125, 142, 195, 142)
-
-    pdf.set_font("Arial", "", 8)
-    pdf.text(15, 146, "HPtech Informática ME")
-    pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
-
-    # Compatível com fpdf antigo e fpdf2
-    try:
-        resultado = pdf.output(dest="S")
-    except TypeError:
-        buffer = io.BytesIO()
-        pdf.output(buffer)
-        return buffer.getvalue()
-
-    if isinstance(resultado, str):
-        return resultado.encode("latin1")
-
-    if isinstance(resultado, (bytes, bytearray)):
-        return bytes(resultado)
-
-    if hasattr(resultado, "getvalue"):
-        return resultado.getvalue()
-
-    return bytes(resultado)
+    pdf.line(15, 142, 85, 142); pdf.line(125, 142, 195, 142)
+    pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Informática ME"); pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
+    return pdf.output(dest="S").encode("latin1")
 
 # --- GERADOR PLANILHA EXCEL CORRIGIDO (FIM DOS CORTES VERTICAIS) ---
 def gerar_xlsx_medicao_nova(dados):
@@ -630,9 +586,7 @@ nome_xlsx = f"Medicao N {dados_faturamento['numero_medicao']} - {dados_faturamen
 with col_b1:
     st.download_button(
         label=" Baixar PDF da Medição", 
-        pdf = gerar_pdf_medicao_nova(dados_faturamento)
-            st.write(type(pdf))
-            st.write(pdf), 
+        data=gerar_pdf_medicao_nova(dados_faturamento), 
         file_name=nome_pdf, 
         mime="application/pdf", 
         use_container_width=True
