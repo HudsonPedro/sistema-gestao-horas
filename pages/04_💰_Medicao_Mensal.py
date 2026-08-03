@@ -377,7 +377,12 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_draw_color(180, 180, 180)
     pdf.line(15, 142, 85, 142); pdf.line(125, 142, 195, 142)
     pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Informática ME"); pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
-    return pdf.output(dest="S").encode("latin1")
+    #return pdf.output(dest="S").encode("latin1")
+     # Tratamento preventivo contra quebras de caracteres especiais
+    texto_seguro = str(ob) if ob else "-"
+    texto_seguro = texto_seguro.encode("latin-1", "ignore").decode("latin-1")
+                 
+    pdf.multi_cell(0, 5, texto_seguro)
 
 # --- GERADOR PLANILHA EXCEL CORRIGIDO (FIM DOS CORTES VERTICAIS) ---
 def gerar_xlsx_medicao_nova(dados):
