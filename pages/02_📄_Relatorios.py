@@ -355,6 +355,10 @@ if btn_gerar:
 
         for (cliente, ra), grupo in grupos:
             solicitante = str(grupo["SOLICITANTE"].iloc[0]).strip()
+            # HOTFIX PRODUÇÃO: remove somente caracteres que a fonte Arial padrão do FPDF
+            # não consegue codificar em Latin-1. Mantém acentos do português normalmente.
+            solicitante = solicitante.encode("latin-1", "ignore").decode("latin-1")
+
             consultor = str(grupo["CONSULTOR"].iloc[0]).strip()
             participante_padrao = str(grupo["PARTICIPANTE"].iloc[0]).strip()
             local = str(grupo["LOCAL"].iloc[0]).strip()
