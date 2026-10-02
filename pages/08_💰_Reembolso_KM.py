@@ -168,7 +168,7 @@ solicitante_nome = st.text_input("Gerente de Implantação na EMPRESA CLIENTE:",
 data_emissao = st.text_input("Data de Emissão:", value=datetime.now().strftime("%d/%m/%Y"))
 
 # --- FUNÇÃO DE DISPARO SMTP PADRÃO DA PRODUÇÃO ---
-def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf, n_xlsx):
+def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf, n_xlsx, comprovante_file=None):
     e_remetente = st.secrets["smtp"]["usuario"]
     senha_remetente = st.secrets["smtp"]["senha"]
     smtp_server = st.secrets["smtp"]["servidor"]
@@ -177,27 +177,61 @@ def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf
     msg = MIMEMultipart()
     msg["From"] = e_remetente
     msg["To"] = email_destino
-    msg["Subject"] = f"Relatorio Reembolso KM - {cliente}"
+    msg["Subject"] = f"Relatório Reembolso KM - {cliente}"
     
-    corpo = f"<html><body><p>Prezada Sra. Amanda, espero que se encontre bem,</p><p>Segue em anexo o relatório de reembolso de KM rodado e o comprovante de abastecimentos, referente ao atendimento presencial no cliente <b>{cliente} no dia: {data_emissao}.</b>.</p><br><p>Com Gratidão,<br>Hudson Valente</p></body></html>"
-    msg.attach(MIMEText(corpo, "html"))
+    corpo = f"""
+    <html>
+    <body>
+        <p>Prezada Sra. Amanda, espero que se encontre bem,</p>
+        <p>Segue em anexo o relatório de reembolso de KM rodado e os documentos de apoio, referente ao atendimento presencial no cliente <b>{cliente}</b>.</p>
+        <p>Data de Emissão: {data_emissao}</p>
+        <br>
+        <p>Atenciosamente,<br><b>HPTECH</b></p>
+    </body>
+    </html>
+    """
+    msg.attach(MIMEText(corpo, "html", "utf-8"))
     
-    for b_data, nome_arquivo in [(pdf_data, n_pdf), (xlsx_data, n_xlsx)]:
-        part = MIMEBase("application", "octet-stream")
-        part.set_payload(b_data)
-        encode_base64(part)
-        part.add_header("Content-Disposition", f"attachment; filename=\"{nome_arquivo}\"")
-        msg.attach(part)
+    # --- ANEXAR PDF ---
+    if pdf_data:
+        part_pdf = MIMEBase("application", "octet-stream")
+        # Garante que os dados passados sejam tratados como bytes puros
+        part_pdf.set_payload(bytes(pdf_data)) 
+        encode_base64(part_pdf)
+        part_pdf.add_header("Content-Disposition", f"attachment; filename={n_pdf}")
+        msg.attach(part_pdf)
         
+    # --- ANEXAR EXCEL ---
+    if xlsx_data:
+        part_xlsx = MIMEBase("application", "octet-stream")
+        part_xlsx.set_payload(bytes(xlsx_data))
+        encode_base64(part_xlsx)
+        part_xlsx.add_header("Content-Disposition", f"attachment; filename={n_xlsx}")
+        msg.attach(part_xlsx)
+
+    # --- ANEXAR COMPROVANTE (IMAGEM) CASO EXISTA ---
+    if comprovante_file is not None:
+        try:
+            # Lê os bytes da imagem enviada no Streamlit
+            comp_bytes = comprovante_file.getvalue()
+            part_img = MIMEBase("application", "octet-stream")
+            part_img.set_payload(comp_bytes)
+            encode_base64(part_img)
+            part_img.add_header("Content-Disposition", f"attachment; filename={comprovante_file.name}")
+            msg.attach(part_img)
+        except Exception as e:
+            st.warning(f"Não foi possível anexar o comprovante de imagem: {e}")
+            
+    # --- ENVIO DO E-MAIL ---
     try:
-        server = smtplib.SMTP(smtp_server, smtp_porta)
-        server.starttls()
-        server.login(e_remetente, senha_remetente)
-        server.sendmail(e_remetente, email_destino, msg.as_string())
-        server.quit()
-        return True, "Relatório de KM enviado com sucesso!"
+        with smtplib.SMTP(smtp_server, smtp_porta) as server:
+            server.starttls()
+            server.login(e_remetente, senha_remetente)
+            server.sendmail(e_remetente, email_destino, msg.as_string())
+        st.success("📧 E-mail enviado com sucesso!")
     except Exception as e:
-        return False, f"Falha no envio: {str(e)}"
+        st.error(f"Erro ao enviar e-mail: {e}")
+
 # --- REQUISITO ANEXO: ARMAZENAMENTO E PRÉ-VISUALIZAÇÃO EM TEMPO REAL ---
 lista_linhas_preview = []
 t_km_acumulado = 0.0
