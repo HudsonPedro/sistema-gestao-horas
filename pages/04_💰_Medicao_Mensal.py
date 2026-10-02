@@ -368,8 +368,8 @@ def gerar_pdf_medicao_nova(dados):
     pdf.set_text_color(100, 100, 100); pdf.set_font("Arial", "I", 7)
     pdf.text(115, 104, "* Duplicatas a serem emitidas")
     pdf.text(115, 107, f"HPtech Informática ME, valor total de R$ {formatar_br(dados['preco_total'])}")
-    pdf.text(115, 110, "Banco: Santander Ag. 0809 CC: 01055895-8")
-    pdf.text(115, 113, "Pix: hudsonpedro@gmail.com")
+    pdf.text(115, 110, "Banco: PicPay PJ Ag. 0001 CC: 1396160418")
+    pdf.text(115, 113, "PIX CNPJ: 41.159.263/0001-25")
     
     # ASSINATURAS LIMPAS
     pdf.set_text_color(0, 0, 0); pdf.set_font("Arial", "B", 9)
@@ -517,8 +517,8 @@ def gerar_xlsx_medicao_nova(dados):
     # Notas adicionais de rodapé
     worksheet.write("E14", "* Duplicatas a serem emitidas", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
     worksheet.write("E15", f"HPtech Informática ME, valor total de R$ {formatar_br(dados['preco_total'])}", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
-    worksheet.write("E16", "Banco: Santander Ag. 0809 CC: 01055895-8", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
-    worksheet.write("E17", "Pix: hudsonpedro@gmail.com", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
+    worksheet.write("E16", "Banco: PicPay Ag. 0001 CC: 1396160418", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
+    worksheet.write("E17", "PIX CNPJ: 41.159.263/0001-25", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
         
     # Seção de Assinaturas (Alinhada às margens da folha)
     worksheet.write("A17", "* De acordo com a Medição Mensal", fmt_negrito)
@@ -546,7 +546,7 @@ def enviar_email_medicao_nova(email_destino, dados, pdf_bytes, xlsx_bytes, nome_
     
     corpo = f"""<html><body><p>Prezada Sra. Camille Borges, espero que se encontre bem,</p><br>
     <p>Conforme solicitado, segue em anexo a medição para aprovação, autorizando a emissão da NFS-e referente aos serviços de implantação no período de ({dados['data_inicio']} até {dados['data_fim']}).</p><br>
-    <p>De acordo como já informado ao setor financeiro as cuidados da Sra. Amanda, informo que a minha conta do Itaú está em processo de encerramento, agora o meu pix é hudsonpedro@gmail.com, favor realizar os depósitos na minha conta Santander Ag. 0809 cc 01055895-8.</p><br><br>
+    <p>Conforme solicitado pelo setor financeiro as cuidados da Sra. Amanda, segue a conta PJ. PIX CNPJ: 41.159.263/0001-25, favor realizar os depósitos na minha conta PJ PicPay Ag. 0001 cc 1396160418.</p><br><br>
     <p>Com gratidão!<br><br>Hudson Valente</p></body></html>"""
     msg.attach(MIMEText(corpo, "html"))
     
