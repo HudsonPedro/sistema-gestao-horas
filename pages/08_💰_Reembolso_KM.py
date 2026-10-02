@@ -184,12 +184,10 @@ def enviar_email_reembolso_km(email_destino, cliente, pdf_data, xlsx_data, n_pdf
     
     for b_data, nome_arquivo in [(pdf_data, n_pdf), (xlsx_data, n_xlsx)]:
         part = MIMEBase("application", "octet-stream")
-        # O bytes(b_data) garante que o payload aceite o bytearray sem falhas
-        part.set_payload(bytes(b_data)) 
+        part.set_payload(b_data)
         encode_base64(part)
         part.add_header("Content-Disposition", f"attachment; filename=\"{nome_arquivo}\"")
         msg.attach(part)
-
         
     try:
         server = smtplib.SMTP(smtp_server, smtp_porta)
@@ -380,7 +378,7 @@ if st.button("Gerar Relatório de Reembolso de KM", type="primary", use_containe
                     pdf.text(15, 15, "COMPROVANTE DE ABASTECIMENTO ANEXADO")
                     pdf.image(caminho_imagem_disco, x=20, y=27, w=115) #x=15, y=22, w=110)
                 
-                st.session_state["km_pdf_p04"] = pdf.output()
+                st.session_state["km_pdf_p04"] = pdf.output(dest="S").encode("latin1")
                 
                 if caminho_imagem_disco and os.path.exists(caminho_imagem_disco):
                     try: os.remove(caminho_imagem_disco)
