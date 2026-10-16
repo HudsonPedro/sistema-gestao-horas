@@ -272,7 +272,7 @@ if not st.session_state["autenticado"]:
         #st.markdown("<p style='text-align: center; color: #777; margin-top: 15px;'>Sistema Integrado HPtech Informática ME.</p>", unsafe_allow_html=True)
         _, col_centro, _ = st.columns([1, 40, 1])
         with col_centro:
-            st.info("Sistema Integrado HPtech Informática\n v1.1|14072026|Copyright ©2026.", icon="ℹ️")
+            st.info("Sistema Integrado HPTECH PLATFORM\n v1.1|14072026|Copyright ©2026.", icon="ℹ️")
 
         if st.session_state.get("recuperar"):
 
@@ -865,7 +865,7 @@ with st.sidebar:
   
  st.caption("v1.0 - 11052026")
  st.caption("Todos os direitos reservados")
- st.caption("Copyright ©2026 HPtech Informática ME")
+ st.caption("Copyright ©2026 HPtech Platform ME")
  
 # 4. CONTEÚDO DA HOME COM NOVO CARD
 def get_image_base64(path):
@@ -1291,6 +1291,6 @@ if u_user == "admin" and st.session_state.get("pagina_admin"):
 
         st.rerun()
 st.divider()
-st.info("Sistema integrado HPtech Informática ME.")
+st.info("Sistema integrado HPtech Platform ME.")
 st.info("v1.0 - 14072026 | Todos os direitos reservados.")
-st.caption("Copyright ©2026 HPtech Informática ME")
+st.caption("Copyright ©2026 HPtech Platform ME")
