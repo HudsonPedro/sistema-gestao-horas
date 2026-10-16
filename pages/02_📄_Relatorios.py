@@ -106,7 +106,7 @@ with st.sidebar:
     st.divider()
     st.caption("v1.0 - 14052026") #16:43 sem alterações
     st.caption("Todos os direitos reservados")
-    st.caption("Copyright ©2026 HPtech Informática ME")
+    st.caption("Copyright ©2026 HPtech Platform ME")
     
 # 4. IMPORTS PESADOS
 import os
