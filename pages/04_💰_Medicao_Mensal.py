@@ -149,7 +149,7 @@ with st.sidebar:
     st.divider()
     st.caption("v1.0 - 11052026")
     st.caption("Todos os direitos reservados")
-    st.caption("Copyright ©2026 HPtech Informática ME")
+    st.caption("Copyright ©2026 HPtech Platform ME")
 
 
 #st.title("💰 Medição Mensal de Prestação de Serviços")
@@ -367,7 +367,7 @@ def gerar_pdf_medicao_nova(dados):
     
     pdf.set_text_color(100, 100, 100); pdf.set_font("Arial", "I", 7)
     pdf.text(115, 104, "* Duplicatas a serem emitidas")
-    pdf.text(115, 107, f"HPtech Informática ME, valor total de R$ {formatar_br(dados['preco_total'])}")
+    pdf.text(115, 107, f"HPtech Platform ME, valor total de R$ {formatar_br(dados['preco_total'])}")
     pdf.text(115, 110, "Banco: PicPay PJ Ag. 0001 CC: 1396160418")
     pdf.text(115, 113, "PIX CNPJ: 41.159.263/0001-25")
     
@@ -376,7 +376,7 @@ def gerar_pdf_medicao_nova(dados):
     pdf.text(15, 122, "* De acordo com a Medição Mensal")
     pdf.set_draw_color(180, 180, 180)
     pdf.line(15, 142, 85, 142); pdf.line(125, 142, 195, 142)
-    pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Informática ME"); pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
+    pdf.set_font("Arial", "", 8); pdf.text(15, 146, "HPtech Platfor ME"); pdf.text(125, 146, "CR Tecnologia da Informação Ltda")
     #return pdf.output(dest="S").encode("latin1") erro
     return bytes(pdf.output())
     
@@ -516,7 +516,7 @@ def gerar_xlsx_medicao_nova(dados):
     
     # Notas adicionais de rodapé
     worksheet.write("E14", "* Duplicatas a serem emitidas", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
-    worksheet.write("E15", f"HPtech Informática ME, valor total de R$ {formatar_br(dados['preco_total'])}", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
+    worksheet.write("E15", f"HPtech Platform ME, valor total de R$ {formatar_br(dados['preco_total'])}", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
     worksheet.write("E16", "Banco: PicPay Ag. 0001 CC: 1396160418", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
     worksheet.write("E17", "PIX CNPJ: 41.159.263/0001-25", workbook.add_format({"italic": True, "size": 7, "font_name": "Arial", "font_color": "#646464"}))
         
@@ -524,7 +524,7 @@ def gerar_xlsx_medicao_nova(dados):
     worksheet.write("A17", "* De acordo com a Medição Mensal", fmt_negrito)
     
     fmt_linha_assinatura = workbook.add_format({"top": 1, "top_color": cor_borda, "align": "left", "font_name": "Arial", "size": 8})
-    worksheet.write("A20", "HPtech Informática ME", fmt_linha_assinatura)
+    worksheet.write("A20", "HPtech Platform ME", fmt_linha_assinatura)
     worksheet.write("F20", "CR Tecnologia da Informação Ltda", fmt_linha_assinatura)
     
     workbook.close()
