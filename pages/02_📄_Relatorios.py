@@ -10,7 +10,7 @@ if "autenticado" not in st.session_state or not st.session_state["autenticado"]:
 # 1. CONFIGURAÇÃO DA PÁGINA (Sempre a primeira linha de código!)
 st.set_page_config(
     page_title="Gerador de Relatórios HPTECH", 
-    page_icon="hptechICO.png", 
+    page_icon="hptech.png", 
     layout="wide"
 )
 
@@ -223,7 +223,7 @@ def get_image_base64(path):
         return base64.b64encode(img_file.read()).decode()
 
 try:
-    img_base64 = get_image_base64("hptechICO.png")
+    img_base64 = get_image_base64("hptech.png")
     st.markdown(
         f"""
         <div style="display: flex; align-items: center;">
