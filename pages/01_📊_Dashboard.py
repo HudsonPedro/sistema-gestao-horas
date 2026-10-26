@@ -10,7 +10,7 @@ if "autenticado" not in st.session_state or not st.session_state["autenticado"]:
 # 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
     page_title="Dashboard HPTECH",
-    page_icon="hptechICO.png",
+    page_icon="hptech.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -126,7 +126,7 @@ def get_image_base64(path):
 
 # Tenta carregar a imagem que está no repositório GitHub
 try:
-    img_base64 = get_image_base64("hptechICO.png")
+    img_base64 = get_image_base64("hptech.png")
     
     st.markdown(
         f"""
