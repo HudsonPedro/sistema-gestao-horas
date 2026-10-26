@@ -238,7 +238,7 @@ def get_image_base64(path):
 
 # Tenta carregar a imagem que está no repositório GitHub
 try:
-    img_base64 = get_image_base64("hptechICO.png")
+    img_base64 = get_image_base64("hptech.png")
     
     st.markdown(
         f"""
