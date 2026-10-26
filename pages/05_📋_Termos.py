@@ -228,7 +228,7 @@ def get_image_base64(path):
     with open(path, "rb") as img_file: return base64.b64encode(img_file.read()).decode()
 
 try:
-    img_base64 = get_image_base64("hptechICO.png")
+    img_base64 = get_image_base64("hptech.png")
     st.markdown(f'<div style="display: flex; align-items: center;"><h1 style="margin: 0; font-size: 2.5rem;">Gerador de Termos de Homologação</h1><img src="data:image/png;base64,{img_base64}" style="margin-left: 0px; height: 140px;"></div>', unsafe_allow_html=True)
     st.markdown("Selecione o cliente e os módulos para gerar os Termos de Homologação em lote.")
 except:
